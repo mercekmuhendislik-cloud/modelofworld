@@ -11,6 +11,7 @@ echo.
 echo  Degisiklikler GitHub'a gonderiliyor...
 echo.
 
+python tools\surum.py
 git add -A
 git commit -m "Site guncellemesi - %date% %time%" >nul 2>&1
 git push origin main
