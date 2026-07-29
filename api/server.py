@@ -83,6 +83,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS job_offers(
       id INTEGER PRIMARY KEY, job_id INTEGER, user_id INTEGER,
       status TEXT DEFAULT 'beklemede', updated TEXT, created TEXT);
+    CREATE TABLE IF NOT EXISTS settings(k TEXT PRIMARY KEY, v TEXT);
     """)
     for col in PROFILE_COLS + ADMIN_COLS + READONLY_COLS:
         try: c.execute(f"ALTER TABLE profiles ADD COLUMN {col} TEXT")
@@ -91,6 +92,12 @@ def init_db():
                      ("deleted", "INTEGER DEFAULT 0")]:
         try: c.execute(f"ALTER TABLE photos ADD COLUMN {col} {ddl}")
         except sqlite3.OperationalError: pass
+    # Yönetici şifresi ilk kurulumda mevcut anahtara eşitlenir (sonra panelden değiştirilir)
+    if not c.execute("SELECT 1 FROM settings WHERE k='admin_salt'").fetchone():
+        salt = secrets.token_hex(16)
+        c.execute("INSERT INTO settings(k,v) VALUES('admin_salt',?)", (salt,))
+        c.execute("INSERT INTO settings(k,v) VALUES('admin_hash',?)",
+                  (hashlib.pbkdf2_hmac("sha256", ADMIN_KEY.encode(), bytes.fromhex(salt), 200_000).hex(),))
     c.commit(); c.close()
 init_db()
 
@@ -130,7 +137,7 @@ def offers_of(uid):
     return [dict(r) for r in rows]
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "MOW/3.0"
+    server_version = "MOW/3.1"
 
     def _json(self, code, obj, cookie=None):
         raw = json.dumps(obj, ensure_ascii=False).encode()
@@ -162,8 +169,20 @@ class Handler(BaseHTTPRequestHandler):
         db().commit()
         return f"mow={tok}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age={SESSION_DAYS*86400}"
 
+    def _admin_session(self):
+        raw = self.headers.get("Cookie") or ""
+        m = re.search(r'mowadm=([A-Za-z0-9_\-]+)', raw)
+        if not m: return False
+        row = db().execute("SELECT expires FROM sessions WHERE token=? AND user_id=-1", (m.group(1),)).fetchone()
+        return bool(row and row["expires"] >= now())
+
     def _is_admin(self, qs):
-        return (qs.get("key", [""])[0] == ADMIN_KEY)
+        return (qs.get("key", [""])[0] == ADMIN_KEY) or self._admin_session()
+
+    def _check_admin_pw(self, pw):
+        salt = db().execute("SELECT v FROM settings WHERE k='admin_salt'").fetchone()["v"]
+        h = db().execute("SELECT v FROM settings WHERE k='admin_hash'").fetchone()["v"]
+        return hash_pw(pw or "", salt) == h
 
     def log_message(self, fmt, *args):
         pass
@@ -173,7 +192,7 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path); qs = parse_qs(u.query); p = u.path
 
         if p == "/api/health":
-            return self._json(200, {"ok": True, "v": 3})
+            return self._json(200, {"ok": True, "v": 3.1})
 
         if p == "/api/me":
             uid = self._session_user()
@@ -362,6 +381,61 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"ok": True})
 
         # ---- Yönetici uçları ----
+        if p == "/api/admin/login":
+            d = jbody()
+            if not self._check_admin_pw(d.get("password")):
+                audit("admin", "giris-hatali", None, "yanlış şifre denemesi")
+                db().commit()
+                return self._json(401, {"error": "Şifre hatalı"})
+            tok = secrets.token_urlsafe(32)
+            exp = (datetime.now(timezone.utc) + timedelta(hours=12)).isoformat(timespec="seconds")
+            db().execute("INSERT INTO sessions(token,user_id,expires) VALUES(?,-1,?)", (tok, exp))
+            audit("admin", "giris", None, "yönetici girişi")
+            db().commit()
+            return self._json(200, {"ok": True},
+                cookie=f"mowadm={tok}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=43200")
+
+        if p == "/api/admin/logout":
+            raw = self.headers.get("Cookie") or ""
+            m = re.search(r'mowadm=([A-Za-z0-9_\-]+)', raw)
+            if m:
+                db().execute("DELETE FROM sessions WHERE token=?", (m.group(1),)); db().commit()
+            return self._json(200, {"ok": True},
+                cookie="mowadm=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0")
+
+        if p == "/api/admin/password":
+            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            d = jbody()
+            if not self._check_admin_pw(d.get("old")):
+                return self._json(401, {"error": "Mevcut şifre hatalı"})
+            new = d.get("new") or ""
+            if len(new) < 8:
+                return self._json(400, {"error": "Yeni şifre en az 8 karakter olmalı"})
+            salt = secrets.token_hex(16)
+            db().execute("UPDATE settings SET v=? WHERE k='admin_salt'", (salt,))
+            db().execute("UPDATE settings SET v=? WHERE k='admin_hash'", (hash_pw(new, salt),))
+            audit("admin", "sifre-degisti", None, "")
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/admin/update":
+            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            d = jbody()
+            uid = int(d.get("user_id") or 0)
+            if not db().execute("SELECT 1 FROM users WHERE id=?", (uid,)).fetchone():
+                return self._json(404, {"error": "Üye bulunamadı"})
+            if "fullname" in d or "phone" in d:
+                db().execute("UPDATE users SET fullname=COALESCE(?,fullname), phone=COALESCE(?,phone) WHERE id=?",
+                             (d.get("fullname"), d.get("phone"), uid))
+            sent = [c for c in PROFILE_COLS if c in d]
+            if sent:
+                sets = ", ".join(f"{c}=?" for c in sent)
+                vals = [str(d.get(c) or "")[:LONG_COLS.get(c, 500)] for c in sent] + [uid]
+                db().execute(f"UPDATE profiles SET {sets} WHERE user_id=?", vals)
+            audit("admin", "uye-duzenleme", uid, ", ".join((["fullname"] if "fullname" in d else []) + sent))
+            db().commit()
+            return self._json(200, {"ok": True})
+
         if p == "/api/admin/review":
             if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
             d = jbody()

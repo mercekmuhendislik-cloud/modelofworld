@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sedcard — VERA Agency</title>
+  <title>Sedcard — Model of World</title>
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     body { background: #f2f2f2; }
     .sheet {
@@ -41,7 +41,7 @@
   </div>
   <div class="sheet" id="sheet" style="display:none">
     <div class="sc-head">
-      <div class="logo2">VERA <span>AGENCY</span></div>
+      <div class="logo2">MODEL <span style="font-family:'Great Vibes',cursive;font-size:1.3em;letter-spacing:0;text-transform:none">of</span> WORLD</div>
       <div style="text-align:right">
         <div class="sc-name" id="scName">—</div>
         <div class="sc-cat" id="scCat">—</div>
@@ -93,7 +93,7 @@
       $("scMea").innerHTML = rows.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join("");
       $("scLang").textContent = p.languages || "";
       $("sheet").style.display = "";
-      document.title = (u.fullname || "Sedcard") + " — Sedcard | VERA Agency";
+      document.title = (u.fullname || "Sedcard") + " — Sedcard | Model of World";
     })();
   </script>
 </body>

@@ -13,7 +13,7 @@ const IMG = id => `https://images.unsplash.com/photo-${id}`;
 const pic = (url, w, extra = "") => `${url}?q=80&auto=format&fit=crop&w=${w}${extra}`;
 
 const AGENCY = {
-  name: "VERA Agency",
+  name: "Model of World",
   phone: "+90 (212) 000 00 00",
   whatsapp: "+90 (532) 000 00 00",
   email: "info@modelofworld.com",
@@ -21,7 +21,7 @@ const AGENCY = {
   instagram: "https://instagram.com/",
   /* Resmi ticari bilgiler — yayın öncesi gerçek değerlerle doldurulacak */
   legal: {
-    title: "VERA Ajans Organizasyon ve Prodüksiyon Ltd. Şti.",
+    title: "Model of World Ajans Organizasyon ve Prodüksiyon Ltd. Şti.",
     taxOffice: "Şişli V.D.",
     taxNo: "000 000 0000",
     mersis: "0000-0000-0000-0000",

@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yönetim — VERA Agency</title>
+  <title>Yönetim — Model of World</title>
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; padding:20px; background:var(--surface); margin-bottom:16px; }
     .adm-user h3 { font-size:1.1rem; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
@@ -242,7 +242,7 @@
         if (note === "__ozel") note = prompt("Üyeye iletilecek gerekçeyi yazın:") || "";
         if (!note) { msg.textContent = "Önce red gerekçesi seçin."; return; }
       }
-      if (act === "onaylandi") note = "Tebrikler! VERA Agency ailesine katıldınız — profiliniz kadroya alındı.";
+      if (act === "onaylandi") note = "Tebrikler! Model of World ailesine katıldınız — profiliniz kadroya alındı.";
       const ok = await api("/api/admin/review", { user_id: uid, status: act, review_note: note });
       msg.textContent = ok ? "✓ Güncellendi (üyenin panelinde görünür)" : "Hata";
       if (ok) load();

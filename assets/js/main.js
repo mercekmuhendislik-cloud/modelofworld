@@ -39,6 +39,20 @@
   window.VERA.isFav = isFav;
   window.VERA.toggleFav = toggleFav;
 
+  /* ---------- Marka Logosu (tüm sayfalarda tek kaynak) ---------- */
+  const LOGO = `
+    <a class="logo" href="index.html" aria-label="Model of World — Ana Sayfa">
+      <svg class="logo-mark" viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="25" r="20.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M24 0.8 L25.3 4.2 L28.8 5.5 L25.3 6.8 L24 10.2 L22.7 6.8 L19.2 5.5 L22.7 4.2 Z" fill="currentColor"/>
+        <text x="24" y="32" text-anchor="middle" font-family="Cormorant Garamond, Georgia, serif" font-size="19" font-weight="600" letter-spacing="0.5" fill="currentColor">MW</text>
+      </svg>
+      <span class="logo-word">
+        <span class="lw-top">MODEL<em>of</em>WORLD</span>
+        <small>AGENCY</small>
+      </span>
+    </a>`;
+
   const active = document.body.dataset.page || "";
 
   const headerMount = document.getElementById("site-header");
@@ -46,7 +60,7 @@
     headerMount.outerHTML = `
     <header class="site-header" id="header">
       <div class="container header-inner">
-        <a class="logo" href="index.html"><strong>VERA</strong><span>Agency</span></a>
+        ${LOGO}
         <nav class="main-nav" id="mainNav" aria-label="Ana menü">
           ${NAV.map(n => `<a href="${n.href}" class="${n.key === active ? "active" : ""}">${n.label}</a>`).join("")}
         </nav>
@@ -82,7 +96,7 @@
       <div class="container">
         <div class="footer-grid">
           <div class="footer-about">
-            <a class="logo" href="index.html"><strong>VERA</strong><span>Agency</span></a>
+            ${LOGO}
             <p>Model &amp; hostes temini, prodüksiyon ve etkinlik yönetiminde premium ajans çözümleri.</p>
           </div>
           <div>

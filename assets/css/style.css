@@ -125,9 +125,19 @@ section { padding: clamp(64px, 9vw, 120px) 0; }
 }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 
-.logo { display: flex; align-items: baseline; gap: 10px; font-family: var(--font-serif); font-size: 1.6rem; letter-spacing: 0.16em; }
-.logo strong { font-weight: 600; }
-.logo span { font-family: var(--font-sans); font-size: 0.58rem; letter-spacing: 0.42em; text-transform: uppercase; color: var(--gold); }
+.logo { display: flex; align-items: center; gap: 11px; color: var(--text); }
+.logo-mark { width: 40px; height: 40px; flex: none; color: var(--gold); }
+.logo-word { display: flex; flex-direction: column; line-height: 1; }
+.lw-top { font-family: var(--font-serif); font-size: 1.18rem; font-weight: 600; letter-spacing: 0.14em; }
+.lw-top em {
+  font-family: var(--font-script); font-style: normal; font-weight: 400;
+  font-size: 1.45em; color: var(--gold); letter-spacing: 0;
+  margin: 0 3px; vertical-align: -0.14em;
+}
+.logo-word small {
+  font-family: var(--font-sans); font-size: 0.5rem; font-weight: 500;
+  letter-spacing: 0.62em; text-transform: uppercase; color: var(--gold); margin-top: 5px;
+}
 
 .main-nav { display: flex; gap: 34px; }
 .main-nav a {
@@ -960,7 +970,7 @@ body { animation: pageIn 0.6s ease both; }
 
 /* ---------- Fotoğraf Filigranı (logo — tüm cast fotoğraflarında) ---------- */
 .talent-media::after, .detail-media::after, .g-item::after {
-  content: "VERA AGENCY";
+  content: "MODEL OF WORLD";
   position: absolute; right: 12px; bottom: 10px; z-index: 3;
   font-family: var(--font-serif); font-size: 0.68rem; font-weight: 600;
   letter-spacing: 0.28em; text-transform: uppercase;
