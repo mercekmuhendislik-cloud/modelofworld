@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sedcard — VERA Agency</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
+  <style>
+    body { background: #f2f2f2; }
+    .sheet {
+      width: min(800px, 96vw); margin: 24px auto; background: #fff; color: #1a1216;
+      padding: 36px; border-radius: 6px; box-shadow: 0 10px 40px rgba(0,0,0,.15);
+    }
+    .sc-head { display:flex; justify-content:space-between; align-items:baseline; border-bottom: 2px solid #d34f6e; padding-bottom: 14px; margin-bottom: 20px; }
+    .sc-head .logo2 { font-family: var(--font-serif); font-size: 1.6rem; letter-spacing: .18em; }
+    .sc-head .logo2 span { color: #d34f6e; font-size: .9rem; }
+    .sc-name { font-family: var(--font-serif); font-size: 2.2rem; }
+    .sc-cat { color:#d34f6e; text-transform: uppercase; letter-spacing: .3em; font-size: .7rem; }
+    .sc-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 20px 0; }
+    .sc-grid .ph2 { aspect-ratio: 3/4; overflow: hidden; border-radius: 4px; background: #eee; position: relative; }
+    .sc-grid img { width: 100%; height: 100%; object-fit: cover; }
+    .sc-mea { display:grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 1px; background: #e8d5da; border: 1px solid #e8d5da; margin-top: 8px; }
+    .sc-mea div { background: #fdf5f7; padding: 10px 12px; }
+    .sc-mea dt { font-size: .6rem; text-transform: uppercase; letter-spacing: .16em; color: #96707c; }
+    .sc-mea dd { font-family: var(--font-serif); font-size: 1.15rem; color: #b8385a; }
+    .sc-foot { margin-top: 18px; display:flex; justify-content:space-between; font-size: .72rem; color: #96707c; letter-spacing: .1em; }
+    .no-print-bar { text-align:center; margin: 18px; }
+    @media print {
+      body { background: #fff; } .sheet { box-shadow: none; margin: 0; width: 100%; }
+      .no-print-bar, .site-header, .wa-float { display: none !important; }
+    }
+  </style>
+</head>
+<body data-page="sedcard">
+  <div class="no-print-bar">
+    <button class="btn btn-gold btn-sm" onclick="window.print()">🖨 PDF Olarak Kaydet / Yazdır</button>
+    <span class="muted" id="scErr" style="margin-left:10px;font-size:.85rem"></span>
+  </div>
+  <div class="sheet" id="sheet" style="display:none">
+    <div class="sc-head">
+      <div class="logo2">VERA <span>AGENCY</span></div>
+      <div style="text-align:right">
+        <div class="sc-name" id="scName">—</div>
+        <div class="sc-cat" id="scCat">—</div>
+      </div>
+    </div>
+    <div class="sc-grid" id="scPhotos"></div>
+    <dl class="sc-mea" id="scMea"></dl>
+    <div class="sc-foot">
+      <span>www.modelofworld.com</span>
+      <span id="scLang"></span>
+      <span>info@modelofworld.com</span>
+    </div>
+  </div>
+
+  <script>
+    (async function () {
+      const $ = id => document.getElementById(id);
+      const uid = +(new URLSearchParams(location.search).get("id") || 0);
+      const key = sessionStorage.getItem("mow-admin") || prompt("Yönetici anahtarı:");
+      if (!key) { $("scErr").textContent = "Anahtar gerekli."; return; }
+      sessionStorage.setItem("mow-admin", key);
+      const r = await fetch("/api/admin/list?key=" + encodeURIComponent(key)).catch(() => null);
+      if (!r || !r.ok) { $("scErr").textContent = "Anahtar hatalı."; return; }
+      const d = await r.json();
+      const u = d.users.find(x => x.id === uid) || d.users[0];
+      if (!u) { $("scErr").textContent = "Üye bulunamadı."; return; }
+      const p = u.profile || {};
+      const k = encodeURIComponent(key);
+
+      $("scName").textContent = u.fullname || "—";
+      const CATS = { model: "Manken / Model", hostes: "Fuar & Kongre Hostesi", yuz: "Yüz Modeli", cocuk: "Çocuk Model", oyuncu: "Oyuncu / Cast" };
+      $("scCat").textContent = CATS[p.category] || p.category || "";
+
+      /* En iyi 4 fotoğraf: önce stüdyo, sonra podyum, sonra diğerleri (arşiv hariç) */
+      const pool = (u.media || []).filter(m => m.kind === "photo" && !m.deleted);
+      const order = ["studio", "podium", "polaroid", "genel"];
+      pool.sort((a, b) => order.indexOf(a.album || "genel") - order.indexOf(b.album || "genel"));
+      const four = pool.slice(0, 4);
+      $("scPhotos").innerHTML = four.length
+        ? four.map(m => `<div class="ph2"><img src="/api/photo/${m.id}?key=${k}"></div>`).join("")
+        : '<p style="grid-column:1/-1;color:#96707c">Onaylı fotoğraf yok.</p>';
+
+      const rows = [
+        ["Boy", p.height && p.height + " cm"], ["Kilo", p.weight && p.weight + " kg"],
+        ["Göğüs", p.bust], ["Bel", p.waist], ["Basen", p.hip],
+        ["Ayakkabı", p.shoe], ["Beden", p.size],
+        ["Saç", p.hair], ["Göz", p.eye], ["Ten", p.skin],
+      ].filter(([, v]) => v);
+      $("scMea").innerHTML = rows.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join("");
+      $("scLang").textContent = p.languages || "";
+      $("sheet").style.display = "";
+      document.title = (u.fullname || "Sedcard") + " — Sedcard | VERA Agency";
+    })();
+  </script>
+</body>
+</html>

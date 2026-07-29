@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-VERA / modelofworld.com — Üyelik & Aday Paneli API'si  (v2)
+VERA / modelofworld.com — Üyelik & Aday Paneli API'si  (v3)
 Yalnızca Python standart kütüphanesi kullanır (pip gerekmez).
 127.0.0.1:8010 dinler; dış dünyaya Caddy /api/* üzerinden açılır.
 
-v2: ölçü kartı (+ten rengi), müsaitlik takvimi, banka/IBAN modülü,
-veli izni (TC + muvafakatname), gizlilik tercihi, video/belge yükleme,
-onboarding onay adımı. Eski veritabanı otomatik yükseltilir (migrate).
-
-Veri dizini: MOW_DATA ortam değişkeni ya da varsayılan
-C:\\inetpub\\modelofworld-data  (webroot DIŞINDA).
+v3: albüm kategorili medya (stüdyo/podyum/polaroid), yumuşak silme (arşiv),
+yönetici onay havuzu (gerekçeli red), ajans içi not/puan/etiket,
+denetim günlüğü (audit), iş teklifi akışı (booking), dijital imza,
+video-book linki. Eski veritabanı otomatik yükseltilir.
 """
 import json, os, re, sqlite3, secrets, hashlib, mimetypes, threading
 from datetime import datetime, timedelta, timezone
@@ -22,12 +20,13 @@ DB_PATH = os.path.join(DATA_DIR, "uye.db")
 ADMIN_KEY_FILE = os.path.join(DATA_DIR, "admin-key.txt")
 SESSION_DAYS = 30
 
-# Yükleme kuralları: tür -> (uzantılar, maks boyut, kişi başı adet)
 UPLOAD_RULES = {
-    "photo": ({".jpg", ".jpeg", ".png", ".webp", ".heic"}, 12 * 1024 * 1024, 12),
+    "photo": ({".jpg", ".jpeg", ".png", ".webp", ".heic"}, 12 * 1024 * 1024, 30),
     "video": ({".mp4", ".mov", ".webm"}, 80 * 1024 * 1024, 3),
     "belge": ({".pdf", ".jpg", ".jpeg", ".png"}, 10 * 1024 * 1024, 3),
+    "imza":  ({".png", ".jpg", ".jpeg"}, 2 * 1024 * 1024, 3),
 }
+ALBUMS = {"studio", "podium", "polaroid", "genel"}
 MAX_BODY = 85 * 1024 * 1024
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -44,17 +43,21 @@ def db():
         _local.conn.row_factory = sqlite3.Row
     return _local.conn
 
-# Profil sütunları (hepsi metin — /api/profile bunları günceller)
+# Üyenin kendisinin güncelleyebildiği alanlar
 PROFILE_COLS = [
     "category", "gender", "birthdate", "city",
     "height", "weight", "bust", "waist", "hip", "shoe", "size",
     "hair", "eye", "skin", "languages", "instagram", "about",
-    "availability", "privacy",
+    "availability", "privacy", "video_link",
     "iban", "bank_name", "account_name", "invoice_type", "tax_no",
     "parent_name", "parent_tc", "parent_phone",
     "consent_kvkk", "consent_contract",
 ]
-LONG_COLS = {"availability": 6000, "about": 2000}
+# Yalnızca yönetici alanları — /api/me bunları asla döndürmez
+ADMIN_COLS = ["admin_note", "admin_rating", "admin_tags"]
+# Üyeye görünen ama üyenin değiştiremediği alanlar
+READONLY_COLS = ["status", "review_note", "consent_at"]
+LONG_COLS = {"availability": 6000, "about": 2000, "admin_note": 2000, "review_note": 1000}
 
 def init_db():
     c = sqlite3.connect(DB_PATH)
@@ -71,17 +74,23 @@ def init_db():
       token TEXT PRIMARY KEY, user_id INTEGER, expires TEXT);
     CREATE TABLE IF NOT EXISTS submissions(
       id INTEGER PRIMARY KEY, kind TEXT, data TEXT, created TEXT);
+    CREATE TABLE IF NOT EXISTS audit(
+      id INTEGER PRIMARY KEY, who TEXT, action TEXT, user_id INTEGER,
+      detail TEXT, created TEXT);
+    CREATE TABLE IF NOT EXISTS jobs(
+      id INTEGER PRIMARY KEY, title TEXT, date TEXT, location TEXT,
+      hours TEXT, fee TEXT, note TEXT, created TEXT);
+    CREATE TABLE IF NOT EXISTS job_offers(
+      id INTEGER PRIMARY KEY, job_id INTEGER, user_id INTEGER,
+      status TEXT DEFAULT 'beklemede', updated TEXT, created TEXT);
     """)
-    # v2 geçişi: eksik sütunları ekle (mevcut kayıtlar korunur)
-    for col in PROFILE_COLS + ["consent_at"]:
-        try:
-            c.execute(f"ALTER TABLE profiles ADD COLUMN {col} TEXT")
-        except sqlite3.OperationalError:
-            pass
-    try:
-        c.execute("ALTER TABLE photos ADD COLUMN kind TEXT DEFAULT 'photo'")
-    except sqlite3.OperationalError:
-        pass
+    for col in PROFILE_COLS + ADMIN_COLS + READONLY_COLS:
+        try: c.execute(f"ALTER TABLE profiles ADD COLUMN {col} TEXT")
+        except sqlite3.OperationalError: pass
+    for col, ddl in [("kind", "TEXT DEFAULT 'photo'"), ("album", "TEXT DEFAULT 'genel'"),
+                     ("deleted", "INTEGER DEFAULT 0")]:
+        try: c.execute(f"ALTER TABLE photos ADD COLUMN {col} {ddl}")
+        except sqlite3.OperationalError: pass
     c.commit(); c.close()
 init_db()
 
@@ -89,6 +98,10 @@ def hash_pw(pw, salt):
     return hashlib.pbkdf2_hmac("sha256", pw.encode(), bytes.fromhex(salt), 200_000).hex()
 
 def now(): return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+def audit(who, action, user_id=None, detail=""):
+    db().execute("INSERT INTO audit(who,action,user_id,detail,created) VALUES(?,?,?,?,?)",
+                 (who, action, user_id, str(detail)[:400], now()))
 
 def parse_multipart(body, ctype):
     m = re.search(r'boundary=([^;]+)', ctype)
@@ -110,8 +123,14 @@ def parse_multipart(body, ctype):
             fields[nm.group(1)] = data.decode("utf-8", "ignore")
     return fields, files
 
+def offers_of(uid):
+    rows = db().execute("""SELECT o.id, o.status, o.updated, j.title, j.date, j.location,
+        j.hours, j.fee, j.note FROM job_offers o JOIN jobs j ON j.id=o.job_id
+        WHERE o.user_id=? ORDER BY o.id DESC""", (uid,)).fetchall()
+    return [dict(r) for r in rows]
+
 class Handler(BaseHTTPRequestHandler):
-    server_version = "MOW/2.0"
+    server_version = "MOW/3.0"
 
     def _json(self, code, obj, cookie=None):
         raw = json.dumps(obj, ensure_ascii=False).encode()
@@ -149,23 +168,28 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass
 
-    # ---------- GET ----------
+    # ---------------- GET ----------------
     def do_GET(self):
         u = urlparse(self.path); qs = parse_qs(u.query); p = u.path
 
         if p == "/api/health":
-            return self._json(200, {"ok": True, "v": 2})
+            return self._json(200, {"ok": True, "v": 3})
 
         if p == "/api/me":
             uid = self._session_user()
             if not uid: return self._json(401, {"error": "Oturum yok"})
             user = db().execute("SELECT id,email,fullname,phone FROM users WHERE id=?", (uid,)).fetchone()
             prof = db().execute("SELECT * FROM profiles WHERE user_id=?", (uid,)).fetchone()
-            media = db().execute("SELECT id,kind,orig FROM photos WHERE user_id=? ORDER BY id", (uid,)).fetchall()
+            prof = dict(prof) if prof else {}
+            for c in ADMIN_COLS: prof.pop(c, None)   # iç notlar üyeye sızmaz
+            media = db().execute(
+                "SELECT id,kind,album,orig FROM photos WHERE user_id=? AND deleted=0 ORDER BY id",
+                (uid,)).fetchall()
             return self._json(200, {
                 "user": dict(user) if user else None,
-                "profile": dict(prof) if prof else {},
+                "profile": prof,
                 "media": [dict(r) for r in media],
+                "offers": offers_of(uid),
             })
 
         m = re.match(r"^/api/photo/(\d+)$", p)
@@ -195,16 +219,23 @@ class Handler(BaseHTTPRequestHandler):
                 prof = db().execute("SELECT * FROM profiles WHERE user_id=?", (usr["id"],)).fetchone()
                 usr["profile"] = dict(prof) if prof else {}
                 usr["media"] = [dict(r) for r in db().execute(
-                    "SELECT id,kind,orig FROM photos WHERE user_id=?", (usr["id"],))]
-            subs = [dict(r) for r in db().execute(
-                "SELECT * FROM submissions ORDER BY id DESC LIMIT 200")]
-            return self._json(200, {"users": users, "submissions": subs})
+                    "SELECT id,kind,album,orig,deleted,created FROM photos WHERE user_id=? ORDER BY id",
+                    (usr["id"],))]
+                usr["offers"] = offers_of(usr["id"])
+            jobs = [dict(r) for r in db().execute("SELECT * FROM jobs ORDER BY id DESC LIMIT 50")]
+            for j in jobs:
+                j["offers"] = [dict(r) for r in db().execute("""
+                    SELECT o.status, o.updated, u.fullname, u.id user_id
+                    FROM job_offers o JOIN users u ON u.id=o.user_id WHERE o.job_id=?""", (j["id"],))]
+            subs = [dict(r) for r in db().execute("SELECT * FROM submissions ORDER BY id DESC LIMIT 100")]
+            logs = [dict(r) for r in db().execute("SELECT * FROM audit ORDER BY id DESC LIMIT 120")]
+            return self._json(200, {"users": users, "jobs": jobs, "submissions": subs, "audit": logs})
 
         return self._json(404, {"error": "Bilinmeyen uç"})
 
-    # ---------- POST ----------
+    # ---------------- POST ----------------
     def do_POST(self):
-        u = urlparse(self.path); p = u.path
+        u = urlparse(self.path); qs = parse_qs(u.query); p = u.path
         ctype = self.headers.get("Content-Type") or ""
         body = self._body()
         if body is None:
@@ -231,6 +262,7 @@ class Handler(BaseHTTPRequestHandler):
                  (d.get("phone") or "").strip(), now()))
             db().execute("INSERT INTO profiles(user_id, status, privacy) VALUES(?, 'inceleniyor', 'private')",
                          (cur.lastrowid,))
+            audit("uye", "kayit", cur.lastrowid, email)
             db().commit()
             return self._json(200, {"ok": True}, cookie=self._make_session(cur.lastrowid))
 
@@ -254,28 +286,24 @@ class Handler(BaseHTTPRequestHandler):
             uid = self._session_user()
             if not uid: return self._json(401, {"error": "Oturum yok"})
             d = jbody()
-
-            # Sunucu tarafı doğrulamalar
             iban = re.sub(r"\s", "", str(d.get("iban") or ""))
             if iban and not re.match(r"^TR\d{24}$", iban.upper()):
                 return self._json(400, {"error": "IBAN geçersiz — TR ile başlayan 26 haneli numara girin"})
-            d["iban"] = iban.upper()
+            if "iban" in d: d["iban"] = iban.upper()
             tc = str(d.get("parent_tc") or "").strip()
             if tc and not re.match(r"^\d{11}$", tc):
                 return self._json(400, {"error": "Veli TC kimlik no 11 haneli olmalı"})
-
-            # Yalnızca gönderilen alanları güncelle (kısmi kayıt — sekme başına kaydetme)
             sent = [c for c in PROFILE_COLS if c in d]
             if sent:
                 sets = ", ".join(f"{c}=?" for c in sent)
                 vals = [str(d.get(c) or "")[:LONG_COLS.get(c, 500)] for c in sent] + [uid]
                 db().execute(f"UPDATE profiles SET {sets} WHERE user_id=?", vals)
-
-            # Onay zamanı damgası
+                audit("uye", "profil-guncelleme", uid, ", ".join(sent))
             prof = db().execute("SELECT consent_kvkk, consent_contract, consent_at FROM profiles WHERE user_id=?",
                                 (uid,)).fetchone()
             if prof and prof["consent_kvkk"] == "1" and prof["consent_contract"] == "1" and not prof["consent_at"]:
                 db().execute("UPDATE profiles SET consent_at=? WHERE user_id=?", (now(), uid))
+                audit("uye", "onay-imza", uid, "KVKK + sözleşme onaylandı")
             db().commit()
             return self._json(200, {"ok": True})
 
@@ -286,8 +314,10 @@ class Handler(BaseHTTPRequestHandler):
             if not files: return self._json(400, {"error": "Dosya bulunamadı"})
             kind = fields.get("kind", "photo")
             if kind not in UPLOAD_RULES: kind = "photo"
+            album = fields.get("album", "genel")
+            if album not in ALBUMS: album = "genel"
             exts, max_size, max_count = UPLOAD_RULES[kind]
-            count = db().execute("SELECT COUNT(*) c FROM photos WHERE user_id=? AND kind=?",
+            count = db().execute("SELECT COUNT(*) c FROM photos WHERE user_id=? AND kind=? AND deleted=0",
                                  (uid, kind)).fetchone()["c"]
             if count >= max_count:
                 return self._json(400, {"error": f"En fazla {max_count} adet yükleyebilirsiniz"})
@@ -301,10 +331,27 @@ class Handler(BaseHTTPRequestHandler):
             fn = f"u{uid}_{kind}_{secrets.token_hex(8)}{ext}"
             with open(os.path.join(UPLOAD_DIR, fn), "wb") as f:
                 f.write(data)
-            cur = db().execute("INSERT INTO photos(user_id,filename,orig,created,kind) VALUES(?,?,?,?,?)",
-                               (uid, fn, orig[:200], now(), kind))
+            cur = db().execute(
+                "INSERT INTO photos(user_id,filename,orig,created,kind,album,deleted) VALUES(?,?,?,?,?,?,0)",
+                (uid, fn, orig[:200], now(), kind, album))
+            audit("uye", "medya-yukleme", uid, f"{kind}/{album}: {orig[:60]}")
             db().commit()
-            return self._json(200, {"ok": True, "id": cur.lastrowid, "kind": kind})
+            return self._json(200, {"ok": True, "id": cur.lastrowid, "kind": kind, "album": album})
+
+        if p == "/api/offer":
+            uid = self._session_user()
+            if not uid: return self._json(401, {"error": "Oturum yok"})
+            d = jbody()
+            act = d.get("action")
+            if act not in ("kabul", "red"):
+                return self._json(400, {"error": "Geçersiz işlem"})
+            row = db().execute("SELECT * FROM job_offers WHERE id=? AND user_id=?",
+                               (int(d.get("id") or 0), uid)).fetchone()
+            if not row: return self._json(404, {"error": "Teklif bulunamadı"})
+            db().execute("UPDATE job_offers SET status=?, updated=? WHERE id=?", (act, now(), row["id"]))
+            audit("uye", "teklif-" + act, uid, f"teklif #{row['id']}")
+            db().commit()
+            return self._json(200, {"ok": True})
 
         if p == "/api/submit":
             d = jbody()
@@ -314,21 +361,69 @@ class Handler(BaseHTTPRequestHandler):
             db().commit()
             return self._json(200, {"ok": True})
 
+        # ---- Yönetici uçları ----
+        if p == "/api/admin/review":
+            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            d = jbody()
+            uid = int(d.get("user_id") or 0)
+            st = d.get("status")
+            if st not in ("onaylandi", "reddedildi", "inceleniyor"):
+                return self._json(400, {"error": "Geçersiz durum"})
+            note = str(d.get("review_note") or "")[:1000]
+            db().execute("UPDATE profiles SET status=?, review_note=? WHERE user_id=?", (st, note, uid))
+            audit("admin", "durum-" + st, uid, note[:100])
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/admin/note":
+            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            d = jbody()
+            uid = int(d.get("user_id") or 0)
+            rating = str(d.get("admin_rating") or "")
+            if rating and rating not in ("1", "2", "3", "4", "5"):
+                return self._json(400, {"error": "Puan 1-5 olmalı"})
+            db().execute("UPDATE profiles SET admin_note=?, admin_rating=?, admin_tags=? WHERE user_id=?",
+                         (str(d.get("admin_note") or "")[:2000], rating,
+                          str(d.get("admin_tags") or "")[:400], uid))
+            audit("admin", "ic-not", uid, "not/puan/etiket güncellendi")
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/admin/job":
+            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            d = jbody()
+            title = str(d.get("title") or "").strip()
+            if not title: return self._json(400, {"error": "İş başlığı gerekli"})
+            ids = [int(x) for x in (d.get("user_ids") or []) if str(x).isdigit()]
+            if not ids: return self._json(400, {"error": "En az bir üye seçin"})
+            cur = db().execute("INSERT INTO jobs(title,date,location,hours,fee,note,created) VALUES(?,?,?,?,?,?,?)",
+                (title[:200], str(d.get("date") or "")[:40], str(d.get("location") or "")[:200],
+                 str(d.get("hours") or "")[:100], str(d.get("fee") or "")[:100],
+                 str(d.get("note") or "")[:1000], now()))
+            for uid in ids:
+                db().execute("INSERT INTO job_offers(job_id,user_id,created) VALUES(?,?,?)",
+                             (cur.lastrowid, uid, now()))
+            audit("admin", "is-teklifi", None, f"{title[:60]} → {len(ids)} üye")
+            db().commit()
+            return self._json(200, {"ok": True, "id": cur.lastrowid})
+
         return self._json(404, {"error": "Bilinmeyen uç"})
 
-    # ---------- DELETE ----------
+    # ---------------- DELETE ----------------
     def do_DELETE(self):
         m = re.match(r"^/api/photo/(\d+)$", urlparse(self.path).path)
         if not m: return self._json(404, {"error": "Bilinmeyen uç"})
         uid = self._session_user()
         if not uid: return self._json(401, {"error": "Oturum yok"})
-        row = db().execute("SELECT * FROM photos WHERE id=? AND user_id=?", (int(m.group(1)), uid)).fetchone()
+        row = db().execute("SELECT * FROM photos WHERE id=? AND user_id=? AND deleted=0",
+                           (int(m.group(1)), uid)).fetchone()
         if not row: return self._json(404, {"error": "Yok"})
-        try: os.remove(os.path.join(UPLOAD_DIR, row["filename"]))
-        except OSError: pass
-        db().execute("DELETE FROM photos WHERE id=?", (row["id"],)); db().commit()
+        # Yumuşak silme: dosya arşivde kalır, yalnızca üyeden gizlenir (madde: medya arşivi)
+        db().execute("UPDATE photos SET deleted=1 WHERE id=?", (row["id"],))
+        audit("uye", "medya-arsiv", uid, row["orig"][:60])
+        db().commit()
         return self._json(200, {"ok": True})
 
 if __name__ == "__main__":
-    print(f"MOW API v2 127.0.0.1:8010 — veri: {DATA_DIR}")
+    print(f"MOW API v3 127.0.0.1:8010 — veri: {DATA_DIR}")
     ThreadingHTTPServer(("127.0.0.1", 8010), Handler).serve_forever()

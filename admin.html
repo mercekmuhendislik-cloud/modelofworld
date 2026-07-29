@@ -3,121 +3,287 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yönetim — Başvurular</title>
+  <title>Yönetim — VERA Agency</title>
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; padding:20px; background:var(--surface); margin-bottom:16px; }
-    .adm-user h3 { font-size:1.1rem; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .adm-user h3 { font-size:1.1rem; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .adm-meta { font-size:.85rem; color:var(--text-2); margin:8px 0 12px; line-height:1.9; }
     .adm-photos { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .adm-photos img { width:90px; height:120px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
+    .adm-photos img { width:84px; height:112px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
+    .adm-photos img.arsiv { opacity:.35; filter:grayscale(.6); }
     .adm-sub { font-size:.82rem; border-bottom:1px solid var(--line); padding:10px 0; color:var(--text-2); word-break:break-word; }
-    .adm-badge { font-size:.64rem; letter-spacing:.14em; text-transform:uppercase; padding:4px 10px; border-radius:999px; border:1px solid var(--line); color:var(--gold); }
-    .adm-block { border-top:1px dashed var(--line); margin-top:12px; padding-top:10px; font-size:.84rem; color:var(--text-2); line-height:1.9; }
+    .adm-badge { font-size:.64rem; letter-spacing:.12em; text-transform:uppercase; padding:4px 10px; border-radius:999px; border:1px solid var(--line); color:var(--gold); }
+    .adm-badge.st-onaylandi { color:#20744c; border-color:#4da878; }
+    .adm-badge.st-reddedildi { color:#a33; border-color:#d95a5a; }
+    .adm-block { border-top:1px dashed var(--line); margin-top:12px; padding-top:12px; font-size:.84rem; color:var(--text-2); line-height:1.9; }
     details.adm-more summary { cursor:pointer; font-size:.8rem; color:var(--gold); margin-top:8px; }
+    .adm-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+    .adm-input { padding:9px 12px; border-radius:8px; background:var(--bg-2); border:1px solid var(--line); color:var(--text); font:inherit; font-size:.85rem; }
+    .adm-stars { color:var(--gold); letter-spacing:2px; }
+    .adm-log { font-size:.78rem; color:var(--text-2); padding:6px 0; border-bottom:1px solid var(--line); }
+    .adm-section-title { font-size:1.3rem; margin:38px 0 14px; font-family:var(--font-serif); }
   </style>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
-    <div class="container" style="max-width:960px">
+    <div class="container" style="max-width:1000px">
       <span class="eyebrow">Yönetim Paneli</span>
-      <h1 style="font-size:2rem;margin-bottom:20px">Üyeler &amp; Başvurular</h1>
+      <h1 style="font-size:2rem;margin-bottom:20px">Üyeler, Onaylar &amp; İşler</h1>
 
       <div class="form-card" id="keyCard">
         <div class="field">
           <label>Yönetici Anahtarı</label>
           <input type="password" id="adminKey" class="search-input" placeholder="Sunucudaki admin-key.txt içeriği">
-          <span class="hint">Anahtar sunucuda: C:\inetpub\modelofworld-data\admin-key.txt</span>
         </div>
         <button class="btn btn-gold btn-sm mt-2" id="loadBtn">Listele</button>
         <span class="muted" id="admErr" style="margin-left:12px;font-size:.85rem"></span>
       </div>
 
-      <div id="results" class="mt-4"></div>
-      <h2 style="font-size:1.3rem;margin:34px 0 12px" id="subTitle" hidden>Form Gönderimleri (teklif / iletişim / başvuru)</h2>
+      <div class="adm-row mt-4" id="filterRow" hidden>
+        <input class="adm-input" id="fText" placeholder="İsim / etiket / şehir ara…" style="flex:1;min-width:200px">
+        <select class="adm-input" id="fStatus">
+          <option value="">Tüm durumlar</option>
+          <option value="inceleniyor">⏳ Onay bekleyenler</option>
+          <option value="onaylandi">✓ Onaylılar</option>
+          <option value="reddedildi">✕ Reddedilenler</option>
+        </select>
+      </div>
+
+      <div id="results" class="mt-2"></div>
+
+      <h2 class="adm-section-title" id="jobTitleH" hidden>📋 İş Teklifi Oluştur</h2>
+      <div class="form-card" id="jobCard" hidden>
+        <div class="form-grid">
+          <div class="field"><label>İş Başlığı *</label><input type="text" id="jTitle" placeholder="örn. Teknoloji Fuarı Standı"></div>
+          <div class="field"><label>Tarih</label><input type="date" id="jDate"></div>
+          <div class="field"><label>Lokasyon</label><input type="text" id="jLoc" placeholder="İstanbul — TÜYAP"></div>
+          <div class="field"><label>Çalışma Saatleri</label><input type="text" id="jHours" placeholder="09:00 – 18:00"></div>
+          <div class="field"><label>Kaşe / Ücret</label><input type="text" id="jFee" placeholder="örn. 5.000 TL/gün"></div>
+          <div class="field full"><label>Not</label><input type="text" id="jNote" placeholder="Kıyafet, ulaşım vb. detaylar"></div>
+          <div class="field full"><label>Teklif Gönderilecek Üyeler</label><div id="jMembers" class="adm-row"></div></div>
+          <div class="full"><button class="btn btn-gold btn-sm" id="jSend">Teklifi Gönder</button> <span class="muted" id="jMsg" style="font-size:.84rem"></span></div>
+        </div>
+      </div>
+      <div id="jobsList"></div>
+
+      <h2 class="adm-section-title" id="subTitle" hidden>✉️ Form Gönderimleri</h2>
       <div id="subs"></div>
+
+      <h2 class="adm-section-title" id="logTitle" hidden>🕘 Aktivite Günlüğü (Audit Log)</h2>
+      <div id="logs"></div>
     </div>
   </section>
 
   <script>
     const $ = id => document.getElementById(id);
+    let DATA = null, KEY = "";
+    const RED_SABLON = [
+      "Fotoğraflarınız düşük çözünürlüklü — lütfen daha net fotoğraflar yükleyin.",
+      "Makyajsız/doğal polaroid fotoğraf eklemeniz gerekiyor.",
+      "Tüm boy fotoğrafı eksik — lütfen boy fotoğrafı ekleyin.",
+      "Ölçü bilgileriniz eksik — lütfen ölçü kartınızı tamamlayın.",
+      "Şu an kadromuz için uygun profil bulunmuyor; ileride tekrar değerlendirilecektir.",
+    ];
+
     $("loadBtn").addEventListener("click", load);
     $("adminKey").addEventListener("keydown", e => { if (e.key === "Enter") load(); });
+    $("fText").addEventListener("input", renderUsers);
+    $("fStatus").addEventListener("change", renderUsers);
     if (sessionStorage.getItem("mow-admin")) { $("adminKey").value = sessionStorage.getItem("mow-admin"); load(); }
 
-    const AY = { musait: "müsait", dolu: "dolu" };
+    async function api(path, payload) {
+      const r = await fetch(path + "?key=" + encodeURIComponent(KEY), {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+      }).catch(() => null);
+      return r && r.ok;
+    }
+
     function availSummary(json) {
       try {
-        const a = JSON.parse(json || "{}");
-        const es = Object.entries(a).sort();
+        const a = JSON.parse(json || "{}"), es = Object.entries(a).sort();
         if (!es.length) return "işaretlenmemiş";
-        const m = es.filter(([,v]) => v === "musait").length, d = es.length - m;
-        const yakin = es.filter(([k]) => k >= new Date().toISOString().slice(0,10)).slice(0, 6)
-          .map(([k, v]) => `${k.slice(5)}(${AY[v] || v})`).join(", ");
-        return `${m} müsait / ${d} dolu gün — yakın: ${yakin || "—"}`;
+        const m = es.filter(([,v]) => v === "musait").length;
+        return `${m} müsait / ${es.length - m} dolu gün`;
       } catch { return "—"; }
     }
 
     async function load() {
-      const key = $("adminKey").value.trim();
-      if (!key) return;
+      KEY = $("adminKey").value.trim();
+      if (!KEY) return;
       $("admErr").textContent = "Yükleniyor…";
-      const r = await fetch("/api/admin/list?key=" + encodeURIComponent(key)).catch(() => null);
+      const r = await fetch("/api/admin/list?key=" + encodeURIComponent(KEY)).catch(() => null);
       if (!r || !r.ok) { $("admErr").textContent = "Anahtar hatalı veya sunucuya ulaşılamadı."; return; }
-      sessionStorage.setItem("mow-admin", key);
+      sessionStorage.setItem("mow-admin", KEY);
       $("admErr").textContent = "";
-      const d = await r.json();
-      const k = encodeURIComponent(key);
+      DATA = await r.json();
+      $("filterRow").hidden = false; $("jobTitleH").hidden = false; $("jobCard").hidden = false;
+      renderUsers(); renderJobForm(); renderJobs(); renderSubs(); renderLogs();
+    }
 
-      $("results").innerHTML = d.users.length ? d.users.map(u => {
+    function renderUsers() {
+      const q = ($("fText").value || "").toLowerCase();
+      const stF = $("fStatus").value;
+      const k = encodeURIComponent(KEY);
+      const users = DATA.users.filter(u => {
         const p = u.profile || {};
-        const fotolar = (u.media || []).filter(m => m.kind === "photo");
-        const videolar = (u.media || []).filter(m => m.kind === "video");
-        const belgeler = (u.media || []).filter(m => m.kind === "belge");
-        const olcu = [p.height && p.height + " cm", p.weight && p.weight + " kg",
-          p.bust && "Göğüs:" + p.bust, p.waist && "Bel:" + p.waist, p.hip && "Basen:" + p.hip,
-          p.shoe && "Ayak:" + p.shoe, p.size && "Beden:" + p.size,
-          p.hair && "Saç:" + p.hair, p.eye && "Göz:" + p.eye, p.skin && "Ten:" + p.skin]
-          .filter(Boolean).join(" · ");
-        const onay = (p.consent_kvkk === "1" && p.consent_contract === "1")
-          ? `✓ Onaylı (${(p.consent_at || "").slice(0,10)})` : "⚠ Onaylar eksik";
+        if (stF && (p.status || "inceleniyor") !== stF) return false;
+        if (q) {
+          const hay = `${u.fullname} ${u.email} ${p.city} ${p.category} ${p.admin_tags}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      $("results").innerHTML = users.length ? users.map(u => {
+        const p = u.profile || {};
+        const st = p.status || "inceleniyor";
+        const aktif = (u.media || []).filter(m => !m.deleted);
+        const arsiv = (u.media || []).filter(m => m.deleted);
+        const fotolar = aktif.filter(m => m.kind === "photo");
+        const videolar = aktif.filter(m => m.kind === "video");
+        const belgeler = aktif.filter(m => m.kind === "belge");
+        const imzalar = aktif.filter(m => m.kind === "imza");
+        const olcu = [p.height && p.height+" cm", p.weight && p.weight+" kg", p.bust && "G:"+p.bust,
+          p.waist && "B:"+p.waist, p.hip && "K:"+p.hip, p.shoe && "Ayak:"+p.shoe, p.size && "Beden:"+p.size,
+          p.hair && "Saç:"+p.hair, p.eye && "Göz:"+p.eye, p.skin && "Ten:"+p.skin].filter(Boolean).join(" · ");
+        const stars = p.admin_rating ? "★".repeat(+p.admin_rating) + "☆".repeat(5 - p.admin_rating) : "puansız";
+        const offers = (u.offers || []).map(o =>
+          `${o.title}: <strong>${o.status}</strong>`).join(" · ") || "teklif yok";
         return `
-        <div class="adm-user">
+        <div class="adm-user" data-uid="${u.id}">
           <h3>${u.fullname || "(isimsiz)"}
-            <span class="adm-badge">${p.category || "kategori yok"}</span>
-            <span class="adm-badge">${p.privacy === "public" ? "🌍 açık profil" : "🔒 özel profil"}</span>
-            <span class="muted" style="font-size:.78rem">#${u.id} · ${u.created?.slice(0,10) || ""}</span>
+            <span class="adm-badge st-${st}">${st === "onaylandi" ? "✓ onaylı" : st === "reddedildi" ? "✕ reddedildi" : "⏳ onay bekliyor"}</span>
+            <span class="adm-badge">${p.category || "?"}</span>
+            <span class="adm-badge">${p.privacy === "public" ? "🌍 açık" : "🔒 özel"}</span>
+            <span class="adm-stars" title="Ajans içi puan">${stars}</span>
+            <span class="muted" style="font-size:.76rem">#${u.id} · ${u.created?.slice(0,10) || ""}</span>
           </h3>
           <div class="adm-meta">
-            📧 ${u.email} &nbsp; 📞 ${u.phone || "—"} &nbsp; 📍 ${p.city || "—"} &nbsp; 🎂 ${p.birthdate || "—"} &nbsp; ${p.gender || ""}<br>
+            📧 ${u.email} · 📞 ${u.phone || "—"} · 📍 ${p.city || "—"} · 🎂 ${p.birthdate || "—"} ${p.gender || ""}<br>
             📏 ${olcu || "ölçü girilmemiş"}<br>
-            🗣 ${p.languages || "—"} &nbsp; 📸 ${p.instagram || "—"} &nbsp; 📝 ${onay}<br>
-            🗓 Müsaitlik: ${availSummary(p.availability)}
+            🗣 ${p.languages || "—"} · 📸 ${p.instagram || "—"} · 🎬 ${p.video_link ? `<a class="gold" href="${p.video_link}" target="_blank">video linki</a>` : "link yok"}<br>
+            🗓 ${availSummary(p.availability)} · 💼 ${offers}
+            ${p.admin_tags ? `<br>🏷 <strong>${p.admin_tags}</strong>` : ""}
             ${p.about ? "<br>💬 " + p.about : ""}
           </div>
           <div class="adm-photos">
-            ${fotolar.map(m => `<img src="/api/photo/${m.id}?key=${k}" loading="lazy">`).join("")
-              || '<span class="muted" style="font-size:.82rem">Fotoğraf yok</span>'}
+            ${fotolar.map(m => `<a href="/api/photo/${m.id}?key=${k}" target="_blank" title="${m.album}"><img src="/api/photo/${m.id}?key=${k}" loading="lazy"></a>`).join("") || '<span class="muted" style="font-size:.82rem">Fotoğraf yok</span>'}
             ${videolar.map(m => `<a class="btn btn-ghost btn-sm" href="/api/photo/${m.id}?key=${k}" target="_blank">🎬 ${m.orig}</a>`).join("")}
           </div>
+
+          <div class="adm-row">
+            <button class="btn btn-gold btn-sm" data-act="onaylandi">✓ Onayla</button>
+            <select class="adm-input" data-redsel style="max-width:280px">
+              <option value="">Red gerekçesi seçin…</option>
+              ${RED_SABLON.map(s => `<option>${s}</option>`).join("")}
+              <option value="__ozel">✏️ Özel gerekçe yaz…</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" data-act="reddedildi">✕ Reddet</button>
+            <button class="btn btn-ghost btn-sm" data-act="inceleniyor">↺ Beklet</button>
+            <a class="btn btn-ghost btn-sm" href="sedcard.html?id=${u.id}" target="_blank">🪪 Sedcard</a>
+            <span class="muted" data-msg style="font-size:.8rem"></span>
+          </div>
+
           <details class="adm-more">
-            <summary>Ödeme &amp; veli bilgileri</summary>
+            <summary>İç not / puan / etiket · ödeme &amp; veli · arşiv</summary>
             <div class="adm-block">
-              💳 IBAN: ${p.iban || "—"} &nbsp; (${p.account_name || "hesap sahibi ?"} · ${p.bank_name || "banka ?"})<br>
-              🧾 Fatura: ${p.invoice_type || "—"} &nbsp; Vergi/TCKN: ${p.tax_no || "—"}<br>
+              <div class="adm-row">
+                <input class="adm-input" data-note placeholder="Ajans içi not (üye görmez): Dakik, iletişimi iyi…" value="${(p.admin_note || "").replace(/"/g,'&quot;')}" style="flex:1;min-width:220px">
+                <select class="adm-input" data-rating>
+                  <option value="">Puan</option>
+                  ${[1,2,3,4,5].map(n => `<option value="${n}" ${p.admin_rating == n ? "selected" : ""}>${"★".repeat(n)}</option>`).join("")}
+                </select>
+                <input class="adm-input" data-tags placeholder="Etiketler: Dövmeli, Kısa Saçlı…" value="${(p.admin_tags || "").replace(/"/g,'&quot;')}" style="min-width:180px">
+                <button class="btn btn-gold btn-sm" data-act="not">Kaydet</button>
+              </div>
+              💳 IBAN: ${p.iban || "—"} (${p.account_name || "?"} · ${p.bank_name || "?"}) · 🧾 ${p.invoice_type || "—"} / ${p.tax_no || "—"}<br>
               👨‍👩‍👧 Veli: ${p.parent_name || "—"} · TC: ${p.parent_tc || "—"} · Tel: ${p.parent_phone || "—"}<br>
-              📄 Muvafakatname: ${belgeler.map(m => `<a class="gold" href="/api/photo/${m.id}?key=${k}" target="_blank">${m.orig}</a>`).join(", ") || "yüklenmedi"}
+              📄 Belgeler: ${belgeler.map(m => `<a class="gold" href="/api/photo/${m.id}?key=${k}" target="_blank">${m.orig}</a>`).join(", ") || "yok"} ·
+              ✍️ İmza: ${imzalar.map(m => `<a class="gold" href="/api/photo/${m.id}?key=${k}" target="_blank">görüntüle</a>`).join(", ") || "yok"}
+              ${p.review_note ? `<br>📮 Üyeye iletilen son not: "${p.review_note}"` : ""}
+              ${arsiv.length ? `<br>🗄 <strong>Arşiv (üyenin sildiği ${arsiv.length} dosya — fiziksel değişim takibi):</strong><div class="adm-photos" style="margin-top:8px">${
+                arsiv.map(m => m.kind === "photo"
+                  ? `<a href="/api/photo/${m.id}?key=${k}" target="_blank"><img class="arsiv" src="/api/photo/${m.id}?key=${k}" loading="lazy" title="${m.created?.slice(0,10)}"></a>`
+                  : `<a class="gold" style="font-size:.78rem" href="/api/photo/${m.id}?key=${k}" target="_blank">${m.kind}: ${m.orig}</a>`).join("")}</div>` : ""}
             </div>
           </details>
         </div>`;
-      }).join("") : '<p class="muted">Henüz üye yok.</p>';
+      }).join("") : '<p class="muted mt-2">Filtreye uyan üye yok.</p>';
+    }
 
-      $("subTitle").hidden = !d.submissions.length;
-      $("subs").innerHTML = d.submissions.map(s =>
+    /* Onay / red / not işlemleri */
+    $("results").addEventListener("click", async e => {
+      const b = e.target.closest("[data-act]");
+      if (!b) return;
+      const card = b.closest(".adm-user");
+      const uid = +card.dataset.uid;
+      const msg = card.querySelector("[data-msg]");
+      const act = b.dataset.act;
+
+      if (act === "not") {
+        const ok = await api("/api/admin/note", {
+          user_id: uid,
+          admin_note: card.querySelector("[data-note]").value,
+          admin_rating: card.querySelector("[data-rating]").value,
+          admin_tags: card.querySelector("[data-tags]").value,
+        });
+        msg.textContent = ok ? "✓ Not kaydedildi" : "Hata";
+        if (ok) load();
+        return;
+      }
+
+      let note = "";
+      if (act === "reddedildi") {
+        note = card.querySelector("[data-redsel]").value;
+        if (note === "__ozel") note = prompt("Üyeye iletilecek gerekçeyi yazın:") || "";
+        if (!note) { msg.textContent = "Önce red gerekçesi seçin."; return; }
+      }
+      if (act === "onaylandi") note = "Tebrikler! VERA Agency ailesine katıldınız — profiliniz kadroya alındı.";
+      const ok = await api("/api/admin/review", { user_id: uid, status: act, review_note: note });
+      msg.textContent = ok ? "✓ Güncellendi (üyenin panelinde görünür)" : "Hata";
+      if (ok) load();
+    });
+
+    /* İş teklifi */
+    function renderJobForm() {
+      $("jMembers").innerHTML = DATA.users.map(u => `
+        <label style="display:inline-flex;gap:6px;align-items:center;font-size:.84rem;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer">
+          <input type="checkbox" value="${u.id}" class="jm"> ${u.fullname || u.email}
+        </label>`).join("");
+    }
+    $("jSend").addEventListener("click", async () => {
+      const ids = [...document.querySelectorAll(".jm:checked")].map(c => +c.value);
+      const ok = await api("/api/admin/job", {
+        title: $("jTitle").value, date: $("jDate").value, location: $("jLoc").value,
+        hours: $("jHours").value, fee: $("jFee").value, note: $("jNote").value, user_ids: ids,
+      });
+      $("jMsg").textContent = ok ? "✓ Teklif gönderildi — üyelerin panellerine düştü" : "Başlık ve en az bir üye gerekli";
+      if (ok) { ["jTitle","jDate","jLoc","jHours","jFee","jNote"].forEach(i => $(i).value = ""); load(); }
+    });
+
+    function renderJobs() {
+      $("jobsList").innerHTML = (DATA.jobs || []).map(j => `
+        <div class="adm-user">
+          <h3>${j.title} <span class="muted" style="font-size:.78rem">${j.date || ""} · ${j.location || ""}</span></h3>
+          <div class="adm-meta">🕐 ${j.hours || "-"} · 💰 ${j.fee || "-"} ${j.note ? "· 📝 " + j.note : ""}<br>
+            Yanıtlar: ${j.offers.map(o => `${o.fullname}: <strong>${o.status === "kabul" ? "✓ kabul" : o.status === "red" ? "✕ red" : "⏳ bekliyor"}</strong>`).join(" · ") || "—"}
+          </div>
+        </div>`).join("");
+    }
+
+    function renderSubs() {
+      $("subTitle").hidden = !DATA.submissions.length;
+      $("subs").innerHTML = DATA.submissions.map(s =>
         `<div class="adm-sub"><strong>[${s.kind}]</strong> ${s.created?.slice(0,16).replace("T"," ")} — ${s.data}</div>`).join("");
+    }
+    function renderLogs() {
+      $("logTitle").hidden = !(DATA.audit || []).length;
+      $("logs").innerHTML = (DATA.audit || []).map(l =>
+        `<div class="adm-log">${l.created?.slice(0,16).replace("T"," ")} · <strong>${l.who}</strong> → ${l.action}${l.user_id ? " (üye #" + l.user_id + ")" : ""}${l.detail ? " — " + l.detail : ""}</div>`).join("");
     }
   </script>
 </body>
