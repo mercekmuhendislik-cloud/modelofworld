@@ -9,7 +9,9 @@ yönetici onay havuzu (gerekçeli red), ajans içi not/puan/etiket,
 denetim günlüğü (audit), iş teklifi akışı (booking), dijital imza,
 video-book linki. Eski veritabanı otomatik yükseltilir.
 """
-import json, os, re, sqlite3, secrets, hashlib, mimetypes, threading, base64, struct, hmac, time as _time
+import json, os, re, sqlite3, secrets, hashlib, mimetypes, threading, base64, struct, hmac, time as _time, shutil, ctypes, traceback, sys
+
+START_TIME = _time.time()
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
@@ -99,6 +101,10 @@ def init_db():
     CREATE TABLE IF NOT EXISTS admin_sessions(
       token TEXT PRIMARY KEY, username TEXT, expires TEXT,
       ip TEXT, ua TEXT, created TEXT);
+    CREATE TABLE IF NOT EXISTS tasks(
+      id INTEGER PRIMARY KEY, title TEXT, note TEXT,
+      assigned_to TEXT, created_by TEXT, status TEXT DEFAULT 'acik',
+      user_ref INTEGER, created TEXT, updated TEXT);
     """)
     for col in PROFILE_COLS + ADMIN_COLS + READONLY_COLS:
         try: c.execute(f"ALTER TABLE profiles ADD COLUMN {col} TEXT")
@@ -154,6 +160,38 @@ def totp_at(secret_b32, offset=0):
 def totp_ok(secret_b32, code):
     code = str(code or "").strip()
     return any(code == totp_at(secret_b32, d) for d in (-1, 0, 1))
+
+def system_health():
+    """RAM / disk / DB boyutu / çalışma süresi (yalnızca stdlib)."""
+    out = {"uptime_min": int((_time.time() - START_TIME) / 60), "py": sys.version.split()[0]}
+    try:
+        class MEMSTAT(ctypes.Structure):
+            _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                        ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                        ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                        ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                        ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+        m = MEMSTAT(); m.dwLength = ctypes.sizeof(MEMSTAT)
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(m))
+        out["ram_pct"] = m.dwMemoryLoad
+        out["ram_total_gb"] = round(m.ullTotalPhys / 1024**3, 1)
+    except Exception:
+        pass
+    try:
+        du = shutil.disk_usage("C:\\")
+        out["disk_pct"] = round(du.used / du.total * 100)
+        out["disk_free_gb"] = round(du.free / 1024**3, 1)
+    except Exception:
+        pass
+    try:
+        out["db_mb"] = round(os.path.getsize(DB_PATH) / 1024**2, 2)
+        toplam = 0
+        for f in os.listdir(UPLOAD_DIR):
+            toplam += os.path.getsize(os.path.join(UPLOAD_DIR, f))
+        out["media_mb"] = round(toplam / 1024**2, 1)
+    except Exception:
+        pass
+    return out
 
 # Rol izinleri: hangi rol hangi işlemi yapabilir
 ROLE_PERMS = {
@@ -264,13 +302,71 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass
 
+    def _safe(self, fn):
+        """Beklenmeyen hataları günlüğe yazıp 500 döndür (hata izleme)."""
+        try:
+            fn()
+        except (BrokenPipeError, ConnectionAbortedError, ConnectionResetError):
+            pass
+        except Exception as e:
+            try:
+                audit("sistem", "HATA", None, f"{self.command} {self.path}: {type(e).__name__}: {e} | " +
+                      traceback.format_exc().splitlines()[-2][:150])
+                db().commit()
+            except Exception:
+                pass
+            try:
+                self._json(500, {"error": "Sunucu hatası — kayıt altına alındı"})
+            except Exception:
+                pass
+
     # ---------------- GET ----------------
     def do_GET(self):
         _local.ip = self._ip()
+        return self._safe(self._get)
+
+    def _get(self):
         u = urlparse(self.path); qs = parse_qs(u.query); p = u.path
 
         if p == "/api/health":
-            return self._json(200, {"ok": True, "v": 5})
+            return self._json(200, {"ok": True, "v": 6})
+
+        if p == "/api/flags":
+            row = db().execute("SELECT v FROM settings WHERE k='maintenance'").fetchone()
+            return self._json(200, {"maintenance": bool(row and row["v"] == "1")})
+
+        if p == "/api/admin/pulse":
+            adm = self._admin(qs)
+            if not adm: return self._json(403, {"error": "Yetki yok"})
+            n = lambda q: db().execute(q).fetchone()[0]
+            return self._json(200, {
+                "users": n("SELECT COUNT(*) FROM users"),
+                "bekleyen": n("SELECT COUNT(*) FROM profiles WHERE COALESCE(status,'inceleniyor')='inceleniyor'"),
+                "sos": n("SELECT COUNT(*) FROM submissions WHERE kind='SOS'"),
+                "subs": n("SELECT COUNT(*) FROM submissions"),
+                "tasks": n("SELECT COUNT(*) FROM tasks WHERE status='acik'"),
+            })
+
+        if p == "/api/admin/backup":
+            adm = self._admin(qs)
+            if not self._can(adm, "users"):
+                return self._json(403, {"error": "Yedek almak için Yönetici rolü gerekli"})
+            tmp = os.path.join(DATA_DIR, "yedek-gecici.db")
+            src = sqlite3.connect(DB_PATH); dst = sqlite3.connect(tmp)
+            with dst: src.backup(dst)
+            src.close(); dst.close()
+            data = open(tmp, "rb").read()
+            os.remove(tmp)
+            audit("admin:" + adm["username"], "yedek-indirildi", None, f"{len(data)//1024} KB")
+            db().commit()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Content-Disposition",
+                f'attachment; filename="modelofworld-yedek-{datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")}.db"')
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
 
         if p == "/api/me":
             uid = self._session_user()
@@ -379,9 +475,16 @@ class Handler(BaseHTTPRequestHandler):
                 for usr in users:
                     for f in ("iban", "bank_name", "account_name", "invoice_type", "tax_no"):
                         if usr["profile"].get(f): usr["profile"][f] = "••• (yetki yok)"
+            tasks = [dict(r) for r in db().execute("SELECT * FROM tasks ORDER BY status='acik' DESC, id DESC LIMIT 60")]
+            trow = db().execute("SELECT v FROM settings WHERE k='red_templates'").fetchone()
+            templates = json.loads(trow["v"]) if trow else []
+            mrow = db().execute("SELECT v FROM settings WHERE k='maintenance'").fetchone()
             out = {"users": users, "jobs": jobs, "submissions": subs, "audit": logs,
-                   "sos": sos, "shares": shares,
+                   "sos": sos, "shares": shares, "tasks": tasks, "templates": templates,
+                   "maintenance": bool(mrow and mrow["v"] == "1"),
                    "me": {"username": adm["username"], "role": adm["role"]}}
+            if adm["role"] == "admin":
+                out["health"] = system_health()
             if self._can(adm, "sessions"):
                 mytok = self._admin_token()
                 out["sessions"] = [{**dict(r), "current": r["token"] == mytok, "token": r["token"][:12] + "…", "full_token": r["token"]}
@@ -396,6 +499,9 @@ class Handler(BaseHTTPRequestHandler):
     # ---------------- POST ----------------
     def do_POST(self):
         _local.ip = self._ip()
+        return self._safe(self._post)
+
+    def _post(self):
         u = urlparse(self.path); qs = parse_qs(u.query); p = u.path
         ctype = self.headers.get("Content-Type") or ""
         body = self._body()
@@ -701,6 +807,52 @@ class Handler(BaseHTTPRequestHandler):
             db().commit()
             return self._json(200, {"ok": True})
 
+        if p == "/api/admin/task":
+            adm = self._admin(qs)
+            if not self._can(adm, "review"): return self._json(403, {"error": "Yetkiniz yok"})
+            d = jbody(); act = d.get("action")
+            if act == "add":
+                title = str(d.get("title") or "").strip()
+                if not title: return self._json(400, {"error": "Görev başlığı gerekli"})
+                db().execute("INSERT INTO tasks(title,note,assigned_to,created_by,status,user_ref,created) VALUES(?,?,?,?,?,?,?)",
+                    (title[:200], str(d.get("note") or "")[:500], str(d.get("assigned_to") or "")[:40],
+                     adm["username"], "acik", int(d.get("user_ref") or 0) or None, now()))
+                audit("admin:" + adm["username"], "gorev-eklendi", None, title[:60])
+            else:
+                tid = int(d.get("id") or 0)
+                if act == "done":
+                    db().execute("UPDATE tasks SET status='tamam', updated=? WHERE id=?", (now(), tid))
+                elif act == "reopen":
+                    db().execute("UPDATE tasks SET status='acik', updated=? WHERE id=?", (now(), tid))
+                elif act == "delete":
+                    db().execute("DELETE FROM tasks WHERE id=?", (tid,))
+                else:
+                    return self._json(400, {"error": "Geçersiz işlem"})
+                audit("admin:" + adm["username"], "gorev-" + act, None, f"#{tid}")
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/admin/maintenance":
+            adm = self._admin(qs)
+            if not self._can(adm, "users"): return self._json(403, {"error": "Yönetici rolü gerekli"})
+            d = jbody()
+            v = "1" if d.get("on") else "0"
+            db().execute("INSERT INTO settings(k,v) VALUES('maintenance',?) ON CONFLICT(k) DO UPDATE SET v=?", (v, v))
+            audit("admin:" + adm["username"], "bakim-modu", None, "açıldı" if v == "1" else "kapatıldı")
+            db().commit()
+            return self._json(200, {"ok": True, "maintenance": v == "1"})
+
+        if p == "/api/admin/templates":
+            adm = self._admin(qs)
+            if not self._can(adm, "review"): return self._json(403, {"error": "Yetkiniz yok"})
+            d = jbody()
+            lst = [str(x)[:250] for x in (d.get("list") or []) if str(x).strip()][:20]
+            db().execute("INSERT INTO settings(k,v) VALUES('red_templates',?) ON CONFLICT(k) DO UPDATE SET v=?",
+                         (json.dumps(lst, ensure_ascii=False), json.dumps(lst, ensure_ascii=False)))
+            audit("admin:" + adm["username"], "sablon-guncellendi", None, f"{len(lst)} şablon")
+            db().commit()
+            return self._json(200, {"ok": True})
+
         if p == "/api/admin/revoke":
             adm = self._admin(qs)
             if not adm: return self._json(403, {"error": "Yetki yok"})
@@ -803,6 +955,9 @@ class Handler(BaseHTTPRequestHandler):
     # ---------------- DELETE ----------------
     def do_DELETE(self):
         _local.ip = self._ip()
+        return self._safe(self._delete)
+
+    def _delete(self):
         m = re.match(r"^/api/photo/(\d+)$", urlparse(self.path).path)
         if not m: return self._json(404, {"error": "Bilinmeyen uç"})
         uid = self._session_user()

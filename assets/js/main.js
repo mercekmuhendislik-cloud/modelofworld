@@ -282,6 +282,21 @@
     if (e.target.tagName === "IMG") e.preventDefault();
   });
 
+  /* ---------- Bakım Modu (yönetici panelden açar) ---------- */
+  if (!["admin", "panel", "uye", "sedcard"].includes(active)) {
+    fetch("/api/flags").then(r => r.ok ? r.json() : null).then(f => {
+      if (!f || !f.maintenance) return;
+      document.body.innerHTML = `
+        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;background:var(--bg)">
+          <div>
+            ${LOGO.replace('class="logo"', 'class="logo" style="justify-content:center"')}
+            <h1 style="font-size:1.9rem;margin:26px 0 10px">Kısa bir bakımdayız</h1>
+            <p style="color:var(--text-2);max-width:44ch">Sitemizi sizin için güzelleştiriyoruz. Birazdan tekrar buradayız — anlayışınız için teşekkürler. 💗</p>
+          </div>
+        </div>`;
+    }).catch(() => {});
+  }
+
   /* ---------- Scroll Reveal ---------- */
   const io = new IntersectionObserver(entries => {
     entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } });

@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=e6506f3">
+  <link rel="stylesheet" href="assets/css/style.css?v=faea788">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -44,6 +44,56 @@
     .sos-card strong { color:#c62828; }
     body.rol-muhasebe .adm-actions .btn:not([href]), body.rol-muhasebe [data-act], body.rol-muhasebe .edit-wrap,
     body.rol-muhasebe [data-redsel] { display:none !important; }
+
+    /* Dashboard */
+    .dash { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+    .dash-card { position:relative; background:var(--surface); border:1px solid var(--line); border-radius:12px;
+      padding:16px; animation:fadeUp .4s ease both; }
+    .dash-card strong { display:block; font-family:var(--font-serif); font-size:1.9rem; color:var(--gold-2); }
+    .dash-card span { font-size:.68rem; text-transform:uppercase; letter-spacing:.14em; color:var(--text-2); }
+    .dash-wide { grid-column:span 2; min-width:0; }
+    .wclose { position:absolute; top:6px; right:8px; font-size:.75rem; color:var(--text-2); cursor:pointer; opacity:.5; }
+    .wclose:hover { opacity:1; color:var(--danger); }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    .adm-user { animation:fadeUp .3s ease both; }
+
+    /* Toast */
+    #toasts { position:fixed; right:16px; bottom:16px; z-index:300; display:flex; flex-direction:column; gap:8px; }
+    .toast { background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--gold);
+      border-radius:10px; padding:12px 16px; font-size:.86rem; box-shadow:var(--shadow); min-width:230px; max-width:340px;
+      animation:toastIn .3s ease both; }
+    .toast.hata { border-left-color:var(--danger); }
+    .toast.sos { border-left-color:#c62828; background:rgba(198,40,40,.08); font-weight:600; }
+    @keyframes toastIn { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:none; } }
+
+    /* Komut paleti */
+    #palette { position:fixed; inset:0; z-index:250; background:rgba(20,8,14,.55); backdrop-filter:blur(6px);
+      display:none; align-items:flex-start; justify-content:center; padding-top:14vh; }
+    #palette.open { display:flex; }
+    .pal-box { width:min(560px,92vw); background:var(--surface); border:1px solid var(--line); border-radius:14px;
+      overflow:hidden; box-shadow:var(--shadow); }
+    .pal-box input { width:100%; padding:16px 18px; border:0; border-bottom:1px solid var(--line);
+      background:transparent; color:var(--text); font:inherit; font-size:1rem; outline:none; }
+    .pal-list { max-height:320px; overflow:auto; }
+    .pal-item { padding:11px 18px; cursor:pointer; font-size:.9rem; display:flex; gap:10px; align-items:center; }
+    .pal-item small { color:var(--text-2); margin-left:auto; font-size:.7rem; }
+    .pal-item.sel, .pal-item:hover { background:var(--bg-2); }
+
+    /* Toplu islem cubugu */
+    #bulkBar { position:sticky; top:8px; z-index:60; display:none; gap:8px; align-items:center; flex-wrap:wrap;
+      background:var(--surface); border:1px solid var(--gold); border-radius:12px; padding:10px 14px; margin-bottom:10px;
+      box-shadow:var(--shadow); }
+    #bulkBar.on { display:flex; }
+    .selbox { width:16px; height:16px; accent-color:var(--gold); }
+
+    /* Mobil */
+    @media (max-width:720px) {
+      .adm-top { padding:10px; gap:8px; }
+      .adm-actions { margin-left:0; width:100%; }
+      .adm-actions .btn { flex:1; text-align:center; }
+      .dash-wide { grid-column:span 1; }
+      .adm-photos img { width:60px; height:80px; }
+    }
   </style>
 </head>
 <body data-page="admin">
@@ -86,6 +136,8 @@
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <span class="adm-badge" id="meBadge"></span>
+            <button class="btn btn-ghost btn-sm" id="themeToggle" title="Koyu / Açık tema">🌙</button>
+            <button class="btn btn-ghost btn-sm" id="palBtn" title="Ctrl+K">⌘K Ara</button>
             <button class="btn btn-ghost btn-sm" id="pwBtn">🔑 Güvenlik</button>
             <button class="btn btn-ghost btn-sm" id="admLogout">Çıkış</button>
           </div>
@@ -148,20 +200,66 @@
 
         <div id="sosBand"></div>
 
+        <!-- DASHBOARD -->
+        <div class="dash" id="dashRoot"></div>
+
+        <!-- ARAÇLAR -->
+        <div class="adm-row" style="margin-bottom:10px" id="toolsRow">
+          <button class="btn btn-ghost btn-sm" id="csvBtn">⬇ Excel/CSV İndir</button>
+          <button class="btn btn-ghost btn-sm" id="backupBtn" hidden>💾 Yedek Al (.db)</button>
+          <button class="btn btn-ghost btn-sm" id="maintBtn" hidden></button>
+          <button class="btn btn-ghost btn-sm" id="tplBtn">✉️ Red Şablonları</button>
+          <button class="btn btn-ghost btn-sm" id="widgetReset" hidden>⚙ Gizli widget'ları göster</button>
+          <span class="mini" id="pulseInfo" style="margin-left:auto"></span>
+        </div>
+        <div class="form-card" id="tplCard" hidden style="margin-bottom:14px">
+          <p class="mini" style="margin-bottom:8px">Her satır bir red gerekçesi şablonudur (üyeye aynen iletilir):</p>
+          <textarea id="tplText" class="search-input" rows="6" style="width:100%;font-size:.85rem"></textarea>
+          <div class="adm-row"><button class="btn btn-gold btn-sm" id="tplSave">Kaydet</button><span class="mini" id="tplMsg"></span></div>
+        </div>
+
+        <!-- TOPLU İŞLEM ÇUBUĞU -->
+        <div id="bulkBar">
+          <strong id="bulkCount" style="font-size:.85rem"></strong>
+          <button class="btn btn-gold btn-sm" data-bulk="onaylandi">✓ Toplu Onayla</button>
+          <select class="adm-input" id="bulkRed" style="max-width:240px"><option value="">Red gerekçesi…</option></select>
+          <button class="btn btn-ghost btn-sm" data-bulk="reddedildi">✕ Toplu Reddet</button>
+          <button class="btn btn-ghost btn-sm" data-bulk="inceleniyor">↺ Beklet</button>
+          <button class="btn btn-ghost btn-sm" id="bulkClear">Seçimi Bırak</button>
+        </div>
+
         <div class="adm-row" style="margin-bottom:14px">
-          <span class="mini">Ajans komisyonu:</span>
-          <input class="adm-input" id="komInput" type="number" value="20" style="width:70px"> <span class="mini">%</span>
-          <input class="adm-input" id="fText" placeholder="İsim / etiket / şehir ara…" style="flex:1;min-width:200px">
+          <label class="mini" style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="selbox" id="selAll"> tümü</label>
+          <input class="adm-input" id="fText" placeholder="İsim / etiket / şehir / dövme ara…" style="flex:1;min-width:170px">
           <select class="adm-input" id="fStatus">
             <option value="">Tüm durumlar</option>
-            <option value="inceleniyor">⏳ Onay bekleyenler</option>
+            <option value="inceleniyor">⏳ Bekleyenler</option>
             <option value="onaylandi">✓ Onaylılar</option>
             <option value="reddedildi">✕ Reddedilenler</option>
           </select>
+          <select class="adm-input" id="fCat"><option value="">Tüm kategoriler</option></select>
+          <input class="adm-input" id="fFrom" type="date" title="Kayıt tarihi: başlangıç">
+          <input class="adm-input" id="fTo" type="date" title="Kayıt tarihi: bitiş">
+          <select class="adm-input" id="fSort">
+            <option value="yeni">En yeni</option>
+            <option value="eski">En eski</option>
+            <option value="ad">İsme göre</option>
+          </select>
+          <span class="mini">Komisyon %</span><input class="adm-input" id="komInput" type="number" value="20" style="width:64px">
           <span class="mini" id="countInfo"></span>
         </div>
 
         <div id="results"></div>
+
+        <h2 class="adm-section-title" data-widget-title="gorevler">📌 Ekip Görevleri</h2>
+        <div class="form-card" data-widget="gorevler">
+          <div class="adm-row">
+            <input class="adm-input" id="tTitle" placeholder="Görev (örn. Ahmet'in polaroidlerini iste)" style="flex:1;min-width:200px">
+            <select class="adm-input" id="tAssign"><option value="">Atanan…</option></select>
+            <button class="btn btn-gold btn-sm" id="tAdd">+ Görev</button>
+          </div>
+          <div id="taskList" class="mini" style="margin-top:10px"></div>
+        </div>
 
         <h2 class="adm-section-title">📋 İş Teklifi Oluştur</h2>
         <div class="form-card">
@@ -216,16 +314,40 @@
     </div>
   </section>
 
+  <div id="toasts"></div>
+  <div id="palette"><div class="pal-box">
+    <input id="palInput" placeholder="Üye ara veya komut yazın…  (↑↓ seç, Enter git, Esc kapat)">
+    <div class="pal-list" id="palList"></div>
+  </div></div>
+
   <script>
     const $ = id => document.getElementById(id);
+
+    /* ---------- Tema ---------- */
+    const themeInit = localStorage.getItem("vera-theme") ||
+      (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.dataset.theme = themeInit;
+    function syncThemeBtn() { $("themeToggle").textContent = document.documentElement.dataset.theme === "dark" ? "☀️" : "🌙"; }
+
+    /* ---------- Toast ---------- */
+    function toast(msg, tur) {
+      const t = document.createElement("div");
+      t.className = "toast" + (tur ? " " + tur : "");
+      t.textContent = msg;
+      $("toasts").appendChild(t);
+      setTimeout(() => { t.style.opacity = "0"; t.style.transition = "opacity .4s"; setTimeout(() => t.remove(), 450); }, 4200);
+    }
     let DATA = null;
-    const RED_SABLON = [
+    const RED_SABLON_VARSAYILAN = [
       "Fotoğraflarınız düşük çözünürlüklü — lütfen daha net fotoğraflar yükleyin.",
       "Makyajsız/doğal polaroid fotoğraf eklemeniz gerekiyor.",
       "Tüm boy fotoğrafı eksik — lütfen boy fotoğrafı ekleyin.",
       "Ölçü bilgileriniz eksik — lütfen ölçü kartınızı tamamlayın.",
       "Şu an kadromuz için uygun profil bulunmuyor; ileride tekrar değerlendirilecektir.",
     ];
+    let RED_SABLON = RED_SABLON_VARSAYILAN.slice();
+    let LISTE = [];
+    const KATLAR = { model:"Manken / Model", hostes:"Fuar Hostesi", yuz:"Yüz Modeli", cocuk:"Çocuk Model", nu:"Nü / Sanatsal", fitness:"Fitness", plus:"Büyük Beden", oyuncu:"Oyuncu", dans:"Dansçı", promo:"Promosyon" };
     const catAd = v => (v || "").split(",").filter(Boolean).map(c => CATS[c] || c).join(", ") || "?";
     const CATS = { model:"Model", hostes:"Hostes", yuz:"Yüz Modeli", cocuk:"Çocuk", oyuncu:"Oyuncu", nu:"Nü/Sanatsal", fitness:"Fitness", plus:"Büyük Beden", dans:"Dansçı", promo:"Promosyon" };
 
@@ -259,8 +381,16 @@
       if (res.ok) { $("pwOld").value = $("pwNew").value = ""; }
     });
 
-    $("fText") && $("fText").addEventListener("input", renderUsers);
-    $("fStatus").addEventListener("change", renderUsers);
+    $("themeToggle").addEventListener("click", () => {
+      const n = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+      document.documentElement.dataset.theme = n;
+      localStorage.setItem("vera-theme", n);
+      syncThemeBtn();
+    });
+    syncThemeBtn();
+
+    ["fText","fStatus","fCat","fFrom","fTo","fSort"].forEach(i =>
+      $(i).addEventListener(i === "fText" ? "input" : "change", renderUsers));
 
     async function load() {
       const r = await fetch("/api/admin/list").catch(() => null);
@@ -278,10 +408,226 @@
         });
         const jc = $("jTitle"); if (jc) jc.closest(".form-card").style.display = "none";
       }
-      renderSos(); renderUsers(); renderJobForm(); renderJobs(); renderSubs(); renderLogs(); renderShares();
-      renderAdmins(); renderSessions(); renderTotp();
+      RED_SABLON = (DATA.templates && DATA.templates.length) ? DATA.templates : RED_SABLON_VARSAYILAN.slice();
+      renderSos(); renderDash(); renderUsers(); renderJobForm(); renderJobs(); renderSubs(); renderLogs(); renderShares();
+      renderAdmins(); renderSessions(); renderTotp(); renderTasks(); renderTools(); syncBulk();
     }
     load(); /* oturum varsa direkt panel açılır */
+
+    /* ---------- Dashboard: sayaçlar + grafikler + sağlık (widget gizle/göster) ---------- */
+    const wHidden = () => JSON.parse(localStorage.getItem("mow-widgets") || "[]");
+    function hideWidget(k) { const h = wHidden(); if (!h.includes(k)) h.push(k); localStorage.setItem("mow-widgets", JSON.stringify(h)); renderDash(); }
+    $("widgetReset").addEventListener("click", () => { localStorage.setItem("mow-widgets", "[]"); renderDash(); });
+
+    function haftaAnahtar(t) { const d = new Date(t); const y = new Date(d.getFullYear(), 0, 1); return d.getFullYear() + "-" + String(Math.ceil(((d - y) / 864e5 + y.getDay() + 1) / 7)).padStart(2, "0"); }
+
+    function renderDash() {
+      const gizli = wHidden();
+      $("widgetReset").hidden = !gizli.length;
+      const users = DATA.users || [];
+      const bekleyen = users.filter(u => (u.profile?.status || "inceleniyor") === "inceleniyor").length;
+      const onayli = users.filter(u => u.profile?.status === "onaylandi").length;
+      const hafta = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+      const yeni = users.filter(u => (u.created || "") >= hafta).length;
+      const kabul = (DATA.jobs || []).flatMap(j => j.offers).filter(o => o.status === "kabul").length;
+      const H = DATA.health;
+      const kart = (k, html) => gizli.includes(k) ? "" :
+        `<div class="dash-card" data-w="${k}"><span class="wclose" onclick="hideWidget('${k}')" title="Widget'ı gizle">✕</span>${html}</div>`;
+      $("dashRoot").innerHTML =
+        kart("toplam", `<strong>${users.length}</strong><span>Toplam Üye</span>`) +
+        kart("bekleyen", `<strong style="color:${bekleyen ? "#c62828" : "var(--gold-2)"}">${bekleyen}</strong><span>Onay Bekleyen</span>`) +
+        kart("onayli", `<strong>${onayli}</strong><span>Kadroda</span>`) +
+        kart("yeni", `<strong>+${yeni}</strong><span>Son 7 Gün</span>`) +
+        kart("kabul", `<strong>${kabul}</strong><span>Kabul Edilen İş</span>`) +
+        kart("grafik", `<span>Üye Artışı (8 hafta)</span><canvas id="chBar" width="300" height="90" style="width:100%"></canvas>`).replace('dash-card"', 'dash-card dash-wide"') +
+        kart("durum", `<span>Durum Dağılımı</span><canvas id="chDonut" width="90" height="90" style="float:right"></canvas><div class="mini" style="margin-top:8px">⏳ ${bekleyen} · ✓ ${onayli} · ✕ ${users.length - bekleyen - onayli}</div>`) +
+        (H && !gizli.includes("saglik") ? kart("saglik",
+          `<span>Sistem Sağlığı</span><div class="mini" style="margin-top:6px;line-height:1.8">
+           💾 RAM %${H.ram_pct ?? "?"} · 💿 Disk %${H.disk_pct ?? "?"} (${H.disk_free_gb ?? "?"} GB boş)<br>
+           🗄 DB ${H.db_mb ?? "?"} MB · 📁 Medya ${H.media_mb ?? "?"} MB<br>
+           ⏱ ${Math.floor((H.uptime_min || 0) / 60)} sa ${(H.uptime_min || 0) % 60} dk · Py ${H.py || ""}</div>`).replace('dash-card"', 'dash-card dash-wide"') : "");
+      /* grafikler */
+      const bar = $("chBar");
+      if (bar) {
+        const haftalar = {}, simdi = Date.now();
+        for (let i = 7; i >= 0; i--) haftalar[haftaAnahtar(simdi - i * 7 * 864e5)] = 0;
+        users.forEach(u => { const k = haftaAnahtar(u.created || simdi); if (k in haftalar) haftalar[k]++; });
+        const vals = Object.values(haftalar), mx = Math.max(...vals, 1);
+        const c = bar.getContext("2d"), w = bar.width / vals.length;
+        c.clearRect(0, 0, bar.width, bar.height);
+        c.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--gold") || "#d34f6e";
+        vals.forEach((v, i) => { const h = v / mx * 70; c.globalAlpha = .35 + .65 * (i / vals.length); c.fillRect(i * w + 4, 85 - h, w - 8, h + 2); });
+        c.globalAlpha = 1;
+      }
+      const don = $("chDonut");
+      if (don) {
+        const c = don.getContext("2d"), seg = [[bekleyen, "#e6a23c"], [onayli, "#4da878"], [users.length - bekleyen - onayli, "#d95a5a"]];
+        const top = Math.max(users.length, 1); let a = -Math.PI / 2;
+        c.clearRect(0, 0, 90, 90);
+        seg.forEach(([v, col]) => { const a2 = a + v / top * 2 * Math.PI; c.beginPath(); c.arc(45, 45, 38, a, a2); c.strokeStyle = col; c.lineWidth = 12; c.stroke(); a = a2; });
+      }
+    }
+
+    /* ---------- Görevler ---------- */
+    function renderTasks() {
+      const opts = (DATA.admins || [{ username: DATA.me?.username }]).map(a => `<option>${a.username}</option>`).join("");
+      $("tAssign").innerHTML = '<option value="">Atanan…</option>' + opts;
+      $("taskList").innerHTML = (DATA.tasks || []).map(t => `
+        <div class="adm-row" style="border-bottom:1px solid var(--line);padding-bottom:6px;${t.status === "tamam" ? "opacity:.5" : ""}">
+          <span>${t.status === "tamam" ? "✅" : "🔸"} <strong>${esc(t.title)}</strong>
+            ${t.assigned_to ? " → @" + esc(t.assigned_to) : ""} <span style="opacity:.6">(${esc(t.created_by)}, ${t.created?.slice(5,16).replace("T"," ")})</span></span>
+          <span style="flex:1"></span>
+          ${t.status === "acik" ? `<button class="btn btn-ghost btn-sm" data-task="done" data-tid="${t.id}">✓ Tamam</button>`
+            : `<button class="btn btn-ghost btn-sm" data-task="reopen" data-tid="${t.id}">↺</button>`}
+          <button class="btn btn-ghost btn-sm" data-task="delete" data-tid="${t.id}">🗑</button>
+        </div>`).join("") || '<span class="mini">Açık görev yok.</span>';
+    }
+    $("tAdd").addEventListener("click", async () => {
+      if (!$("tTitle").value.trim()) return toast("Görev başlığı yazın", "hata");
+      const r = await api("/api/admin/task", { action: "add", title: $("tTitle").value, assigned_to: $("tAssign").value });
+      toast(r.ok ? "📌 Görev eklendi" : r.err, r.ok ? "" : "hata");
+      if (r.ok) { $("tTitle").value = ""; load(); }
+    });
+    $("taskList").addEventListener("click", async e => {
+      const b = e.target.closest("[data-task]");
+      if (!b) return;
+      if (b.dataset.task === "delete" && !confirm("Görev silinsin mi?")) return;
+      await api("/api/admin/task", { action: b.dataset.task, id: +b.dataset.tid });
+      load();
+    });
+
+    /* ---------- Araç çubuğu: yedek, bakım, şablon, csv ---------- */
+    function renderTools() {
+      const admin = DATA.me?.role === "admin";
+      $("backupBtn").hidden = !admin;
+      $("maintBtn").hidden = !admin;
+      $("maintBtn").textContent = DATA.maintenance ? "🟢 Bakım Modunu Kapat (site kapalı!)" : "🔧 Bakım Modu";
+      $("maintBtn").style.borderColor = DATA.maintenance ? "#c62828" : "";
+      const cats = new Set();
+      (DATA.users || []).forEach(u => (u.profile?.category || "").split(",").forEach(c => c && cats.add(c)));
+      $("fCat").innerHTML = '<option value="">Tüm kategoriler</option>' + [...cats].map(c => `<option value="${c}">${KATLAR[c] || c}</option>`).join("");
+      $("bulkRed").innerHTML = '<option value="">Red gerekçesi…</option>' + RED_SABLON.map(t => `<option>${t}</option>`).join("");
+      $("tplText").value = RED_SABLON.join("\n");
+    }
+    $("backupBtn").addEventListener("click", () => { toast("💾 Yedek indiriliyor…"); location.href = "/api/admin/backup"; });
+    $("maintBtn").addEventListener("click", async () => {
+      const yeni = !DATA.maintenance;
+      if (yeni && !confirm("Site ziyaretçilere KAPATILACAK (bakım sayfası gösterilir). Emin misiniz?")) return;
+      const r = await api("/api/admin/maintenance", { on: yeni ? 1 : 0 });
+      toast(r.ok ? (yeni ? "🔧 Bakım modu AÇIK — site kapalı" : "🟢 Site tekrar yayında") : r.err, r.ok ? "" : "hata");
+      load();
+    });
+    $("tplBtn").addEventListener("click", () => $("tplCard").hidden = !$("tplCard").hidden);
+    $("tplSave").addEventListener("click", async () => {
+      const list = $("tplText").value.split("\n").map(x => x.trim()).filter(Boolean);
+      const r = await api("/api/admin/templates", { list });
+      $("tplMsg").textContent = r.ok ? "✓" : r.err;
+      toast(r.ok ? "✉️ Şablonlar güncellendi" : r.err, r.ok ? "" : "hata");
+      if (r.ok) load();
+    });
+    $("csvBtn").addEventListener("click", () => {
+      const cols = ["ID","Ad Soyad","E-posta","Telefon","Şehir","Kategori","Durum","Boy","Kilo","Göğüs","Bel","Basen","Beden","Saç","Göz","Diller","IBAN","Kayıt"];
+      const rows = LISTE.map(u => { const p = u.profile || {}; return [u.id, u.fullname, u.email, u.phone, p.city, catAd(p.category), p.status || "inceleniyor", p.height, p.weight, p.bust, p.waist, p.hip, p.size, p.hair, p.eye, p.languages, p.iban, (u.created || "").slice(0, 10)]; });
+      const csv = "\uFEFF" + [cols, ...rows].map(r => r.map(x => '"' + String(x ?? "").replace(/"/g, '""') + '"').join(";")).join("\n");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      a.download = "uyeler-" + new Date().toISOString().slice(0, 10) + ".csv";
+      a.click();
+      toast("⬇ " + LISTE.length + " üye dışa aktarıldı (Excel'de açılır)");
+    });
+
+    /* ---------- Toplu işlemler ---------- */
+    function seciliIds() { return [...document.querySelectorAll(".uSel:checked")].map(c => +c.dataset.sel); }
+    function syncBulk() {
+      const n = seciliIds().length;
+      $("bulkBar").classList.toggle("on", n > 0);
+      $("bulkCount").textContent = n + " üye seçildi";
+    }
+    document.addEventListener("change", e => { if (e.target.classList?.contains("uSel") || e.target.id === "selAll") {
+      if (e.target.id === "selAll") document.querySelectorAll(".uSel").forEach(c => c.checked = e.target.checked);
+      syncBulk();
+    }});
+    $("bulkClear").addEventListener("click", () => { document.querySelectorAll(".uSel,#selAll").forEach(c => c.checked = false); syncBulk(); });
+    document.querySelectorAll("[data-bulk]").forEach(b => b.addEventListener("click", async () => {
+      const ids = seciliIds();
+      if (!ids.length) return;
+      const st = b.dataset.bulk;
+      let note = "";
+      if (st === "reddedildi") { note = $("bulkRed").value; if (!note) return toast("Önce red gerekçesi seçin", "hata"); }
+      if (st === "onaylandi") note = "Tebrikler! Model of World ailesine katıldınız — profiliniz kadroya alındı.";
+      if (!confirm(ids.length + " üye için işlem uygulanacak. Onaylıyor musunuz?")) return;
+      toast("⏳ " + ids.length + " üye işleniyor…");
+      for (const uid of ids) await api("/api/admin/review", { user_id: uid, status: st, review_note: note });
+      toast("✓ Toplu işlem tamamlandı (" + ids.length + " üye)");
+      load();
+    }));
+
+    /* ---------- Komut Paleti (Ctrl+K) ---------- */
+    const BOLUMLER = [
+      ["📊 Dashboard", "#dashRoot"], ["👥 Üye Listesi", "#results"], ["📌 Görevler", "#taskList"],
+      ["📋 İş Teklifi", "#jTitle"], ["🔗 VIP Paylaşım", "#shMembers"], ["🕘 Günlük", "#logs"],
+      ["🖥 Oturumlar", "#sessList"], ["🔑 Güvenlik", "#pwCard"],
+    ];
+    let palSel = 0;
+    function palOpen() { $("palette").classList.add("open"); $("palInput").value = ""; palRender(""); setTimeout(() => $("palInput").focus(), 50); }
+    function palClose() { $("palette").classList.remove("open"); }
+    function palItems(q) {
+      q = q.toLowerCase();
+      const cmds = BOLUMLER.filter(([l]) => l.toLowerCase().includes(q)).map(([l, sel]) => ({ l, tip: "bölüm", sel }));
+      const uys = (DATA?.users || []).filter(u => (`${u.fullname} ${u.email}`).toLowerCase().includes(q))
+        .slice(0, 7).map(u => ({ l: "👤 " + (u.fullname || u.email), tip: "üye", uid: u.id }));
+      return [...uys, ...cmds].slice(0, 10);
+    }
+    function palRender(q) {
+      const items = palItems(q); palSel = 0;
+      $("palList").innerHTML = items.map((it, i) =>
+        `<div class="pal-item ${i === 0 ? "sel" : ""}" data-i="${i}">${it.l}<small>${it.tip}</small></div>`).join("") ||
+        '<div class="pal-item">Sonuç yok</div>';
+      $("palList")._items = items;
+    }
+    function palGo(it) {
+      if (!it) return;
+      palClose();
+      if (it.tip === "üye") {
+        $("fText").value = ""; $("fStatus").value = ""; $("fCat").value = ""; renderUsers();
+        const card = document.querySelector(`.adm-user[data-uid="${it.uid}"]`);
+        if (card) { card.classList.add("open"); card.scrollIntoView({ behavior: "smooth", block: "center" });
+          card.style.borderColor = "var(--gold)"; setTimeout(() => card.style.borderColor = "", 2500); }
+      } else {
+        if (it.sel === "#pwCard") $("pwCard").hidden = false;
+        document.querySelector(it.sel)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+    $("palBtn").addEventListener("click", palOpen);
+    document.addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); if (!$("panelView").hidden) palOpen(); }
+      if (!$("palette").classList.contains("open")) return;
+      const items = $("palList")._items || [];
+      if (e.key === "Escape") palClose();
+      if (e.key === "ArrowDown") { palSel = Math.min(palSel + 1, items.length - 1); }
+      if (e.key === "ArrowUp") { palSel = Math.max(palSel - 1, 0); }
+      if (e.key === "Enter") { e.preventDefault(); palGo(items[palSel]); }
+      document.querySelectorAll(".pal-item").forEach((el, i) => el.classList.toggle("sel", i === palSel));
+    });
+    $("palInput").addEventListener("input", e => palRender(e.target.value));
+    $("palList").addEventListener("click", e => { const d = e.target.closest("[data-i]"); if (d) palGo(($("palList")._items || [])[+d.dataset.i]); });
+    $("palette").addEventListener("click", e => { if (e.target.id === "palette") palClose(); });
+
+    /* ---------- Canlı nabız: 30 sn'de bir yeni kayıt / SOS bildirimi ---------- */
+    let PULSE = null;
+    setInterval(async () => {
+      if ($("panelView").hidden) return;
+      const r = await fetch("/api/admin/pulse").catch(() => null);
+      if (!r || !r.ok) return;
+      const d = await r.json();
+      if (PULSE) {
+        if (d.sos > PULSE.sos) { toast("🆘 YENİ ACİL DURUM ALARMI! Sayfa yenileniyor…", "sos"); load(); }
+        else if (d.users > PULSE.users) { toast("🆕 Yeni üye başvurusu geldi (" + (d.users - PULSE.users) + ")"); load(); }
+        else if (d.subs > PULSE.subs) { toast("✉️ Yeni form gönderimi var"); load(); }
+      }
+      PULSE = d;
+      $("pulseInfo").textContent = "🟢 canlı · " + d.bekleyen + " bekleyen";
+    }, 30000);
 
     function renderSos() {
       const sos = DATA.sos || [];
@@ -430,13 +776,23 @@
 
     function renderUsers() {
       const q = ($("fText").value || "").toLowerCase();
-      const stF = $("fStatus").value;
-      const users = DATA.users.filter(u => {
+      const stF = $("fStatus").value, catF = $("fCat").value;
+      const from = $("fFrom").value, to = $("fTo").value;
+      let users = DATA.users.filter(u => {
         const p = u.profile || {};
         if (stF && (p.status || "inceleniyor") !== stF) return false;
+        if (catF && !(p.category || "").split(",").includes(catF)) return false;
+        const d = (u.created || "").slice(0, 10);
+        if (from && d < from) return false;
+        if (to && d > to) return false;
         if (q && !`${u.fullname} ${u.email} ${p.city} ${p.category} ${p.admin_tags} ${p.tattoo_info} ${p.scar_info} ${p.skills} ${p.shoot_prefs}`.toLowerCase().includes(q)) return false;
         return true;
       });
+      const srt = $("fSort").value;
+      users.sort((a, b) => srt === "eski" ? (a.created || "").localeCompare(b.created || "")
+        : srt === "ad" ? (a.fullname || "").localeCompare(b.fullname || "", "tr")
+        : (b.created || "").localeCompare(a.created || ""));
+      LISTE = users;
       $("countInfo").textContent = users.length + " üye";
 
       $("results").innerHTML = users.length ? users.map(u => {
@@ -456,6 +812,7 @@
         return `
         <div class="adm-user" data-uid="${u.id}">
           <div class="adm-top" data-toggle>
+            <input type="checkbox" class="selbox uSel" data-sel="${u.id}" onclick="event.stopPropagation()">
             ${thumb}
             <div class="adm-id">
               <strong>${esc(u.fullname) || "(isimsiz)"} <span class="adm-stars">${stars}</span></strong>
