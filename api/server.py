@@ -397,6 +397,7 @@ class Handler(BaseHTTPRequestHandler):
                 audit("uye", "profil-guncelleme", uid, ", ".join(sent))
             if is_minor(uid):
                 db().execute("UPDATE profiles SET shoot_prefs='standart' WHERE user_id=?", (uid,))
+                db().execute("UPDATE profiles SET category='cocuk' WHERE user_id=? AND category='nu'", (uid,))
             prof = db().execute("SELECT consent_kvkk, consent_contract, consent_at FROM profiles WHERE user_id=?",
                                 (uid,)).fetchone()
             if prof and prof["consent_kvkk"] == "1" and prof["consent_contract"] == "1" and not prof["consent_at"]:
