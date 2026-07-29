@@ -1,5 +1,5 @@
 /* =========================================================
-   VERA AGENCY — Örnek Veri Katmanı
+   MODEL OF WORLD — Örnek Veri Katmanı
    Gerçek ortamda bu veriler bir API / CMS'ten gelecektir.
 
    GİZLİLİK KURALI (madde 34): Sitede yeteneklerin yalnızca

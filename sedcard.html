@@ -60,16 +60,15 @@
     (async function () {
       const $ = id => document.getElementById(id);
       const uid = +(new URLSearchParams(location.search).get("id") || 0);
-      const key = sessionStorage.getItem("mow-admin") || prompt("Yönetici anahtarı:");
-      if (!key) { $("scErr").textContent = "Anahtar gerekli."; return; }
-      sessionStorage.setItem("mow-admin", key);
-      const r = await fetch("/api/admin/list?key=" + encodeURIComponent(key)).catch(() => null);
-      if (!r || !r.ok) { $("scErr").textContent = "Anahtar hatalı."; return; }
+      const r = await fetch("/api/admin/list").catch(() => null);
+      if (!r || !r.ok) {
+        $("scErr").innerHTML = 'Oturum gerekli — önce <a class="gold" href="admin.html">yönetici girişi</a> yapın, sonra bu sayfayı yenileyin.';
+        return;
+      }
       const d = await r.json();
       const u = d.users.find(x => x.id === uid) || d.users[0];
       if (!u) { $("scErr").textContent = "Üye bulunamadı."; return; }
       const p = u.profile || {};
-      const k = encodeURIComponent(key);
 
       $("scName").textContent = u.fullname || "—";
       const CATS = { model: "Manken / Model", hostes: "Fuar & Kongre Hostesi", yuz: "Yüz Modeli", cocuk: "Çocuk Model", oyuncu: "Oyuncu / Cast" };
@@ -81,7 +80,7 @@
       pool.sort((a, b) => order.indexOf(a.album || "genel") - order.indexOf(b.album || "genel"));
       const four = pool.slice(0, 4);
       $("scPhotos").innerHTML = four.length
-        ? four.map(m => `<div class="ph2"><img src="/api/photo/${m.id}?key=${k}"></div>`).join("")
+        ? four.map(m => `<div class="ph2"><img src="/api/photo/${m.id}"></div>`).join("")
         : '<p style="grid-column:1/-1;color:#96707c">Onaylı fotoğraf yok.</p>';
 
       const rows = [

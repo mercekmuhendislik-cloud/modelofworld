@@ -1,5 +1,5 @@
 /* =========================================================
-   VERA AGENCY — Ortak Katman
+   MODEL OF WORLD — Ortak Katman
    Header/footer render, tema, mobil menü, arama overlay,
    özel imleç, scroll-reveal, lazy-load
    ========================================================= */
