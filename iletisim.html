@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>İletişim — VERA Agency</title>
+  <meta name="description" content="VERA Agency iletişim: telefon, WhatsApp, e-posta ve showroom adresi.">
+  <!-- Open Graph & Twitter Cards -->
+  <link rel="canonical" href="https://www.modelofworld.com/iletisim.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="VERA Agency">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="İletişim — VERA Agency">
+  <meta property="og:description" content="VERA Agency iletişim: telefon, WhatsApp, e-posta ve showroom adresi.">
+  <meta property="og:url" content="https://www.modelofworld.com/iletisim.html">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="İletişim — VERA Agency">
+  <meta name="twitter:description" content="VERA Agency iletişim: telefon, WhatsApp, e-posta ve showroom adresi.">
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
+</head>
+<body data-page="iletisim">
+  <div id="site-header"></div>
+
+  <div class="page-head">
+    <div class="container">
+      <span class="eyebrow">İletişim</span>
+      <h1>Bize Ulaşın</h1>
+      <p class="muted mt-2" style="max-width:52ch">Acil operasyon talepleri için telefon ve WhatsApp hattımız 7/24 açıktır.</p>
+    </div>
+  </div>
+
+  <section style="padding-top:16px">
+    <div class="container" style="display:grid;grid-template-columns:1fr 1.2fr;gap:clamp(28px,5vw,64px);align-items:start" id="contactLayout">
+      <div class="reveal">
+        <dl class="sedcard" style="grid-template-columns:1fr" id="contactInfo"></dl>
+        <div class="mt-2" style="display:flex;gap:12px;flex-wrap:wrap">
+          <a class="btn btn-gold btn-sm" id="waBtn" target="_blank" rel="noopener">WhatsApp'tan Yazın</a>
+          <a class="btn btn-ghost btn-sm" id="mailBtn">E-posta Gönderin</a>
+        </div>
+      </div>
+
+      <div class="form-card reveal" data-delay="1">
+        <form id="contactForm" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label>Ad Soyad <span class="req">*</span></label>
+              <input type="text" name="name" required minlength="5" placeholder="Adınız Soyadınız">
+              <span class="err">Adınızı girin.</span>
+            </div>
+            <div class="field">
+              <label>E-posta <span class="req">*</span></label>
+              <input type="email" name="email" required placeholder="ornek@mail.com">
+              <span class="err">Geçerli bir e-posta girin.</span>
+            </div>
+            <div class="field full">
+              <label>Konu</label>
+              <input type="text" name="subject" placeholder="Konu başlığı">
+            </div>
+            <div class="field full">
+              <label>Mesajınız <span class="req">*</span></label>
+              <textarea name="message" required minlength="10" placeholder="Mesajınız…"></textarea>
+              <span class="err">Lütfen mesajınızı yazın.</span>
+            </div>
+            <div class="full center">
+              <button type="submit" class="btn btn-gold" style="min-width:220px">Gönder</button>
+            </div>
+          </div>
+        </form>
+        <div class="form-success" id="contactSuccess">
+          <div class="tick">✓</div>
+          <h3>Mesajınız İletildi</h3>
+          <p>En kısa sürede size dönüş yapacağız. Acil talepler için WhatsApp hattımızı kullanabilirsiniz.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KONUM / GOOGLE MAPS -->
+  <section style="padding-top:0">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Konum</span>
+        <h2>Showroom &amp; Ofis</h2>
+        <p>Nişantaşı, İstanbul — randevu ile ziyaret edebilirsiniz. Haritaya tıklayarak yol tarifi alın.</p>
+      </div>
+      <div class="reveal" style="border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)">
+        <iframe
+          src="https://www.google.com/maps?q=Ni%C5%9Fanta%C5%9F%C4%B1%2C%20%C5%9Ei%C5%9Fli%2F%C4%B0stanbul&output=embed"
+          width="100%" height="420" style="border:0;display:block;filter:grayscale(.2)"
+          allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+          title="VERA Agency konum haritası"></iframe>
+      </div>
+      <p class="muted mt-2" style="font-size:.8rem">Gerçek ofis adresi netleştiğinde harita pin'i güncellenecektir.</p>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/analytics.js"></script>
+  <script src="assets/js/forms.js"></script>
+  <script>
+    (function () {
+      const { AGENCY } = window.VERA;
+      document.getElementById("contactInfo").innerHTML = `
+        <div><dt>Telefon</dt><dd style="font-size:1.1rem"><a href="tel:${AGENCY.phone.replace(/[^\d+]/g, "")}">${AGENCY.phone}</a></dd></div>
+        <div><dt>WhatsApp (7/24)</dt><dd style="font-size:1.1rem">${AGENCY.whatsapp}</dd></div>
+        <div><dt>E-posta</dt><dd style="font-size:1.1rem"><a href="mailto:${AGENCY.email}">${AGENCY.email}</a></dd></div>
+        <div><dt>Showroom</dt><dd style="font-size:1.1rem">${AGENCY.address}</dd></div>
+        <div><dt>Çalışma Saatleri</dt><dd style="font-size:1.1rem">Hafta içi 09:00 – 19:00</dd></div>`;
+      document.getElementById("waBtn").href = "https://wa.me/" + AGENCY.whatsapp.replace(/[^\d]/g, "");
+      document.getElementById("mailBtn").href = "mailto:" + AGENCY.email;
+
+      /* İletişim formu — forms.js altyapısını kullan */
+      const form = document.getElementById("contactForm");
+      form.addEventListener("submit", e => {
+        e.preventDefault();
+        let ok = true;
+        form.querySelectorAll(".field").forEach(f => {
+          const i = f.querySelector("input, textarea");
+          if (!i) return;
+          const v = i.checkValidity();
+          f.classList.toggle("invalid", !v);
+          if (!v) ok = false;
+        });
+        if (!ok) return;
+        const all = JSON.parse(localStorage.getItem("vera-submissions") || "[]");
+        all.push({ kind: "iletisim", data: Object.fromEntries(new FormData(form).entries()), at: new Date().toISOString() });
+        localStorage.setItem("vera-submissions", JSON.stringify(all));
+        form.style.display = "none";
+        document.getElementById("contactSuccess").classList.add("show");
+      });
+    })();
+  </script>
+  <style>@media (max-width: 860px) { #contactLayout { grid-template-columns: 1fr !important; } }</style>
+</body>
+</html>

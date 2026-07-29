@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog & Haberler — VERA Agency</title>
+  <meta name="description" content="Fuar trendleri, etkinlik yönetimi ve cast seçimi üzerine sektör içerikleri.">
+  <!-- Open Graph & Twitter Cards -->
+  <link rel="canonical" href="https://www.modelofworld.com/blog.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="VERA Agency">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="Blog & Haberler — VERA Agency">
+  <meta property="og:description" content="Fuar trendleri, etkinlik yönetimi ve cast seçimi üzerine sektör içerikleri.">
+  <meta property="og:url" content="https://www.modelofworld.com/blog.html">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Blog & Haberler — VERA Agency">
+  <meta name="twitter:description" content="Fuar trendleri, etkinlik yönetimi ve cast seçimi üzerine sektör içerikleri.">
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
+</head>
+<body data-page="blog">
+  <div id="site-header"></div>
+
+  <div class="page-head">
+    <div class="container">
+      <span class="eyebrow">İçerik &amp; Haberler</span>
+      <h1>Blog</h1>
+      <p class="muted mt-2" style="max-width:56ch">Fuar, moda ve prodüksiyon dünyasından güncel içerikler.</p>
+    </div>
+  </div>
+
+  <section style="padding-top:0">
+    <div class="container">
+      <div class="blog-grid" id="blogGrid"></div>
+      <p class="muted mt-4 center" style="font-size:.85rem"><em>Yazı detay sayfaları içerik yönetim sistemi (CMS) bağlandığında aktifleşecektir.</em></p>
+    </div>
+  </section>
+
+  <!-- SOSYAL MEDYA -->
+  <section style="background:var(--bg-2);border-block:1px solid var(--line)">
+    <div class="container center">
+      <span class="eyebrow" style="justify-content:center">Bizi Takip Edin</span>
+      <h2 style="margin-bottom:14px">Instagram &amp; TikTok</h2>
+      <p class="muted" style="max-width:52ch;margin:0 auto 28px">Kamera arkası, yeni yüzler ve etkinlik kareleri her gün sosyal medya hesaplarımızda. Canlı akış (feed) entegrasyonu, hesaplar bağlandığında burada görünecek.</p>
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+        <a class="btn btn-ghost btn-sm" href="https://instagram.com/" target="_blank" rel="noopener">Instagram →</a>
+        <a class="btn btn-ghost btn-sm" href="https://tiktok.com/" target="_blank" rel="noopener">TikTok →</a>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/analytics.js"></script>
+  <script>
+    (function () {
+      const { BLOG_POSTS } = window.VERA;
+      document.getElementById("blogGrid").innerHTML = BLOG_POSTS.map((b, i) => `
+        <article class="blog-card reveal" data-delay="${i % 3}">
+          <div class="blog-visual" style="--bv1:${b.gradient[0]};--bv2:${b.gradient[1]};position:relative">
+            ${b.img ? `<img class="cover" src="${b.img}?q=80&auto=format&fit=crop&w=640&h=360" alt="${b.title}" loading="lazy">` : ""}
+            <span class="b-tag">${b.tag}</span>
+          </div>
+          <div class="blog-body">
+            <h3>${b.title}</h3>
+            <p>${b.excerpt}</p>
+            <time>${b.date}</time>
+          </div>
+        </article>`).join("");
+      window.VERA.observeNew();
+    })();
+  </script>
+</body>
+</html>

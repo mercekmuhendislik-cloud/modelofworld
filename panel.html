@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aday Panelim — VERA Agency</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
+  <style>
+    .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
+    .my-photo { position: relative; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--bg-2); }
+    .my-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .my-photo .file-chip { display:flex; align-items:center; justify-content:center; height:100%; flex-direction:column; gap:8px; font-size:.78rem; color:var(--text-2); padding:10px; text-align:center; word-break:break-all; }
+    .my-photo .file-chip .ico { font-size:1.8rem; }
+    .my-photo button { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%;
+      background: rgba(10,10,12,.6); color: #fff; font-size: .9rem; backdrop-filter: blur(6px); z-index:2; }
+    .my-photo button:hover { background: var(--danger); }
+    .status-pill { display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:999px;
+      border:1px solid var(--line); font-size:.78rem; text-transform:uppercase; letter-spacing:.16em; color:var(--gold); }
+
+    /* Takvim */
+    .cal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+    .cal-grid .dow { text-align:center; font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--text-2); padding:6px 0; }
+    .cal-day { aspect-ratio:1; border:1px solid var(--line); border-radius:10px; display:flex; align-items:center;
+      justify-content:center; font-size:.9rem; cursor:pointer; transition:all .15s ease; user-select:none; background:var(--surface); }
+    .cal-day:hover { border-color: var(--gold); }
+    .cal-day.empty { visibility:hidden; }
+    .cal-day.musait { background:#e0f4e8; border-color:#4da878; color:#20744c; font-weight:600; }
+    .cal-day.dolu { background:#fde3e3; border-color:#d95a5a; color:#a33; font-weight:600; }
+    [data-theme="dark"] .cal-day.musait { background:rgba(77,168,120,.2); }
+    [data-theme="dark"] .cal-day.dolu { background:rgba(217,90,90,.2); }
+    .cal-legend { display:flex; gap:18px; margin-top:14px; font-size:.8rem; color:var(--text-2); flex-wrap:wrap; }
+    .cal-legend span::before { content:"●"; margin-right:6px; }
+    .cal-legend .l-musait::before { color:#4da878; } .cal-legend .l-dolu::before { color:#d95a5a; } .cal-legend .l-bos::before { color:var(--line); }
+  </style>
+</head>
+<body data-page="panel">
+  <div id="site-header"></div>
+
+  <div class="page-head">
+    <div class="container" style="display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:16px">
+      <div>
+        <span class="eyebrow">Aday Paneli</span>
+        <h1 style="font-size:clamp(1.8rem,4vw,3rem)">Hoş geldiniz, <span id="userName">…</span></h1>
+        <p class="muted mt-2">Başvuru durumu: <span class="status-pill" id="statusPill">İnceleniyor</span></p>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn">Çıkış Yap</button>
+    </div>
+  </div>
+
+  <section style="padding-top:0">
+    <div class="container" style="max-width:980px">
+
+      <!-- ONBOARDING ADIM GÖSTERGESİ -->
+      <div class="wizard-steps" id="obSteps" style="margin-bottom:26px">
+        <div class="wstep" data-ob="1"><span class="dot">1</span> Temel Bilgiler</div>
+        <div class="wline"></div>
+        <div class="wstep" data-ob="2"><span class="dot">2</span> Ölçüler</div>
+        <div class="wline"></div>
+        <div class="wstep" data-ob="3"><span class="dot">3</span> Fotoğraf / Video</div>
+        <div class="wline"></div>
+        <div class="wstep" data-ob="4"><span class="dot">4</span> Onaylar</div>
+      </div>
+
+      <!-- SEKMELER (onboarding bitince hepsi serbest) -->
+      <div class="tabs no-print" id="panelTabs" style="margin-bottom:24px">
+        <button class="tab-btn active" data-tab="genel">Temel Bilgiler</button>
+        <button class="tab-btn" data-tab="olculer">Ölçü Kartım</button>
+        <button class="tab-btn" data-tab="medya">Fotoğraf &amp; Video</button>
+        <button class="tab-btn" data-tab="onaylar">Sözleşme &amp; KVKK</button>
+        <button class="tab-btn" data-tab="takvim">Müsaitlik Takvimim</button>
+        <button class="tab-btn" data-tab="odeme">Ödeme Bilgilerim</button>
+        <button class="tab-btn" data-tab="gizlilik">Gizlilik</button>
+      </div>
+
+      <!-- 1) TEMEL BİLGİLER -->
+      <div class="form-card tab-pane active" id="tab-genel">
+        <h3 style="margin-bottom:18px">Temel &amp; İletişim Bilgileri</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label>Kategori <span class="req">*</span></label>
+            <select name="category">
+              <option value="">Seçiniz…</option>
+              <option value="model">Manken / Model</option>
+              <option value="hostes">Fuar / Kongre Hostesi</option>
+              <option value="yuz">Yüz Modeli</option>
+              <option value="cocuk">Çocuk Model (veli başvurusu)</option>
+              <option value="oyuncu">Reklam Oyuncusu / Cast</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Cinsiyet <span class="req">*</span></label>
+            <select name="gender">
+              <option value="">Seçiniz…</option>
+              <option value="kadin">Kadın</option>
+              <option value="erkek">Erkek</option>
+            </select>
+          </div>
+          <div class="field"><label>Doğum Tarihi <span class="req">*</span></label><input type="date" name="birthdate"></div>
+          <div class="field"><label>Şehir <span class="req">*</span></label><input type="text" name="city" placeholder="İstanbul"></div>
+          <div class="field"><label>Yabancı Diller</label><input type="text" name="languages" placeholder="İngilizce C1, Rusça B2"></div>
+          <div class="field"><label>Instagram</label><input type="text" name="instagram" placeholder="@kullaniciadi"></div>
+          <div class="field full"><label>Hakkımda / Deneyimler</label><textarea name="about" placeholder="Deneyimleriniz, çalıştığınız markalar…"></textarea></div>
+
+          <!-- VELİ İZNİ (18 yaş altı / çocuk model seçilince otomatik açılır) -->
+          <div class="form-section-title" id="parentTitle" style="display:none">Veli / Vasi İzni (18 yaş altı için zorunlu)</div>
+          <div class="field parent-field" style="display:none">
+            <label>Veli Ad Soyad <span class="req">*</span></label>
+            <input type="text" name="parent_name" placeholder="Veli / vasi adı soyadı">
+          </div>
+          <div class="field parent-field" style="display:none">
+            <label>Veli TC Kimlik No <span class="req">*</span></label>
+            <input type="text" name="parent_tc" maxlength="11" pattern="\d{11}" placeholder="11 haneli TC no">
+          </div>
+          <div class="field parent-field" style="display:none">
+            <label>Veli Telefon <span class="req">*</span></label>
+            <input type="tel" name="parent_phone" placeholder="05xx xxx xx xx">
+          </div>
+          <div class="field parent-field full" style="display:none">
+            <label>Veli Muvafakatnamesi (PDF veya fotoğraf) <span class="req">*</span></label>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer">📄 Muvafakatname Yükle
+                <input type="file" id="belgeInput" accept=".pdf,image/*" style="display:none">
+              </label>
+              <span class="muted" id="belgeList" style="font-size:.84rem"></span>
+            </div>
+            <span class="hint">İmzalı veli izin belgesi. Örnek muvafakatname metnini <a class="gold" href="sozlesme.html" target="_blank">buradan</a> görebilirsiniz.</span>
+          </div>
+        </div>
+        <div class="wizard-nav">
+          <span class="muted" id="msg-genel" style="font-size:.85rem"></span>
+          <button class="btn btn-gold" data-save="genel">Kaydet ve Devam Et →</button>
+        </div>
+      </div>
+
+      <!-- 2) ÖLÇÜ KARTI -->
+      <div class="form-card tab-pane" id="tab-olculer">
+        <h3 style="margin-bottom:6px">Kişisel Ölçü Kartım (Sedcard Verisi)</h3>
+        <p class="muted" style="font-size:.86rem;margin-bottom:18px">Ölçüleriniz müşterilere sunulan sedcard'ınızda kullanılır — güncel tutmanız seçilme şansınızı artırır.</p>
+        <div class="form-grid">
+          <div class="field"><label>Boy (cm) <span class="req">*</span></label><input type="number" name="height" placeholder="175"></div>
+          <div class="field"><label>Kilo (kg) <span class="req">*</span></label><input type="number" name="weight" placeholder="60"></div>
+          <div class="field"><label>Göğüs (cm)</label><input type="number" name="bust" placeholder="88"></div>
+          <div class="field"><label>Bel (cm)</label><input type="number" name="waist" placeholder="62"></div>
+          <div class="field"><label>Kalça / Basen (cm)</label><input type="number" name="hip" placeholder="91"></div>
+          <div class="field"><label>Ayakkabı No</label><input type="number" name="shoe" placeholder="39"></div>
+          <div class="field"><label>Kıyafet Bedeni</label><input type="text" name="size" placeholder="36 / S"></div>
+          <div class="field">
+            <label>Saç Rengi</label>
+            <select name="hair"><option value="">Seçiniz…</option><option>Siyah</option><option>Kahverengi</option><option>Sarı</option><option>Kızıl</option><option>Gri / Beyaz</option><option>Renkli</option></select>
+          </div>
+          <div class="field">
+            <label>Göz Rengi</label>
+            <select name="eye"><option value="">Seçiniz…</option><option>Kahverengi</option><option>Siyah</option><option>Ela</option><option>Yeşil</option><option>Mavi</option><option>Gri</option></select>
+          </div>
+          <div class="field">
+            <label>Ten Rengi</label>
+            <select name="skin"><option value="">Seçiniz…</option><option>Açık</option><option>Buğday</option><option>Esmer</option><option>Koyu</option></select>
+          </div>
+        </div>
+        <div class="wizard-nav">
+          <span class="muted" id="msg-olculer" style="font-size:.85rem"></span>
+          <button class="btn btn-gold" data-save="olculer">Kaydet ve Devam Et →</button>
+        </div>
+      </div>
+
+      <!-- 3) FOTOĞRAF & VIDEO -->
+      <div class="form-card tab-pane" id="tab-medya">
+        <h3 style="margin-bottom:6px">Fotoğraflarım</h3>
+        <p class="muted" style="font-size:.86rem;margin-bottom:14px">Doğal ışıkta, filtresiz; 1 yakın portre + 1 tüm boy zorunlu. En fazla 12 fotoğraf (12 MB/adet).</p>
+        <div class="my-photos" id="photoGrid"></div>
+        <div class="mt-2" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <label class="btn btn-gold btn-sm" style="cursor:pointer">+ Fotoğraf Yükle
+            <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
+          </label>
+          <span class="muted" id="uploadStatus" style="font-size:.84rem"></span>
+        </div>
+
+        <h3 style="margin:30px 0 6px">Video / Tanıtım (opsiyonel)</h3>
+        <p class="muted" style="font-size:.86rem;margin-bottom:14px">10–15 saniyelik tanıtım veya yürüyüş videosu. En fazla 3 video (80 MB/adet, MP4/MOV).</p>
+        <div class="my-photos" id="videoGrid"></div>
+        <div class="mt-2">
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">🎬 Video Yükle
+            <input type="file" id="videoInput" accept="video/mp4,video/quicktime,video/webm" style="display:none">
+          </label>
+          <span class="muted" id="videoStatus" style="font-size:.84rem;margin-left:10px"></span>
+        </div>
+        <div class="wizard-nav">
+          <span></span>
+          <button class="btn btn-gold" data-save="medya">Devam Et →</button>
+        </div>
+      </div>
+
+      <!-- 4) SÖZLEŞME & KVKK -->
+      <div class="form-card tab-pane" id="tab-onaylar">
+        <h3 style="margin-bottom:18px">Sözleşmeler ve Onaylar</h3>
+        <div class="form-grid" style="grid-template-columns:1fr">
+          <div class="field">
+            <div class="checkbox-row">
+              <input type="checkbox" name="consent_kvkk" id="cKvkk">
+              <label for="cKvkk" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.9rem">
+                Kişisel verilerimin (ölçüler, fotoğraf ve videolar dahil) casting değerlendirmesi amacıyla
+                <a class="gold" href="kvkk.html" target="_blank">KVKK Aydınlatma Metni</a> kapsamında işlenmesine açık rıza veriyorum. <span class="req">*</span>
+              </label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="checkbox-row">
+              <input type="checkbox" name="consent_contract" id="cContract">
+              <label for="cContract" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.9rem">
+                <a class="gold" href="sozlesme.html" target="_blank">Çalışma prensipleri ve şartlarını</a> okudum, kabul ediyorum.
+                Ajansın adaylardan hiçbir ücret talep etmediğini biliyorum. <span class="req">*</span>
+              </label>
+            </div>
+          </div>
+          <div class="guide-box">
+            <strong>Onay sonrası ne olur?</strong>
+            <ul>
+              <li>Başvurunuz casting ekibine düşer, 5 iş günü içinde incelenir</li>
+              <li>Uygun bulunursanız görüşmeye davet edilirsiniz</li>
+              <li>Durumunuzu bu panelin üst kısmından takip edebilirsiniz</li>
+            </ul>
+          </div>
+        </div>
+        <div class="wizard-nav">
+          <span class="muted" id="msg-onaylar" style="font-size:.85rem"></span>
+          <button class="btn btn-gold" data-save="onaylar">Onaylıyorum — Başvurumu Tamamla ✓</button>
+        </div>
+      </div>
+
+      <!-- MÜSAİTLİK TAKVİMİ -->
+      <div class="form-card tab-pane" id="tab-takvim">
+        <h3 style="margin-bottom:6px">Müsaitlik Takvimim</h3>
+        <p class="muted" style="font-size:.86rem;margin-bottom:18px">Günlere tıklayarak durumunuzu işaretleyin: 1 tık = <strong style="color:#4da878">müsait</strong>, 2 tık = <strong style="color:#d95a5a">dolu</strong>, 3 tık = temizle. Ajans, cast önerirken takviminize bakar.</p>
+        <div class="cal-head">
+          <button class="icon-btn" id="calPrev">‹</button>
+          <strong id="calTitle" class="serif" style="font-size:1.2rem"></strong>
+          <button class="icon-btn" id="calNext">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend">
+          <span class="l-musait">Müsaitim</span><span class="l-dolu">Doluyum</span><span class="l-bos">Belirtilmedi</span>
+        </div>
+        <div class="wizard-nav">
+          <span class="muted" id="msg-takvim" style="font-size:.85rem"></span>
+          <button class="btn btn-gold" data-save="takvim">Takvimi Kaydet</button>
+        </div>
+      </div>
+
+      <!-- ÖDEME BİLGİLERİ -->
+      <div class="form-card tab-pane" id="tab-odeme">
+        <h3 style="margin-bottom:6px">Ödeme &amp; Fatura Bilgilerim</h3>
+        <p class="muted" style="font-size:.86rem;margin-bottom:18px">Kaşe ücreti ödemeleriniz için kullanılır; yalnızca ajans muhasebesi görür. Kadroya kabul edilmeden doldurmanız zorunlu değildir.</p>
+        <div class="form-grid">
+          <div class="field full"><label>IBAN</label><input type="text" name="iban" placeholder="TR__ ____ ____ ____ ____ ____ __" maxlength="32"></div>
+          <div class="field"><label>Hesap Sahibi Ad Soyad</label><input type="text" name="account_name" placeholder="Hesap sahibinin tam adı"></div>
+          <div class="field"><label>Banka</label><input type="text" name="bank_name" placeholder="Banka adı"></div>
+          <div class="field">
+            <label>Fatura Durumu</label>
+            <select name="invoice_type">
+              <option value="">Seçiniz…</option>
+              <option value="yok">Fatura kesemiyorum (gider pusulası)</option>
+              <option value="sahis">Şahıs şirketim var</option>
+              <option value="sirket">Şirket faturası keserim</option>
+            </select>
+          </div>
+          <div class="field"><label>Vergi No / TCKN (fatura için)</label><input type="text" name="tax_no" placeholder="Opsiyonel"></div>
+        </div>
+        <div class="wizard-nav">
+          <span class="muted" id="msg-odeme" style="font-size:.85rem"></span>
+          <button class="btn btn-gold" data-save="odeme">Kaydet</button>
+        </div>
+      </div>
+
+      <!-- GİZLİLİK -->
+      <div class="form-card tab-pane" id="tab-gizlilik">
+        <h3 style="margin-bottom:6px">Profil Gizliliği</h3>
+        <p class="muted" style="font-size:.86rem;margin-bottom:18px">Kadroya kabul edildiğinizde profilinizin nerede görüneceğini siz seçersiniz.</p>
+        <div class="form-grid" style="grid-template-columns:1fr">
+          <label class="guide-box" style="cursor:pointer;display:block">
+            <div class="checkbox-row">
+              <input type="radio" name="privacy" value="public">
+              <div>
+                <strong style="display:block;text-transform:none;letter-spacing:0">🌍 Herkese Açık</strong>
+                <span class="muted" style="font-size:.86rem">Profilim sitenin herkese açık kataloğunda ve arama motorlarında görünebilir. (Soyadınız ve iletişim bilgileriniz hiçbir zaman yayınlanmaz.)</span>
+              </div>
+            </div>
+          </label>
+          <label class="guide-box" style="cursor:pointer;display:block">
+            <div class="checkbox-row">
+              <input type="radio" name="privacy" value="private">
+              <div>
+                <strong style="display:block;text-transform:none;letter-spacing:0">🔒 Sadece Özel Paylaşım</strong>
+                <span class="muted" style="font-size:.86rem">Profilim herkese açık katalogda görünmez; yalnızca ajansın müşterilere özel gönderdiği bağlantılarda yer alır.</span>
+              </div>
+            </div>
+          </label>
+        </div>
+        <div class="wizard-nav">
+          <span class="muted" id="msg-gizlilik" style="font-size:.85rem"></span>
+          <button class="btn btn-gold" data-save="gizlilik">Kaydet</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    (function () {
+      const $ = id => document.getElementById(id);
+      let ME = null;               /* /api/me yanıtı */
+      let AVAIL = {};              /* {"2026-08-05": "musait"|"dolu"} */
+      let calY, calM;              /* takvim ayı */
+
+      /* ---------- yardımcılar ---------- */
+      const field = n => document.querySelector(`[name="${n}"]`);
+      const val = n => { const el = field(n); return el ? (el.type === "checkbox" ? (el.checked ? "1" : "") : el.value) : ""; };
+
+      function age(birth) {
+        if (!birth) return null;
+        const d = new Date(birth); if (isNaN(d)) return null;
+        return Math.floor((Date.now() - d.getTime()) / 31557600000);
+      }
+      function isMinor() {
+        const a = age(val("birthdate"));
+        return val("category") === "cocuk" || (a !== null && a < 18);
+      }
+      function syncParentFields() {
+        const show = isMinor();
+        $("parentTitle").style.display = show ? "" : "none";
+        document.querySelectorAll(".parent-field").forEach(el => el.style.display = show ? "" : "none");
+      }
+      ["category", "birthdate"].forEach(n => field(n).addEventListener("change", syncParentFields));
+
+      /* ---------- onboarding adım durumu ---------- */
+      function stepDone(n, p, media) {
+        if (n === 1) return p.category && p.gender && p.birthdate && p.city;
+        if (n === 2) return p.height && p.weight;
+        if (n === 3) return media.some(m => m.kind === "photo");
+        if (n === 4) return p.consent_kvkk === "1" && p.consent_contract === "1";
+      }
+      function refreshSteps() {
+        const p = ME.profile, media = ME.media;
+        let firstOpen = 0;
+        for (let i = 1; i <= 4; i++) {
+          const done = stepDone(i, p, media);
+          const el = document.querySelector(`[data-ob="${i}"]`);
+          el.classList.toggle("done", !!done);
+          el.classList.remove("active");
+          if (!done && !firstOpen) firstOpen = i;
+        }
+        if (firstOpen) {
+          document.querySelector(`[data-ob="${firstOpen}"]`).classList.add("active");
+          $("obSteps").style.display = "";
+        } else {
+          $("obSteps").style.display = "none"; /* onboarding tamam */
+        }
+        return firstOpen;
+      }
+
+      /* ---------- sekmeler ---------- */
+      const TAB_ORDER = ["genel", "olculer", "medya", "onaylar", "takvim", "odeme", "gizlilik"];
+      function showTab(key) {
+        document.querySelectorAll("#panelTabs .tab-btn").forEach(b =>
+          b.classList.toggle("active", b.dataset.tab === key));
+        document.querySelectorAll(".tab-pane").forEach(pn =>
+          pn.classList.toggle("active", pn.id === "tab-" + key));
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      $("panelTabs").addEventListener("click", e => {
+        const b = e.target.closest(".tab-btn");
+        if (b) showTab(b.dataset.tab);
+      });
+
+      /* ---------- kaydetme ---------- */
+      const SAVE_FIELDS = {
+        genel: ["category","gender","birthdate","city","languages","instagram","about","parent_name","parent_tc","parent_phone"],
+        olculer: ["height","weight","bust","waist","hip","shoe","size","hair","eye","skin"],
+        onaylar: ["consent_kvkk","consent_contract"],
+        odeme: ["iban","account_name","bank_name","invoice_type","tax_no"],
+        gizlilik: ["privacy"],
+      };
+      const NEXT_TAB = { genel: "olculer", olculer: "medya", medya: "onaylar", onaylar: "takvim" };
+
+      document.querySelectorAll("[data-save]").forEach(btn => btn.addEventListener("click", async () => {
+        const key = btn.dataset.save;
+        const msg = $("msg-" + key);
+        const payload = {};
+
+        if (key === "medya") { showTab("onaylar"); return; }
+        if (key === "takvim") payload.availability = JSON.stringify(AVAIL);
+        else if (key === "gizlilik") {
+          const sel = document.querySelector('[name="privacy"]:checked');
+          if (!sel) { msg.textContent = "Lütfen bir seçenek işaretleyin."; return; }
+          payload.privacy = sel.value;
+        } else {
+          (SAVE_FIELDS[key] || []).forEach(n => payload[n] = val(n));
+        }
+
+        /* adım doğrulamaları */
+        if (key === "genel") {
+          if (!payload.category || !payload.gender || !payload.birthdate || !payload.city) {
+            msg.textContent = "Kategori, cinsiyet, doğum tarihi ve şehir zorunludur."; return;
+          }
+          if (isMinor() && (!payload.parent_name || !/^\d{11}$/.test(payload.parent_tc) || !payload.parent_phone)) {
+            msg.textContent = "18 yaş altı için veli bilgileri (ad, 11 haneli TC, telefon) zorunludur."; return;
+          }
+        }
+        if (key === "olculer" && (!payload.height || !payload.weight)) {
+          msg.textContent = "Boy ve kilo zorunludur."; return;
+        }
+        if (key === "onaylar" && (payload.consent_kvkk !== "1" || payload.consent_contract !== "1")) {
+          msg.textContent = "Devam etmek için iki onay kutusunu da işaretleyin."; return;
+        }
+
+        msg.textContent = "Kaydediliyor…";
+        const r = await fetch("/api/profile", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).catch(() => null);
+        if (!r || !r.ok) {
+          const d = r ? await r.json().catch(() => ({})) : {};
+          msg.textContent = d.error || "Kaydedilemedi — tekrar deneyin."; return;
+        }
+        msg.textContent = "✓ Kaydedildi";
+        Object.assign(ME.profile, payload);
+        const open = refreshSteps();
+        if (key === "onaylar" && !open) {
+          $("statusPill").textContent = "İnceleniyor — Başvuru Tamamlandı ✓";
+        }
+        if (NEXT_TAB[key]) showTab(NEXT_TAB[key]);
+      }));
+
+      /* ---------- medya (foto/video/belge) ---------- */
+      function renderMedia() {
+        const photos = ME.media.filter(m => m.kind === "photo");
+        const videos = ME.media.filter(m => m.kind === "video");
+        const docs = ME.media.filter(m => m.kind === "belge");
+        $("photoGrid").innerHTML = photos.length
+          ? photos.map(m => `<div class="my-photo"><img src="/api/photo/${m.id}" loading="lazy"><button data-del="${m.id}">✕</button></div>`).join("")
+          : `<p class="muted" style="grid-column:1/-1">Henüz fotoğraf yüklemediniz.</p>`;
+        $("videoGrid").innerHTML = videos.length
+          ? videos.map(m => `<div class="my-photo"><a class="file-chip" href="/api/photo/${m.id}" target="_blank"><span class="ico">🎬</span>${m.orig}</a><button data-del="${m.id}">✕</button></div>`).join("")
+          : `<p class="muted" style="grid-column:1/-1">Video yok.</p>`;
+        $("belgeList").innerHTML = docs.length
+          ? docs.map(m => `<a class="gold" href="/api/photo/${m.id}" target="_blank">📄 ${m.orig}</a> <button class="muted" data-del="${m.id}" style="font-size:.8rem">(sil)</button>`).join(" · ")
+          : "Henüz belge yüklenmedi";
+      }
+      document.body.addEventListener("click", async e => {
+        const b = e.target.closest("[data-del]");
+        if (!b || !confirm("Bu dosya silinsin mi?")) return;
+        await fetch("/api/photo/" + b.dataset.del, { method: "DELETE" });
+        load(false);
+      });
+
+      function bindUpload(inputId, kind, statusId) {
+        $(inputId).addEventListener("change", async e => {
+          const files = [...e.target.files];
+          const st = $(statusId);
+          for (let i = 0; i < files.length; i++) {
+            st.textContent = `Yükleniyor ${i + 1}/${files.length}…`;
+            const fd = new FormData();
+            fd.append("kind", kind);
+            fd.append("file", files[i]);
+            const r = await fetch("/api/upload", { method: "POST", body: fd }).catch(() => null);
+            if (!r || !r.ok) {
+              const d = r ? await r.json().catch(() => ({})) : {};
+              st.textContent = d.error || "Yükleme hatası."; e.target.value = ""; load(false); return;
+            }
+          }
+          st.textContent = "✓ Yüklendi"; e.target.value = ""; load(false);
+        });
+      }
+      bindUpload("photoInput", "photo", "uploadStatus");
+      bindUpload("videoInput", "video", "videoStatus");
+      bindUpload("belgeInput", "belge", "msg-genel");
+
+      /* ---------- müsaitlik takvimi ---------- */
+      const AYLAR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+      function renderCal() {
+        $("calTitle").textContent = AYLAR[calM] + " " + calY;
+        const first = new Date(calY, calM, 1);
+        const startDow = (first.getDay() + 6) % 7; /* Pzt=0 */
+        const days = new Date(calY, calM + 1, 0).getDate();
+        let html = ["Pt","Sa","Ça","Pe","Cu","Ct","Pz"].map(d => `<div class="dow">${d}</div>`).join("");
+        for (let i = 0; i < startDow; i++) html += `<div class="cal-day empty"></div>`;
+        for (let d = 1; d <= days; d++) {
+          const key = `${calY}-${String(calM + 1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+          const cls = AVAIL[key] || "";
+          html += `<div class="cal-day ${cls}" data-date="${key}">${d}</div>`;
+        }
+        $("calGrid").innerHTML = html;
+      }
+      $("calGrid").addEventListener("click", e => {
+        const c = e.target.closest(".cal-day:not(.empty)");
+        if (!c) return;
+        const k = c.dataset.date;
+        AVAIL[k] = AVAIL[k] === "musait" ? "dolu" : AVAIL[k] === "dolu" ? undefined : "musait";
+        if (!AVAIL[k]) delete AVAIL[k];
+        renderCal();
+      });
+      $("calPrev").addEventListener("click", () => { calM--; if (calM < 0) { calM = 11; calY--; } renderCal(); });
+      $("calNext").addEventListener("click", () => { calM++; if (calM > 11) { calM = 0; calY++; } renderCal(); });
+
+      /* ---------- IBAN maskesi ---------- */
+      field("iban").addEventListener("input", e => {
+        let v = e.target.value.toUpperCase().replace(/[^TR0-9]/g, "");
+        e.target.value = v.slice(0, 26);
+      });
+
+      /* ---------- yükle ---------- */
+      async function load(navigate = true) {
+        const r = await fetch("/api/me").catch(() => null);
+        if (!r || !r.ok) { location.href = "uye.html"; return; }
+        ME = await r.json();
+        $("userName").textContent = (ME.user?.fullname || ME.user?.email || "").split(" ")[0];
+        const st = ME.profile?.status || "inceleniyor";
+        $("statusPill").textContent =
+          st === "onaylandi" ? "✓ Kadroya Kabul Edildi" : st === "reddedildi" ? "Değerlendirildi" : "İnceleniyor";
+
+        /* alanları doldur */
+        Object.entries(ME.profile || {}).forEach(([k, v]) => {
+          const el = field(k);
+          if (!el || v == null) return;
+          if (el.type === "checkbox") el.checked = v === "1";
+          else el.value = v;
+        });
+        const priv = ME.profile?.privacy || "private";
+        const pr = document.querySelector(`[name="privacy"][value="${priv}"]`);
+        if (pr) pr.checked = true;
+
+        try { AVAIL = JSON.parse(ME.profile?.availability || "{}") || {}; } catch { AVAIL = {}; }
+        const t = new Date(); calY = t.getFullYear(); calM = t.getMonth();
+        renderCal();
+        syncParentFields();
+        renderMedia();
+
+        const open = refreshSteps();
+        if (navigate) showTab(open ? TAB_ORDER[open - 1] : "genel");
+      }
+
+      $("logoutBtn").addEventListener("click", async () => {
+        await fetch("/api/logout", { method: "POST" });
+        location.href = "uye.html";
+      });
+
+      load();
+    })();
+  </script>
+</body>
+</html>

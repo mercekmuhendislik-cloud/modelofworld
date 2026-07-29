@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cast Kataloğu — VERA Agency</title>
+  <meta name="description" content="Model ve fuar hostesi kataloğu. Boy, şehir, dil ve daha fazlasına göre filtreleyin.">
+  <!-- Open Graph & Twitter Cards -->
+  <link rel="canonical" href="https://www.modelofworld.com/katalog.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="VERA Agency">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="Cast Kataloğu — VERA Agency">
+  <meta property="og:description" content="Model ve fuar hostesi kataloğu. Boy, şehir, dil ve daha fazlasına göre filtreleyin.">
+  <meta property="og:url" content="https://www.modelofworld.com/katalog.html">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Cast Kataloğu — VERA Agency">
+  <meta name="twitter:description" content="Model ve fuar hostesi kataloğu. Boy, şehir, dil ve daha fazlasına göre filtreleyin.">
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
+</head>
+<body data-page="katalog">
+  <div id="site-header"></div>
+
+  <div class="page-head">
+    <div class="container">
+      <span class="eyebrow">Cast &amp; Katalog</span>
+      <h1>Yetenek Kataloğu</h1>
+      <p class="muted mt-2" style="max-width:56ch">Projenize uygun model veya hostesi gelişmiş filtrelerle saniyeler içinde bulun.</p>
+    </div>
+  </div>
+
+  <section style="padding-top:0">
+    <div class="container catalog-layout">
+
+      <!-- FİLTRE PANELİ -->
+      <div>
+        <button class="btn btn-ghost filters-toggle" id="filtersToggle">Filtreleri Göster / Gizle</button>
+        <aside class="filters" id="filtersPanel" aria-label="Katalog filtreleri">
+          <h3>Filtrele</h3>
+
+          <div class="filter-group">
+            <label for="fSearch">İsim / Etiket Ara</label>
+            <input type="text" id="fSearch" class="search-input" placeholder="örn. podyum, Rusça…">
+          </div>
+
+          <div class="filter-group">
+            <span class="fg-title">Kategori</span>
+            <div class="chip-row" id="fCategory"></div>
+          </div>
+
+          <div class="filter-group">
+            <span class="fg-title">Cinsiyet</span>
+            <div class="chip-row" id="fGender">
+              <button class="chip active" data-val="">Tümü</button>
+              <button class="chip" data-val="kadin">Kadın</button>
+              <button class="chip" data-val="erkek">Erkek</button>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <span class="fg-title">Minimum Boy</span>
+            <div class="range-row">
+              <input type="range" id="fHeight" min="130" max="190" step="1" value="130">
+              <output id="fHeightOut">Tümü</output>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <span class="fg-title">Maksimum Kilo</span>
+            <div class="range-row">
+              <input type="range" id="fWeight" min="40" max="90" step="1" value="90">
+              <output id="fWeightOut">Tümü</output>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <span class="fg-title">Ayak Numarası</span>
+            <div class="chip-row" id="fShoe"></div>
+          </div>
+
+          <div class="filter-group">
+            <span class="fg-title">Beden</span>
+            <div class="chip-row" id="fSize"></div>
+          </div>
+
+          <div class="filter-group">
+            <span class="fg-title">Şehir</span>
+            <div class="chip-row" id="fCity"></div>
+          </div>
+
+          <div class="filter-group">
+            <span class="fg-title">Saç Rengi</span>
+            <div class="chip-row" id="fHair"></div>
+          </div>
+
+          <div class="filter-group">
+            <span class="fg-title">Göz Rengi</span>
+            <div class="chip-row" id="fEye"></div>
+          </div>
+
+          <div class="filter-group">
+            <span class="fg-title">Yabancı Dil</span>
+            <div class="chip-row" id="fLang"></div>
+          </div>
+
+          <button class="btn btn-ghost btn-sm btn-clear" id="fClear">Filtreleri Temizle</button>
+        </aside>
+      </div>
+
+      <!-- SONUÇLAR -->
+      <div>
+        <div class="catalog-toolbar">
+          <span class="result-count" id="resultCount"></span>
+          <select class="sort-select" id="fSort" aria-label="Sıralama">
+            <option value="featured">Öne Çıkanlar</option>
+            <option value="name">İsme Göre (A–Z)</option>
+            <option value="height-desc">Boy (Uzundan Kısaya)</option>
+            <option value="height-asc">Boy (Kısadan Uzuna)</option>
+            <option value="age-asc">Yaş (Küçükten Büyüğe)</option>
+          </select>
+        </div>
+        <div class="talent-grid" id="catalogGrid"></div>
+        <div class="empty-state hidden" id="emptyState">
+          <div class="serif">Kriterlere uygun sonuç bulunamadı</div>
+          <p>Filtreleri gevşetmeyi deneyin ya da aradığınız profili bize iletin — kadromuz sürekli genişliyor.</p>
+          <a class="btn btn-gold btn-sm mt-2" href="teklif.html">Profil Talebi Gönder</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/analytics.js"></script>
+  <script src="assets/js/catalog.js"></script>
+</body>
+</html>

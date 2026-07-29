@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model & Hostes Başvurusu — VERA Agency</title>
+  <meta name="description" content="Ajansımıza model veya hostes olarak başvurun. Kayıt ücreti alınmaz.">
+  <!-- Open Graph & Twitter Cards -->
+  <link rel="canonical" href="https://www.modelofworld.com/basvuru.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="VERA Agency">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="Model & Hostes Başvurusu — VERA Agency">
+  <meta property="og:description" content="Ajansımıza model veya hostes olarak başvurun. Kayıt ücreti alınmaz.">
+  <meta property="og:url" content="https://www.modelofworld.com/basvuru.html">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Model & Hostes Başvurusu — VERA Agency">
+  <meta name="twitter:description" content="Ajansımıza model veya hostes olarak başvurun. Kayıt ücreti alınmaz.">
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
+</head>
+<body data-page="basvuru">
+  <div id="site-header"></div>
+
+  <div class="page-head">
+    <div class="container center">
+      <span class="eyebrow" style="justify-content:center">Kariyer</span>
+      <h1>Ajansımıza Katılın</h1>
+      <p class="muted mt-2" style="max-width:58ch;margin-inline:auto">Model veya hostes kadromuzda yer almak için iki adımlık formu doldurun. Başvurunuz casting ekibimizce 5 iş günü içinde değerlendirilir. <strong class="gold">Ajansımız adaylardan hiçbir aşamada kayıt ücreti almaz.</strong></p>
+    </div>
+  </div>
+
+  <section style="padding-top:16px">
+    <div class="container" style="max-width:860px">
+      <div class="guide-box mt-2" style="margin-bottom:22px;text-align:center">
+        <strong style="display:inline">Fotoğraflarınızı yüklemek mi istiyorsunuz?</strong>
+        <span class="muted" style="font-size:.88rem"> Ücretsiz üye olun, aday panelinizden profilinizi oluşturup fotoğraflarınızı yükleyin.</span>
+        <div class="mt-2"><a class="btn btn-gold btn-sm" href="uye.html">Üye Ol / Giriş Yap →</a></div>
+      </div>
+      <div class="form-card">
+
+        <form id="applyForm" novalidate>
+          <!-- Adım göstergesi -->
+          <div class="wizard-steps no-print">
+            <div class="wstep active" data-step="1"><span class="dot">1</span> Kişisel Bilgiler</div>
+            <div class="wline"></div>
+            <div class="wstep" data-step="2"><span class="dot">2</span> Ölçüler &amp; Fotoğraflar</div>
+          </div>
+
+          <!-- ADIM 1: Kişisel Bilgiler -->
+          <div class="wizard-pane active" data-pane="1">
+            <div class="form-grid">
+              <div class="field">
+                <label>Ad Soyad <span class="req">*</span></label>
+                <input type="text" name="fullname" required minlength="5" placeholder="Adınız Soyadınız">
+                <span class="err">Lütfen adınızı ve soyadınızı girin.</span>
+              </div>
+              <div class="field">
+                <label>Doğum Tarihi <span class="req">*</span></label>
+                <input type="date" name="birthdate" required>
+                <span class="err">Doğum tarihi gereklidir.</span>
+              </div>
+              <div class="field">
+                <label>E-posta <span class="req">*</span></label>
+                <input type="email" name="email" required placeholder="ornek@mail.com">
+                <span class="err">Geçerli bir e-posta adresi girin.</span>
+              </div>
+              <div class="field">
+                <label>Telefon <span class="req">*</span></label>
+                <input type="tel" name="phone" required pattern="[0-9+() \-]{10,}" placeholder="05xx xxx xx xx">
+                <span class="err">Geçerli bir telefon numarası girin.</span>
+              </div>
+              <div class="field">
+                <label>Şehir <span class="req">*</span></label>
+                <input type="text" name="city" required placeholder="İstanbul">
+                <span class="err">Şehir bilgisi gereklidir.</span>
+              </div>
+              <div class="field">
+                <label>Instagram Kullanıcı Adı</label>
+                <input type="text" name="instagram" placeholder="@kullaniciadi">
+                <span class="hint">Portfolyonuzu görebilmemiz için önerilir; sitede asla yayınlanmaz.</span>
+              </div>
+              <div class="field">
+                <label>Başvuru Kategorisi <span class="req">*</span></label>
+                <select name="category" required>
+                  <option value="">Seçiniz…</option>
+                  <option value="model">Manken / Model</option>
+                  <option value="hostes">Fuar / Kongre Hostesi</option>
+                  <option value="yuz">Yüz Modeli</option>
+                  <option value="cocuk">Çocuk Model (veli başvurusu)</option>
+                  <option value="oyuncu">Reklam Oyuncusu / Cast</option>
+                </select>
+                <span class="err">Bir kategori seçin.</span>
+              </div>
+              <div class="field">
+                <label>Cinsiyet <span class="req">*</span></label>
+                <select name="gender" required>
+                  <option value="">Seçiniz…</option>
+                  <option value="kadin">Kadın</option>
+                  <option value="erkek">Erkek</option>
+                </select>
+                <span class="err">Seçim yapınız.</span>
+              </div>
+              <div class="field full">
+                <label>Kendinizden Bahsedin</label>
+                <textarea name="about" placeholder="Deneyimleriniz, çalıştığınız markalar, uygunluk durumunuz…"></textarea>
+              </div>
+            </div>
+            <div class="wizard-err" id="wizError" style="display:none;color:var(--danger);font-size:.86rem;margin-top:18px;text-align:center">
+              Lütfen kırmızıyla işaretlenen zorunlu alanları doldurun.
+            </div>
+            <div class="wizard-nav">
+              <span></span>
+              <button type="button" class="btn btn-gold" id="toStep2">Devam Et — Ölçüler →</button>
+            </div>
+          </div>
+
+          <!-- ADIM 2: Ölçüler & Fotoğraflar -->
+          <div class="wizard-pane" data-pane="2">
+            <div class="form-grid">
+              <div class="form-section-title">Fiziksel Bilgiler</div>
+
+              <div class="field">
+                <label>Boy (cm) <span class="req">*</span></label>
+                <input type="number" name="height" required min="100" max="220" placeholder="175">
+                <span class="err">Geçerli bir boy girin.</span>
+              </div>
+              <div class="field">
+                <label>Kilo (kg) <span class="req">*</span></label>
+                <input type="number" name="weight" required min="20" max="150" placeholder="60">
+                <span class="err">Geçerli bir kilo girin.</span>
+              </div>
+              <div class="field">
+                <label>Beden</label>
+                <input type="text" name="size" placeholder="36 / S">
+              </div>
+              <div class="field">
+                <label>Ayakkabı Numarası</label>
+                <input type="number" name="shoe" min="20" max="50" placeholder="39">
+              </div>
+              <div class="field">
+                <label>Dövme / Piercing</label>
+                <select name="tattoo">
+                  <option value="yok">Yok</option>
+                  <option value="gizlenebilir">Var — kıyafetle gizlenebilir</option>
+                  <option value="gorunur">Var — görünür</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Deneyim Süresi</label>
+                <select name="experience">
+                  <option value="yok">Deneyimim yok</option>
+                  <option value="0-1">0–1 yıl</option>
+                  <option value="1-3">1–3 yıl</option>
+                  <option value="3-5">3–5 yıl</option>
+                  <option value="5+">5+ yıl</option>
+                </select>
+              </div>
+
+              <div class="form-section-title">Diller &amp; Ekstra Yetenekler</div>
+
+              <div class="field full">
+                <label>Bildiğiniz Yabancı Diller (seviyesiyle)</label>
+                <input type="text" name="languages" placeholder="İngilizce C1, Rusça B2…">
+              </div>
+              <div class="field full">
+                <label>Yetenekler</label>
+                <div class="skill-grid">
+                  <label class="skill-check"><input type="checkbox" name="skills" value="ehliyet"><span>Ehliyet (B)</span></label>
+                  <label class="skill-check"><input type="checkbox" name="skills" value="dans"><span>Dans</span></label>
+                  <label class="skill-check"><input type="checkbox" name="skills" value="oyunculuk"><span>Oyunculuk</span></label>
+                  <label class="skill-check"><input type="checkbox" name="skills" value="yuzme"><span>Yüzme</span></label>
+                  <label class="skill-check"><input type="checkbox" name="skills" value="binicilik"><span>Binicilik</span></label>
+                  <label class="skill-check"><input type="checkbox" name="skills" value="enstruman"><span>Enstrüman</span></label>
+                  <label class="skill-check"><input type="checkbox" name="skills" value="spikerlik"><span>Spikerlik</span></label>
+                  <label class="skill-check"><input type="checkbox" name="skills" value="barista"><span>Barista</span></label>
+                </div>
+              </div>
+
+              <div class="form-section-title">Fotoğraf &amp; Video</div>
+
+              <div class="field full">
+                <div class="guide-box">
+                  <strong>Nasıl fotoğraf yüklemelisiniz?</strong>
+                  <ul>
+                    <li>Doğal ışıkta, makyajsız veya az makyajlı, <em>filtresiz</em> çekin</li>
+                    <li>1 yakın portre (önden) + 1 tüm boy fotoğrafı zorunlu</li>
+                    <li>Düz bir duvar önünde, sade kıyafetle çekilmiş olmalı</li>
+                    <li>Güneş gözlüğü, şapka ve yoğun rötuşlu fotoğraf kabul edilmez</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="field full">
+                <label>Fotoğraflarınız (2–6 adet) <span class="req">*</span></label>
+                <input type="file" name="photos" accept="image/*" multiple required>
+                <span class="hint">Maks. 10 MB/adet · JPG, PNG veya HEIC</span>
+                <span class="err">Lütfen en az bir fotoğraf ekleyin.</span>
+              </div>
+
+              <div class="field full">
+                <label>Video Başvuru / Audition (opsiyonel)</label>
+                <input type="file" name="video" accept="video/*">
+                <span class="hint">10–15 saniyelik tanıtım veya yürüyüş (catwalk) videosu — dikey veya yatay. Maks. 100 MB.</span>
+              </div>
+
+              <div class="field full">
+                <div class="checkbox-row">
+                  <input type="checkbox" name="kvkk" id="kvkk" required>
+                  <label for="kvkk" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.86rem">
+                    Kişisel verilerimin başvuru değerlendirme amacıyla <a href="kvkk.html" class="gold" target="_blank">KVKK Aydınlatma Metni</a> kapsamında işlenmesini kabul ediyorum; <a href="sozlesme.html" class="gold" target="_blank">çalışma prensipleri ve şartları</a> okudum. <span class="req">*</span>
+                  </label>
+                </div>
+                <span class="err">Devam etmek için onay gereklidir.</span>
+              </div>
+            </div>
+
+            <div class="wizard-nav">
+              <button type="button" class="btn btn-ghost" id="backStep1">← Geri</button>
+              <button type="submit" class="btn btn-gold" style="min-width:240px">Başvuruyu Gönder</button>
+            </div>
+          </div>
+        </form>
+
+        <div class="form-success" id="applySuccess">
+          <div class="tick">✓</div>
+          <h3>Başvurunuz Alındı</h3>
+          <p>Teşekkürler! Casting ekibimiz başvurunuzu inceleyecek ve uygun bulunması halinde 5 iş günü içinde sizinle iletişime geçecektir. Başvuru durumunuzu e-posta adresinize gelecek bağlantıdan takip edebilirsiniz.</p>
+          <a class="btn btn-ghost" href="index.html">Ana Sayfaya Dön</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADAYLAR İÇİN SSS -->
+  <section style="padding-top:0">
+    <div class="container" style="max-width:860px">
+      <div class="section-head reveal">
+        <span class="eyebrow">Adaylar İçin</span>
+        <h2>Sıkça Sorulan Sorular</h2>
+      </div>
+      <div class="accordion" id="faqCandidates"></div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/analytics.js"></script>
+  <script src="assets/js/forms.js"></script>
+  <script>
+    document.getElementById("faqCandidates").innerHTML = window.VERA.FAQ_CANDIDATES.map(f => `
+      <details class="acc-item"><summary>${f.q}</summary><div class="acc-body">${f.a}</div></details>`).join("");
+  </script>
+</body>
+</html>

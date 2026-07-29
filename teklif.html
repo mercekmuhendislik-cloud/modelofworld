@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teklif İsteyin — VERA Agency</title>
+  <meta name="description" content="Model, hostes, prodüksiyon ve etkinlik projeleriniz için hızlı teklif alın.">
+  <!-- Open Graph & Twitter Cards -->
+  <link rel="canonical" href="https://www.modelofworld.com/teklif.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="VERA Agency">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="Teklif İsteyin — VERA Agency">
+  <meta property="og:description" content="Model, hostes, prodüksiyon ve etkinlik projeleriniz için hızlı teklif alın.">
+  <meta property="og:url" content="https://www.modelofworld.com/teklif.html">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Teklif İsteyin — VERA Agency">
+  <meta name="twitter:description" content="Model, hostes, prodüksiyon ve etkinlik projeleriniz için hızlı teklif alın.">
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
+</head>
+<body data-page="teklif">
+  <div id="site-header"></div>
+
+  <div class="page-head">
+    <div class="container center">
+      <span class="eyebrow" style="justify-content:center">Kurumsal Müşteriler</span>
+      <h1>Projeniz İçin Teklif Alın</h1>
+      <p class="muted mt-2" style="max-width:58ch;margin-inline:auto">Formu doldurun; ekibimiz aynı iş günü içinde size özel cast seçkisi ve fiyat çalışmasıyla dönüş yapsın.</p>
+    </div>
+  </div>
+
+  <section style="padding-top:16px">
+    <div class="container" style="max-width:860px">
+      <div class="form-card">
+
+        <form id="quoteForm" novalidate>
+          <div class="form-grid">
+            <div class="form-section-title">Firma &amp; İletişim</div>
+
+            <div class="field">
+              <label>Firma / Marka Adı <span class="req">*</span></label>
+              <input type="text" name="company" required placeholder="Firma Ünvanı">
+              <span class="err">Firma adı gereklidir.</span>
+            </div>
+            <div class="field">
+              <label>Yetkili Ad Soyad <span class="req">*</span></label>
+              <input type="text" name="contact" required minlength="5" placeholder="Ad Soyad">
+              <span class="err">Yetkili kişi bilgisi gereklidir.</span>
+            </div>
+            <div class="field">
+              <label>E-posta <span class="req">*</span></label>
+              <input type="email" name="email" required placeholder="ornek@firma.com">
+              <span class="err">Geçerli bir e-posta girin.</span>
+            </div>
+            <div class="field">
+              <label>Telefon <span class="req">*</span></label>
+              <input type="tel" name="phone" required pattern="[0-9+() \-]{10,}" placeholder="05xx xxx xx xx">
+              <span class="err">Geçerli bir telefon numarası girin.</span>
+            </div>
+
+            <div class="form-section-title">Proje Detayları</div>
+
+            <div class="field">
+              <label>Hizmet Türü <span class="req">*</span></label>
+              <select name="service" id="serviceSelect" required>
+                <option value="">Seçiniz…</option>
+              </select>
+              <span class="err">Bir hizmet seçin.</span>
+            </div>
+            <div class="field">
+              <label>İhtiyaç Duyulan Kişi Sayısı</label>
+              <select name="headcount">
+                <option value="1-2">1–2 kişi</option>
+                <option value="3-5">3–5 kişi</option>
+                <option value="6-10">6–10 kişi</option>
+                <option value="10+">10+ kişi</option>
+                <option value="belirsiz">Henüz belirsiz</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Etkinlik / Proje Tarihi <span class="req">*</span></label>
+              <input type="date" name="date" required>
+              <span class="err">Tarih seçiniz.</span>
+            </div>
+            <div class="field">
+              <label>Saat Aralığı</label>
+              <div style="display:flex;gap:10px;align-items:center">
+                <select name="timeStart" style="flex:1" aria-label="Başlangıç saati"></select>
+                <span class="muted">—</span>
+                <select name="timeEnd" style="flex:1" aria-label="Bitiş saati"></select>
+              </div>
+            </div>
+            <div class="field">
+              <label>Süre</label>
+              <select name="duration">
+                <option value="yarim-gun">Yarım gün</option>
+                <option value="1-gun">1 gün</option>
+                <option value="2-3-gun">2–3 gün</option>
+                <option value="hafta">1 hafta+</option>
+                <option value="sezon">Sezonluk / Uzun dönem</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Şehir / Lokasyon <span class="req">*</span></label>
+              <input type="text" name="location" required placeholder="İstanbul — Fuar Merkezi">
+              <span class="err">Lokasyon bilgisi gereklidir.</span>
+            </div>
+            <div class="field">
+              <label>Tahmini Bütçe Aralığı</label>
+              <select name="budget">
+                <option value="">Belirtmek istemiyorum</option>
+                <option value="0-50">50.000 TL'ye kadar</option>
+                <option value="50-150">50.000 – 150.000 TL</option>
+                <option value="150-500">150.000 – 500.000 TL</option>
+                <option value="500+">500.000 TL üzeri</option>
+              </select>
+            </div>
+
+            <div class="field full" id="talentField" hidden>
+              <label>İlgilendiğiniz Profil(ler)</label>
+              <input type="text" name="talent" id="talentInput" readonly>
+              <span class="hint">Katalogdan / cast listenizden seçtiğiniz profiller otomatik eklendi. Ekibimiz benzer alternatifleri de sunar.</span>
+            </div>
+
+            <div class="estimate-box" id="estimateBox" hidden>
+              <div>
+                <div class="eb-label">Tahmini Bütçe Aralığı</div>
+                <div class="eb-value" id="estimateValue">—</div>
+              </div>
+              <div class="eb-label" id="estimateMeta"></div>
+              <div class="eb-note">* Hizmet türü, kişi sayısı ve süreye göre otomatik hesaplanan yaklaşık aralıktır; bağlayıcı değildir. Net fiyat, brief sonrası aynı gün iletilir.</div>
+            </div>
+
+            <div class="field full">
+              <label>Proje Açıklaması <span class="req">*</span></label>
+              <textarea name="brief" required minlength="20" placeholder="Etkinliğin kapsamı, beklentileriniz, kıyafet/dil gereksinimleri…"></textarea>
+              <span class="err">Lütfen projenizi kısaca anlatın (en az 20 karakter).</span>
+            </div>
+
+            <div class="field full">
+              <div class="checkbox-row">
+                <input type="checkbox" name="kvkk" id="kvkk" required>
+                <label for="kvkk" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.86rem">
+                  İletişim bilgilerimin teklif süreci için işlenmesini kabul ediyorum. <span class="req">*</span>
+                </label>
+              </div>
+              <span class="err">Devam etmek için onay gereklidir.</span>
+            </div>
+
+            <div class="full center mt-2">
+              <button type="submit" class="btn btn-gold" style="min-width:260px">Teklif Talebi Gönder</button>
+            </div>
+          </div>
+        </form>
+
+        <div class="form-success" id="quoteSuccess">
+          <div class="tick">✓</div>
+          <h3>Talebiniz Bize Ulaştı</h3>
+          <p>Teşekkürler! Proje ekibimiz talebinizi inceleyip aynı iş günü içinde size özel cast seçkisi ve fiyat teklifi ile dönüş yapacaktır.</p>
+          <a class="btn btn-ghost" href="katalog.html">Kataloğa Göz Atın</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MÜŞTERİLER İÇİN SSS -->
+  <section style="padding-top:0">
+    <div class="container" style="max-width:860px">
+      <div class="section-head reveal">
+        <span class="eyebrow">Müşteriler İçin</span>
+        <h2>Sıkça Sorulan Sorular</h2>
+      </div>
+      <div class="accordion" id="faqClients"></div>
+      <p class="muted mt-2" style="font-size:.85rem">Detaylı iptal/iade şartları ve sözleşme taslağı için: <a class="gold" href="sozlesme.html">Sözleşme &amp; Şartlar</a></p>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/analytics.js"></script>
+  <script src="assets/js/forms.js"></script>
+  <script>
+    document.getElementById("faqClients").innerHTML = window.VERA.FAQ_CLIENTS.map(f => `
+      <details class="acc-item"><summary>${f.q}</summary><div class="acc-body">${f.a}</div></details>`).join("");
+  </script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yönetim — Başvurular</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
+  <style>
+    .adm-user { border:1px solid var(--line); border-radius:12px; padding:20px; background:var(--surface); margin-bottom:16px; }
+    .adm-user h3 { font-size:1.1rem; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .adm-meta { font-size:.85rem; color:var(--text-2); margin:8px 0 12px; line-height:1.9; }
+    .adm-photos { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .adm-photos img { width:90px; height:120px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
+    .adm-sub { font-size:.82rem; border-bottom:1px solid var(--line); padding:10px 0; color:var(--text-2); word-break:break-word; }
+    .adm-badge { font-size:.64rem; letter-spacing:.14em; text-transform:uppercase; padding:4px 10px; border-radius:999px; border:1px solid var(--line); color:var(--gold); }
+    .adm-block { border-top:1px dashed var(--line); margin-top:12px; padding-top:10px; font-size:.84rem; color:var(--text-2); line-height:1.9; }
+    details.adm-more summary { cursor:pointer; font-size:.8rem; color:var(--gold); margin-top:8px; }
+  </style>
+</head>
+<body data-page="admin">
+  <section style="padding-top:40px">
+    <div class="container" style="max-width:960px">
+      <span class="eyebrow">Yönetim Paneli</span>
+      <h1 style="font-size:2rem;margin-bottom:20px">Üyeler &amp; Başvurular</h1>
+
+      <div class="form-card" id="keyCard">
+        <div class="field">
+          <label>Yönetici Anahtarı</label>
+          <input type="password" id="adminKey" class="search-input" placeholder="Sunucudaki admin-key.txt içeriği">
+          <span class="hint">Anahtar sunucuda: C:\inetpub\modelofworld-data\admin-key.txt</span>
+        </div>
+        <button class="btn btn-gold btn-sm mt-2" id="loadBtn">Listele</button>
+        <span class="muted" id="admErr" style="margin-left:12px;font-size:.85rem"></span>
+      </div>
+
+      <div id="results" class="mt-4"></div>
+      <h2 style="font-size:1.3rem;margin:34px 0 12px" id="subTitle" hidden>Form Gönderimleri (teklif / iletişim / başvuru)</h2>
+      <div id="subs"></div>
+    </div>
+  </section>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    $("loadBtn").addEventListener("click", load);
+    $("adminKey").addEventListener("keydown", e => { if (e.key === "Enter") load(); });
+    if (sessionStorage.getItem("mow-admin")) { $("adminKey").value = sessionStorage.getItem("mow-admin"); load(); }
+
+    const AY = { musait: "müsait", dolu: "dolu" };
+    function availSummary(json) {
+      try {
+        const a = JSON.parse(json || "{}");
+        const es = Object.entries(a).sort();
+        if (!es.length) return "işaretlenmemiş";
+        const m = es.filter(([,v]) => v === "musait").length, d = es.length - m;
+        const yakin = es.filter(([k]) => k >= new Date().toISOString().slice(0,10)).slice(0, 6)
+          .map(([k, v]) => `${k.slice(5)}(${AY[v] || v})`).join(", ");
+        return `${m} müsait / ${d} dolu gün — yakın: ${yakin || "—"}`;
+      } catch { return "—"; }
+    }
+
+    async function load() {
+      const key = $("adminKey").value.trim();
+      if (!key) return;
+      $("admErr").textContent = "Yükleniyor…";
+      const r = await fetch("/api/admin/list?key=" + encodeURIComponent(key)).catch(() => null);
+      if (!r || !r.ok) { $("admErr").textContent = "Anahtar hatalı veya sunucuya ulaşılamadı."; return; }
+      sessionStorage.setItem("mow-admin", key);
+      $("admErr").textContent = "";
+      const d = await r.json();
+      const k = encodeURIComponent(key);
+
+      $("results").innerHTML = d.users.length ? d.users.map(u => {
+        const p = u.profile || {};
+        const fotolar = (u.media || []).filter(m => m.kind === "photo");
+        const videolar = (u.media || []).filter(m => m.kind === "video");
+        const belgeler = (u.media || []).filter(m => m.kind === "belge");
+        const olcu = [p.height && p.height + " cm", p.weight && p.weight + " kg",
+          p.bust && "Göğüs:" + p.bust, p.waist && "Bel:" + p.waist, p.hip && "Basen:" + p.hip,
+          p.shoe && "Ayak:" + p.shoe, p.size && "Beden:" + p.size,
+          p.hair && "Saç:" + p.hair, p.eye && "Göz:" + p.eye, p.skin && "Ten:" + p.skin]
+          .filter(Boolean).join(" · ");
+        const onay = (p.consent_kvkk === "1" && p.consent_contract === "1")
+          ? `✓ Onaylı (${(p.consent_at || "").slice(0,10)})` : "⚠ Onaylar eksik";
+        return `
+        <div class="adm-user">
+          <h3>${u.fullname || "(isimsiz)"}
+            <span class="adm-badge">${p.category || "kategori yok"}</span>
+            <span class="adm-badge">${p.privacy === "public" ? "🌍 açık profil" : "🔒 özel profil"}</span>
+            <span class="muted" style="font-size:.78rem">#${u.id} · ${u.created?.slice(0,10) || ""}</span>
+          </h3>
+          <div class="adm-meta">
+            📧 ${u.email} &nbsp; 📞 ${u.phone || "—"} &nbsp; 📍 ${p.city || "—"} &nbsp; 🎂 ${p.birthdate || "—"} &nbsp; ${p.gender || ""}<br>
+            📏 ${olcu || "ölçü girilmemiş"}<br>
+            🗣 ${p.languages || "—"} &nbsp; 📸 ${p.instagram || "—"} &nbsp; 📝 ${onay}<br>
+            🗓 Müsaitlik: ${availSummary(p.availability)}
+            ${p.about ? "<br>💬 " + p.about : ""}
+          </div>
+          <div class="adm-photos">
+            ${fotolar.map(m => `<img src="/api/photo/${m.id}?key=${k}" loading="lazy">`).join("")
+              || '<span class="muted" style="font-size:.82rem">Fotoğraf yok</span>'}
+            ${videolar.map(m => `<a class="btn btn-ghost btn-sm" href="/api/photo/${m.id}?key=${k}" target="_blank">🎬 ${m.orig}</a>`).join("")}
+          </div>
+          <details class="adm-more">
+            <summary>Ödeme &amp; veli bilgileri</summary>
+            <div class="adm-block">
+              💳 IBAN: ${p.iban || "—"} &nbsp; (${p.account_name || "hesap sahibi ?"} · ${p.bank_name || "banka ?"})<br>
+              🧾 Fatura: ${p.invoice_type || "—"} &nbsp; Vergi/TCKN: ${p.tax_no || "—"}<br>
+              👨‍👩‍👧 Veli: ${p.parent_name || "—"} · TC: ${p.parent_tc || "—"} · Tel: ${p.parent_phone || "—"}<br>
+              📄 Muvafakatname: ${belgeler.map(m => `<a class="gold" href="/api/photo/${m.id}?key=${k}" target="_blank">${m.orig}</a>`).join(", ") || "yüklenmedi"}
+            </div>
+          </details>
+        </div>`;
+      }).join("") : '<p class="muted">Henüz üye yok.</p>';
+
+      $("subTitle").hidden = !d.submissions.length;
+      $("subs").innerHTML = d.submissions.map(s =>
+        `<div class="adm-sub"><strong>[${s.kind}]</strong> ${s.created?.slice(0,16).replace("T"," ")} — ${s.data}</div>`).join("");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hizmetlerimiz — VERA Agency</title>
+  <meta name="description" content="Manken/model temini, fuar hostesi, fotoğraf prodüksiyonu ve etkinlik yönetimi hizmetleri.">
+  <!-- Open Graph & Twitter Cards -->
+  <link rel="canonical" href="https://www.modelofworld.com/hizmetler.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="VERA Agency">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="Hizmetlerimiz — VERA Agency">
+  <meta property="og:description" content="Manken/model temini, fuar hostesi, fotoğraf prodüksiyonu ve etkinlik yönetimi hizmetleri.">
+  <meta property="og:url" content="https://www.modelofworld.com/hizmetler.html">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Hizmetlerimiz — VERA Agency">
+  <meta name="twitter:description" content="Manken/model temini, fuar hostesi, fotoğraf prodüksiyonu ve etkinlik yönetimi hizmetleri.">
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
+  <style>
+    .service-full {
+      display: grid; grid-template-columns: 1fr 1.4fr; gap: clamp(28px, 5vw, 64px);
+      align-items: center; padding: clamp(40px, 6vw, 72px) 0;
+      border-bottom: 1px solid var(--line); scroll-margin-top: calc(var(--header-h) + 20px);
+    }
+    .service-full:last-of-type { border-bottom: 0; }
+    .service-full:nth-child(even) .sf-visual { order: 2; }
+    @media (max-width: 820px) { .service-full { grid-template-columns: 1fr; } .service-full:nth-child(even) .sf-visual { order: 0; } }
+    .sf-visual {
+      aspect-ratio: 4 / 3; border-radius: var(--radius); position: relative; overflow: hidden;
+      background: linear-gradient(135deg, var(--sv1), var(--sv2));
+      border: 1px solid var(--line);
+    }
+    .sf-visual::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 75% 20%, rgba(255,255,255,.14), transparent 55%); }
+    .sf-visual .num { position: absolute; bottom: 16px; left: 26px; font-family: var(--font-serif); font-size: 4.4rem; color: rgba(255,255,255,.35); }
+    .sf-body h2 { margin-bottom: 14px; font-size: clamp(1.6rem, 3vw, 2.3rem); }
+    .sf-body > p { color: var(--text-2); margin-bottom: 22px; }
+    .sf-body ul { display: grid; gap: 11px; margin-bottom: 28px; }
+    .sf-body ul li { display: flex; gap: 12px; color: var(--text-2); font-size: .95rem; }
+    .sf-body ul li::before { content: "—"; color: var(--gold); flex: none; }
+  </style>
+</head>
+<body data-page="hizmetler">
+  <div id="site-header"></div>
+
+  <div class="page-head">
+    <div class="container">
+      <span class="eyebrow">Hizmetlerimiz</span>
+      <h1>Yedi Alanda<br><em class="script">Uçtan Uca Çözüm</em></h1>
+      <p class="muted mt-2" style="max-width:58ch">Casting'den saha operasyonuna, çekimden raporlamaya kadar tüm süreci ajans ekibimiz yönetir. Tek muhatap, tek sözleşme, kusursuz teslim.</p>
+    </div>
+  </div>
+
+  <section style="padding-top:0">
+    <div class="container" id="servicesRoot"></div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container">
+      <span class="eyebrow" style="justify-content:center">Hangi hizmete ihtiyacınız var?</span>
+      <h2>Projenizi anlatın, planlamayı biz yapalım.</h2>
+      <p>Kapsamı netleştirmemiş olsanız bile brief görüşmesi için bize ulaşabilirsiniz.</p>
+      <a class="btn btn-gold" href="teklif.html">Teklif İsteyin</a>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/analytics.js"></script>
+  <script>
+    (function () {
+      const { SERVICES } = window.VERA;
+      document.getElementById("servicesRoot").innerHTML = SERVICES.map((s, i) => `
+        <article class="service-full reveal" id="${s.id}">
+          <div class="sf-visual" style="--sv1:${s.gradient[0]};--sv2:${s.gradient[1]}">
+            ${s.img ? `<img class="cover" src="${s.img}?q=80&auto=format&fit=crop&w=900&h=675" alt="${s.title}" loading="lazy">` : ""}
+            <span class="num">${String(i + 1).padStart(2, "0")}</span>
+          </div>
+          <div class="sf-body">
+            <span class="eyebrow">Hizmet ${String(i + 1).padStart(2, "0")}</span>
+            <h2>${s.title}</h2>
+            <p>${s.short}</p>
+            <ul>${s.details.map(d => `<li>${d}</li>`).join("")}</ul>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <a class="btn btn-gold btn-sm" href="teklif.html">Bu Hizmet İçin Teklif Al</a>
+              ${s.catalogCat ? `<a class="btn btn-ghost btn-sm" href="katalog.html?cat=${s.catalogCat}">Kadroyu İncele</a>` : ""}
+              ${s.link ? `<a class="btn btn-ghost btn-sm" href="${s.link}">Prodüksiyon Detayları</a>` : ""}
+            </div>
+          </div>
+        </article>`).join("");
+
+      window.VERA.observeNew();
+
+      /* Hash ile gelindiyse ilgili hizmete kaydır */
+      if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+    })();
+  </script>
+</body>
+</html>

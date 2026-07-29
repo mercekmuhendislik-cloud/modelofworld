@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Üye Girişi — VERA Agency</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>V</text></svg>">
+</head>
+<body data-page="uye">
+  <div id="site-header"></div>
+
+  <div class="page-head">
+    <div class="container center">
+      <span class="eyebrow" style="justify-content:center">Aday Paneli</span>
+      <h1>Üye Girişi</h1>
+      <p class="muted mt-2" style="max-width:52ch;margin-inline:auto">Üye olun, profilinizi oluşturun ve fotoğraflarınızı yükleyin — casting ekibimiz başvurunuzu panel üzerinden değerlendirsin.</p>
+    </div>
+  </div>
+
+  <section style="padding-top:16px">
+    <div class="container" style="max-width:520px">
+      <div class="form-card">
+        <div class="tabs" style="justify-content:center">
+          <button class="tab-btn active" data-t="login">Giriş Yap</button>
+          <button class="tab-btn" data-t="register">Üye Ol</button>
+        </div>
+
+        <div class="field full" id="authError" style="display:none">
+          <span style="color:var(--danger);font-size:.88rem" id="authErrorText"></span>
+        </div>
+
+        <!-- GİRİŞ -->
+        <form id="loginForm" class="form-grid" style="grid-template-columns:1fr">
+          <div class="field">
+            <label>E-posta</label>
+            <input type="email" name="email" required placeholder="ornek@mail.com">
+          </div>
+          <div class="field">
+            <label>Şifre</label>
+            <input type="password" name="password" required minlength="6" placeholder="••••••••">
+          </div>
+          <button class="btn btn-gold full" type="submit">Giriş Yap</button>
+        </form>
+
+        <!-- KAYIT -->
+        <form id="registerForm" class="form-grid hidden" style="grid-template-columns:1fr">
+          <div class="field">
+            <label>Ad Soyad</label>
+            <input type="text" name="fullname" required minlength="5" placeholder="Adınız Soyadınız">
+          </div>
+          <div class="field">
+            <label>E-posta</label>
+            <input type="email" name="email" required placeholder="ornek@mail.com">
+          </div>
+          <div class="field">
+            <label>Telefon</label>
+            <input type="tel" name="phone" required pattern="[0-9+() \-]{10,}" placeholder="05xx xxx xx xx">
+          </div>
+          <div class="field">
+            <label>Şifre (en az 6 karakter)</label>
+            <input type="password" name="password" required minlength="6" placeholder="••••••••">
+          </div>
+          <div class="field">
+            <div class="checkbox-row">
+              <input type="checkbox" id="rkvkk" required>
+              <label for="rkvkk" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.84rem">
+                Kişisel verilerimin <a href="kvkk.html" class="gold" target="_blank">KVKK Aydınlatma Metni</a> kapsamında işlenmesini kabul ediyorum.
+              </label>
+            </div>
+          </div>
+          <button class="btn btn-gold full" type="submit">Üye Ol</button>
+        </form>
+      </div>
+      <p class="muted center mt-2" style="font-size:.82rem">Üyelik tamamen ücretsizdir. Ajansımız adaylardan hiçbir aşamada ücret talep etmez.</p>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    (function () {
+      /* Zaten girişliyse panele git */
+      fetch("/api/me").then(r => { if (r.ok) location.href = "panel.html"; }).catch(() => {});
+
+      const tabs = document.querySelectorAll(".tab-btn");
+      tabs.forEach(b => b.addEventListener("click", () => {
+        tabs.forEach(x => x.classList.toggle("active", x === b));
+        document.getElementById("loginForm").classList.toggle("hidden", b.dataset.t !== "login");
+        document.getElementById("registerForm").classList.toggle("hidden", b.dataset.t !== "register");
+        showErr("");
+      }));
+
+      function showErr(msg) {
+        document.getElementById("authError").style.display = msg ? "block" : "none";
+        document.getElementById("authErrorText").textContent = msg;
+      }
+
+      async function auth(url, payload, btn) {
+        btn.disabled = true; btn.textContent = "Lütfen bekleyin…";
+        try {
+          const r = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const d = await r.json().catch(() => ({}));
+          if (r.ok) { location.href = "panel.html"; return; }
+          showErr(d.error || "Bir hata oluştu, tekrar deneyin.");
+        } catch {
+          showErr("Sunucuya ulaşılamadı. Lütfen daha sonra tekrar deneyin.");
+        }
+        btn.disabled = false; btn.textContent = url.includes("login") ? "Giriş Yap" : "Üye Ol";
+      }
+
+      document.getElementById("loginForm").addEventListener("submit", e => {
+        e.preventDefault();
+        const f = e.target;
+        auth("/api/login", { email: f.email.value, password: f.password.value }, f.querySelector("button"));
+      });
+      document.getElementById("registerForm").addEventListener("submit", e => {
+        e.preventDefault();
+        const f = e.target;
+        auth("/api/register", {
+          fullname: f.fullname.value, email: f.email.value,
+          phone: f.phone.value, password: f.password.value,
+        }, f.querySelector("button"));
+      });
+    })();
+  </script>
+</body>
+</html>

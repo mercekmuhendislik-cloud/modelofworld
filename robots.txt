@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /cast-listem.html
+Disallow: /uye.html
+Disallow: /panel.html
+Disallow: /admin.html
+Disallow: /api/
+
+Sitemap: https://www.modelofworld.com/sitemap.xml
