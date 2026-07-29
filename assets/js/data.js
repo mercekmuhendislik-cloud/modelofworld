@@ -254,6 +254,61 @@ const SERVICES = [
     gradient: ["#2e1520", "#8c4a63"],
   },
   {
+    id: "etkinlik", img: IMG("1492684223066-81342ee5ff30"),
+    title: "Etkinlik Yönetimi",
+    short: "Lansman, davet ve kurumsal etkinliklerde anahtar teslim organizasyon.",
+    details: [
+      "Marka lansmanları ve basın davetleri",
+      "Kurumsal gala ve ödül törenleri",
+      "Ses, ışık ve teknik altyapı yönetimi",
+      "Canlı yayın / streaming prodüksiyonu",
+    ],
+    gradient: ["#33200f", "#a3663a"],
+  },
+];
+
+/* Tahmini bütçe hesaplayıcı — kişi/gün TL aralığı (temsili; gerçek tarifeyle güncellenecek) */
+const RATES = {
+  "manken-model":   [8000, 20000],
+  "fuar-hostes":    [3500, 6500],
+  "moda-podyum":    [10000, 25000],
+  "produksiyon":    [15000, 60000],
+  "dizi-film-cast": [4000, 30000],
+  "acilis-lansman": [4000, 8000],
+  "etkinlik":       [20000, 80000],
+};
+const HEADCOUNT_MID = { "1-2": 1.5, "3-5": 4, "6-10": 8, "10+": 12, "belirsiz": 3 };
+const DURATION_DAYS = { "yarim-gun": 0.6, "1-gun": 1, "2-3-gun": 2.5, "hafta": 6, "sezon": 20 };
+
+/* Aday SSS */
+const FAQ_CANDIDATES = [
+  { q: "Ajansınıza nasıl seçilirim?", a: "Üye olup panelinizden başvurunuzu tamamlamanız yeterli. Casting ekibimiz her başvuruyu 5 iş günü içinde inceler; uygun profiller görüşmeye davet edilir." },
+  { q: "Başvuru veya kayıt için ücret ödeyecek miyim?", a: "Hayır. Ajansımız adaylardan hiçbir aşamada kayıt, dosya veya çekim ücreti talep etmez. Sizden ücret isteyen kişilere itibar etmeyin." },
+  { q: "Deneyimim yok, başvurabilir miyim?", a: "Evet. Kadromuzun bir bölümü ajans bünyesinde eğitilerek ilk işine bizimle çıkmıştır. Değerlendirmede potansiyel esas alınır." },
+  { q: "Fotoğraflarım nasıl olmalı?", a: "Doğal ışıkta, makyajsız/az makyajlı, filtresiz; 1 yakın portre ve 1 tüm boy fotoğrafı zorunludur. Profesyonel çekim şart değildir." },
+  { q: "Kişisel bilgilerim güvende mi?", a: "Tüm veriler KVKK kapsamında yalnızca değerlendirme amacıyla işlenir; üçüncü kişilerle paylaşılmaz. Sitede yalnızca adınız ve soyadınızın baş harfi yayınlanır." },
+  { q: "Kabul edilirsem süreç nasıl işler?", a: "Sözleşme ve gizlilik şartları panelinizden dijital olarak imzalanır, sedcard çekiminiz ajans tarafından yapılır ve profiliniz yayına hazırlanır." },
+];
+
+/* Müşteri SSS */
+const FAQ_CLIENTS = [
+  { q: "İptal şartları nelerdir?", a: "Etkinliğe 7+ gün kala ücretsiz iptal; 3–7 gün arası %25, son 72 saatte %50 kesinti uygulanır. Detaylar sözleşme taslağında yer alır." },
+  { q: "Personel değişikliği nasıl yapılır?", a: "Etkinlik öncesi onayladığınız cast'te değişiklik gerekirse eşdeğer profil alternatifi ücretsiz sunulur; son dakika durumları için her operasyonda yedek plan hazırdır." },
+  { q: "Personel sigortalı mı?", a: "Evet. Sahaya çıkan tüm personelimiz SGK'lı ve mevzuata uygun çalıştırılır; talep halinde belgeleri sunulur." },
+  { q: "Teklife ne kadar sürede dönüş yapıyorsunuz?", a: "Aynı iş günü içinde size özel cast seçkisi ve fiyat çalışması iletilir. Acil operasyonlar için 7/24 WhatsApp hattımız açıktır." },
+  { q: "Üniforma / kıyafetleri kim sağlıyor?", a: "Kurumsal üniforma, konsept elbise veya markanıza özel kıyafet ajans tarafından tedarik edilebilir; kendi kıyafetinizin kullanılması da mümkündür." },
+];
+
+/* Tamamlanan son projeler — ana sayfa "Son Projeler" alanı */
+const PROJECTS = [
+  {
+    title: "İstanbul Moda Haftası Defilesi", img: IMG("1509631179647-0177331693ae"),
+    category: "Podyum / Cast",
+    scope: "14 manken · styling · backstage yönetimi",
+    date: "Haziran 2026",
+    gradient: ["#2b1d34", "#7a5c8f"],
+  },
+  {
     title: "Uluslararası Turizm Fuarı Standı", img: IMG("1587825140708-dfaf72ae4b04"),
     category: "Fuar Hostesi",
     scope: "8 çok dilli hostes · 4 gün · süpervizörlü ekip",
@@ -351,7 +406,7 @@ function formatLanguages(t) {
 
 /* Diğer scriptlerin erişimi için global */
 window.VERA = {
-  AGENCY, CATEGORIES, TALENTS, LABELS, SERVICES, PACKAGES, LOCATIONS,
+  AGENCY, CATEGORIES, TALENTS, LABELS, SERVICES,
   RATES, HEADCOUNT_MID, DURATION_DAYS, FAQ_CANDIDATES, FAQ_CLIENTS,
   PROJECTS, COUNTERS, BRANDS, TESTIMONIALS, BLOG_POSTS,
   talentPlaceholder, formatLanguages,
