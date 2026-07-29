@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=8af8f7d">
+  <link rel="stylesheet" href="assets/css/style.css?v=faea788">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -94,16 +94,6 @@
       .dash-wide { grid-column:span 1; }
       .adm-photos img { width:60px; height:80px; }
     }
-
-    /* Sidebar Layout */
-    .admin-layout { display: grid; grid-template-columns: 240px 1fr; gap: 30px; align-items: start; }
-    .sidebar-nav-item:hover { background: var(--bg-2); color: var(--text); }
-    .sidebar-nav-item.active { background: var(--gold-grad); color: #ffffff !important; box-shadow: 0 4px 12px rgba(211, 79, 110, 0.2); }
-    @media (max-width: 900px) {
-      .admin-layout { grid-template-columns: 1fr; gap: 20px; }
-      .admin-sidebar { position: static !important; flex-direction: row !important; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 8px !important; gap: 8px !important; }
-      .sidebar-nav-item { padding: 8px 12px !important; font-size: 0.85rem !important; white-space: nowrap; }
-    }
   </style>
 </head>
 <body data-page="admin">
@@ -139,10 +129,10 @@
 
       <!-- PANEL -->
       <div id="panelView" hidden>
-        <div style="display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:12px;margin-bottom:24px;border-bottom:1px solid var(--line);padding-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:12px;margin-bottom:18px">
           <div>
             <span class="eyebrow">Yönetim Paneli</span>
-            <h1 style="font-size:1.9rem">Model of World</h1>
+            <h1 style="font-size:1.9rem">Üyeler, Onaylar &amp; İşler</h1>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <span class="adm-badge" id="meBadge"></span>
@@ -153,217 +143,172 @@
           </div>
         </div>
 
-        <div class="admin-layout">
-          <!-- Sol Sidebar Menü -->
-          <div class="admin-sidebar" style="position: sticky; top: 20px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); z-index: 50;">
-            <div class="sidebar-nav-item" data-tab="dashboard" onclick="showTab('dashboard')" style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; cursor:pointer; transition: all 0.2s; font-weight: 500; font-size: 0.9rem; color: var(--text-2);">
-              <span>📊</span> <span class="menu-label">Genel Bakış</span>
-            </div>
-            <div class="sidebar-nav-item" data-tab="members" onclick="showTab('members')" style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; cursor:pointer; transition: all 0.2s; font-weight: 500; font-size: 0.9rem; color: var(--text-2);">
-              <span>👥</span> <span class="menu-label">Üyeler &amp; Onaylar</span>
-            </div>
-            <div class="sidebar-nav-item" data-tab="jobs" onclick="showTab('jobs')" style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; cursor:pointer; transition: all 0.2s; font-weight: 500; font-size: 0.9rem; color: var(--text-2);">
-              <span>💼</span> <span class="menu-label">İşler &amp; Paylaşımlar</span>
-            </div>
-            <div class="sidebar-nav-item" data-tab="forms" onclick="showTab('forms')" style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; cursor:pointer; transition: all 0.2s; font-weight: 500; font-size: 0.9rem; color: var(--text-2);">
-              <span>✉️</span> <span class="menu-label">Gelen Formlar</span>
-            </div>
-            <div class="sidebar-nav-item" data-tab="tasks" onclick="showTab('tasks')" style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; cursor:pointer; transition: all 0.2s; font-weight: 500; font-size: 0.9rem; color: var(--text-2);">
-              <span>📌</span> <span class="menu-label">Ekip &amp; Görevler</span>
-            </div>
-            <div class="sidebar-nav-item" data-tab="settings" onclick="showTab('settings')" style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; cursor:pointer; transition: all 0.2s; font-weight: 500; font-size: 0.9rem; color: var(--text-2);">
-              <span>⚙️</span> <span class="menu-label">Ayarlar &amp; Güvenlik</span>
+        <div class="form-card" id="pwCard" hidden style="margin-bottom:18px;max-width:640px">
+          <h3 style="font-size:1.05rem;margin-bottom:12px">🔑 Şifre Değiştir</h3>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr">
+            <div class="field"><label>Mevcut Şifre</label><input type="password" id="pwOld"></div>
+            <div class="field"><label>Yeni Şifre (min. 8)</label><input type="password" id="pwNew"></div>
+            <div class="full"><button class="btn btn-gold btn-sm" id="pwSave">Şifreyi Güncelle</button> <span class="muted" id="pwMsg" style="font-size:.82rem"></span></div>
+          </div>
+          <h3 style="font-size:1.05rem;margin:20px 0 8px">📱 İki Adımlı Doğrulama (2FA)</h3>
+          <p class="mini" style="margin-bottom:10px">Google Authenticator (veya benzeri) uygulamasıyla girişinizi ikinci bir kodla koruyun.</p>
+          <div id="totpOff">
+            <button class="btn btn-gold btn-sm" id="totpSetup">2FA Kur</button>
+          </div>
+          <div id="totpSetupBox" hidden class="mt-2">
+            <p class="mini">1) Google Authenticator'da <strong>+ → QR kodu tara</strong> deyin ve bunu okutun:</p>
+            <div id="totpQr" style="background:#fff;padding:12px;border-radius:10px;display:inline-block;margin:10px 0"></div>
+            <p class="mini">QR okutamazsanız elle girin: <code id="totpSecret" style="user-select:all"></code></p>
+            <div class="adm-row">
+              <input class="adm-input" id="totpCode" maxlength="6" placeholder="Uygulamadaki 6 haneli kod">
+              <button class="btn btn-gold btn-sm" id="totpEnable">Doğrula ve Aç</button>
+              <span class="mini" id="totpMsg"></span>
             </div>
           </div>
-
-          <!-- Sağ İçerik Alanı -->
-          <div class="admin-main-content" style="min-width:0;">
-            
-            <!-- TAB 1: Genel Bakış -->
-            <div class="tab-content" data-tab="dashboard">
-              <div id="sosBand"></div>
-              <div class="dash" id="dashRoot"></div>
-              
-              <h2 class="adm-section-title" id="logTitle" hidden>🕘 Aktivite Günlüğü</h2>
-              <div id="logs"></div>
+          <div id="totpOn" hidden class="mt-2">
+            <span class="adm-badge st-onaylandi">✓ 2FA AKTİF</span>
+            <div class="adm-row">
+              <input class="adm-input" id="totpOffCode" maxlength="6" placeholder="Kapatmak için kod">
+              <button class="btn btn-ghost btn-sm" id="totpDisable">2FA Kapat</button>
+              <span class="mini" id="totpMsg2"></span>
             </div>
-
-            <!-- TAB 2: Üyeler & Onaylar -->
-            <div class="tab-content" data-tab="members">
-              <!-- ARAÇLAR -->
-              <div class="adm-row" style="margin-bottom:10px" id="toolsRow">
-                <button class="btn btn-ghost btn-sm" id="csvBtn">⬇ Excel/CSV İndir</button>
-                <button class="btn btn-ghost btn-sm" id="backupBtn" hidden>💾 Yedek Al (.db)</button>
-                <button class="btn btn-ghost btn-sm" id="maintBtn" hidden></button>
-                <button class="btn btn-ghost btn-sm" id="tplBtn">✉️ Red Şablonları</button>
-                <button class="btn btn-ghost btn-sm" id="widgetReset" hidden>⚙ Gizli widget'ları göster</button>
-                <span class="mini" id="pulseInfo" style="margin-left:auto"></span>
-              </div>
-              <div class="form-card" id="tplCard" hidden style="margin-bottom:14px">
-                <p class="mini" style="margin-bottom:8px">Her satır bir red gerekçesi şablonudur (üyeye aynen iletilir):</p>
-                <textarea id="tplText" class="search-input" rows="6" style="width:100%;font-size:.85rem"></textarea>
-                <div class="adm-row"><button class="btn btn-gold btn-sm" id="tplSave">Kaydet</button><span class="mini" id="tplMsg"></span></div>
-              </div>
-
-              <!-- TOPLU İŞLEM ÇUBUĞU -->
-              <div id="bulkBar">
-                <strong id="bulkCount" style="font-size:.85rem"></strong>
-                <button class="btn btn-gold btn-sm" data-bulk="onaylandi">✓ Toplu Onayla</button>
-                <select class="adm-input" id="bulkRed" style="max-width:240px"><option value="">Red gerekçesi…</option></select>
-                <button class="btn btn-ghost btn-sm" data-bulk="reddedildi">✕ Toplu Reddet</button>
-                <button class="btn btn-ghost btn-sm" data-bulk="inceleniyor">↺ Beklet</button>
-                <button class="btn btn-ghost btn-sm" id="bulkClear">Seçimi Bırak</button>
-              </div>
-
-              <div class="adm-row" style="margin-bottom:14px">
-                <label class="mini" style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="selbox" id="selAll"> tümü</label>
-                <input class="adm-input" id="fText" placeholder="İsim / etiket / şehir / dövme ara…" style="flex:1;min-width:170px">
-                <select class="adm-input" id="fStatus">
-                  <option value="">Tüm durumlar</option>
-                  <option value="inceleniyor">⏳ Bekleyenler</option>
-                  <option value="onaylandi">✓ Onaylılar</option>
-                  <option value="reddedildi">✕ Reddedilenler</option>
-                </select>
-                <select class="adm-input" id="fCat"><option value="">Tüm kategoriler</option></select>
-                <input class="adm-input" id="fFrom" type="date" title="Kayıt tarihi: başlangıç">
-                <input class="adm-input" id="fTo" type="date" title="Kayıt tarihi: bitiş">
-                <select class="adm-input" id="fSort">
-                  <option value="yeni">En yeni</option>
-                  <option value="eski">En eski</option>
-                  <option value="ad">İsme göre</option>
-                </select>
-                <span class="mini">Komisyon %</span><input class="adm-input" id="komInput" type="number" value="20" style="width:64px">
-                <span class="mini" id="countInfo"></span>
-              </div>
-
-              <div id="results"></div>
-            </div>
-
-            <!-- TAB 3: İşler & Paylaşımlar -->
-            <div class="tab-content" data-tab="jobs">
-              <h2 class="adm-section-title">📋 İş Teklifi Oluştur</h2>
-              <div class="form-card">
-                <div class="form-grid">
-                  <div class="field"><label>İş Başlığı *</label><input type="text" id="jTitle" placeholder="örn. Teknoloji Fuarı Standı"></div>
-                  <div class="field"><label>Tarih</label><input type="date" id="jDate"></div>
-                  <div class="field"><label>Lokasyon</label><input type="text" id="jLoc" placeholder="İstanbul — TÜYAP"></div>
-                  <div class="field"><label>Çalışma Saatleri</label><input type="text" id="jHours" placeholder="09:00 – 18:00"></div>
-                  <div class="field"><label>Kaşe / Ücret</label><input type="text" id="jFee" placeholder="örn. 5.000 TL/gün"></div>
-                  <div class="field full"><label>Not</label><input type="text" id="jNote" placeholder="Kıyafet, ulaşım vb."></div>
-                  <div class="field full">
-                    <div class="checkbox-row"><input type="checkbox" id="jSensitive">
-                      <label for="jSensitive" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.86rem">🎨 Özel / Sanatsal proje (üyeden kabul sırasında <strong>ek muvafakat onayı</strong> istenir)</label>
-                    </div>
-                  </div>
-                  <div class="field full" id="jUsageWrap" hidden>
-                    <label>Kullanım Kapsamı (mecra + süre — muvafakatnameye yazılır)</label>
-                    <input type="text" id="jUsage" placeholder="örn. Yalnızca X dergisi basılı sayı + 2 yıl web galerisi; billboard hariç">
-                  </div>
-                  <div class="field full"><label>Teklif Gönderilecek Üyeler</label><div id="jMembers" class="adm-row" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--radius); padding: 10px;"></div></div>
-                  <div class="full"><button class="btn btn-gold btn-sm" id="jSend">Teklifi Gönder</button> <span class="muted" id="jMsg" style="font-size:.84rem"></span></div>
-                </div>
-              </div>
-              <div id="jobsList" class="mt-2"></div>
-
-              <h2 class="adm-section-title">🔗 VIP Müşteri Paylaşımı (süreli özel link)</h2>
-              <div class="form-card">
-                <p class="mini" style="margin-bottom:10px">Seçtiğiniz üyelerin sedcard'larını müşteriye özel, süresi dolunca kendini kapatan bir bağlantıyla paylaşın. Sanatsal albüm yalnızca izin kutusunu işaretlerseniz görünür.</p>
-                <div class="field"><label>Paylaşılacak Üyeler</label><div id="shMembers" class="adm-row" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--radius); padding: 10px;"></div></div>
-                <div class="adm-row">
-                  <select class="adm-input" id="shHours">
-                    <option value="24">24 saat geçerli</option>
-                    <option value="72">3 gün geçerli</option>
-                    <option value="168">7 gün geçerli</option>
-                  </select>
-                  <label style="display:inline-flex;gap:6px;align-items:center;font-size:.82rem">
-                    <input type="checkbox" id="shSensitive"> Sanatsal albümler de görünsün
-                  </label>
-                  <button class="btn btn-gold btn-sm" id="shCreate">Link Oluştur</button>
-                </div>
-                <div class="mini mt-2" id="shResult"></div>
-                <div class="mini mt-2" id="shActive"></div>
-              </div>
-            </div>
-
-            <!-- TAB 4: Gelen Formlar -->
-            <div class="tab-content" data-tab="forms">
-              <h2 class="adm-section-title" id="subTitle" hidden>✉️ Form Gönderimleri</h2>
-              <div id="subs"></div>
-            </div>
-
-            <!-- TAB 5: Ekip & Görevler -->
-            <div class="tab-content" data-tab="tasks">
-              <h2 class="adm-section-title" data-widget-title="gorevler">📌 Ekip Görevleri</h2>
-              <div class="form-card" data-widget="gorevler">
-                <div class="adm-row">
-                  <input class="adm-input" id="tTitle" placeholder="Görev (örn. Ahmet'in polaroidlerini iste)" style="flex:1;min-width:200px">
-                  <select class="adm-input" id="tAssign"><option value="">Atanan…</option></select>
-                  <button class="btn btn-gold btn-sm" id="tAdd">+ Görev</button>
-                </div>
-                <div id="taskList" class="mini" style="margin-top:10px"></div>
-              </div>
-
-              <!-- YETKİLİ KULLANICILAR (sadece Yönetici) -->
-              <div class="form-card" id="usersCard" hidden style="margin-top:18px">
-                <h3 style="font-size:1.05rem;margin-bottom:10px">👥 Yetkili Kullanıcılar <span class="mini">(rol bazlı erişim)</span></h3>
-                <div id="adminList" class="mini" style="margin-bottom:12px"></div>
-                <div class="adm-row">
-                  <input class="adm-input" id="nuUser" placeholder="kullanıcı adı (küçük harf)">
-                  <input class="adm-input" id="nuPass" type="password" placeholder="şifre (min 8)">
-                  <select class="adm-input" id="nuRole">
-                    <option value="editor">Editör — üye onay/düzenleme, işler (ödeme bilgisi GÖREMEZ)</option>
-                    <option value="muhasebe">Muhasebe — sadece görüntüleme + ödeme bilgileri</option>
-                    <option value="admin">Yönetici — tam yetki</option>
-                  </select>
-                  <button class="btn btn-gold btn-sm" id="nuAdd">+ Ekle</button>
-                  <span class="mini" id="nuMsg"></span>
-                </div>
-              </div>
-            </div>
-
-            <!-- TAB 6: Ayarlar & Güvenlik -->
-            <div class="tab-content" data-tab="settings">
-              <div class="form-card" id="pwCard" style="margin-bottom:18px;max-width:640px">
-                <h3 style="font-size:1.05rem;margin-bottom:12px">🔑 Şifre Değiştir</h3>
-                <div class="form-grid" style="grid-template-columns:1fr 1fr">
-                  <div class="field"><label>Mevcut Şifre</label><input type="password" id="pwOld"></div>
-                  <div class="field"><label>Yeni Şifre (min. 8)</label><input type="password" id="pwNew"></div>
-                  <div class="full"><button class="btn btn-gold btn-sm" id="pwSave">Şifreyi Güncelle</button> <span class="muted" id="pwMsg" style="font-size:.82rem"></span></div>
-                </div>
-                <h3 style="font-size:1.05rem;margin:20px 0 8px">📱 İki Adımlı Doğrulama (2FA)</h3>
-                <p class="mini" style="margin-bottom:10px">Google Authenticator (veya benzeri) uygulamasıyla girişinizi ikinci bir kodla koruyun.</p>
-                <div id="totpOff">
-                  <button class="btn btn-gold btn-sm" id="totpSetup">2FA Kur</button>
-                </div>
-                <div id="totpSetupBox" hidden class="mt-2">
-                  <p class="mini">1) Google Authenticator'da <strong>+ → QR kodu tara</strong> deyin ve bunu okutun:</p>
-                  <div id="totpQr" style="background:#fff;padding:12px;border-radius:10px;display:inline-block;margin:10px 0"></div>
-                  <p class="mini">QR okutamazsanız elle girin: <code id="totpSecret" style="user-select:all"></code></p>
-                  <div class="adm-row">
-                    <input class="adm-input" id="totpCode" maxlength="6" placeholder="Uygulamadaki 6 haneli kod">
-                    <button class="btn btn-gold btn-sm" id="totpEnable">Doğrula ve Aç</button>
-                    <span class="mini" id="totpMsg"></span>
-                  </div>
-                </div>
-                <div id="totpOn" hidden class="mt-2">
-                  <span class="adm-badge st-onaylandi">✓ 2FA AKTİF</span>
-                  <div class="adm-row">
-                    <input class="adm-input" id="totpOffCode" maxlength="6" placeholder="Kapatmak için kod">
-                    <button class="btn btn-ghost btn-sm" id="totpDisable">2FA Kapat</button>
-                    <span class="mini" id="totpMsg2"></span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- AKTİF OTURUMLAR (sadece Yönetici) -->
-              <div class="form-card" id="sessCard" hidden style="margin-bottom:18px">
-                <h3 style="font-size:1.05rem;margin-bottom:10px">🖥 Aktif Oturumlar &amp; Cihazlar</h3>
-                <div id="sessList" class="mini"></div>
-              </div>
-            </div>
-
           </div>
         </div>
+
+        <!-- YETKİLİ KULLANICILAR (sadece Yönetici) -->
+        <div class="form-card" id="usersCard" hidden style="margin-bottom:18px">
+          <h3 style="font-size:1.05rem;margin-bottom:10px">👥 Yetkili Kullanıcılar <span class="mini">(rol bazlı erişim)</span></h3>
+          <div id="adminList" class="mini" style="margin-bottom:12px"></div>
+          <div class="adm-row">
+            <input class="adm-input" id="nuUser" placeholder="kullanıcı adı (küçük harf)">
+            <input class="adm-input" id="nuPass" type="password" placeholder="şifre (min 8)">
+            <select class="adm-input" id="nuRole">
+              <option value="editor">Editör — üye onay/düzenleme, işler (ödeme bilgisi GÖREMEZ)</option>
+              <option value="muhasebe">Muhasebe — sadece görüntüleme + ödeme bilgileri</option>
+              <option value="admin">Yönetici — tam yetki</option>
+            </select>
+            <button class="btn btn-gold btn-sm" id="nuAdd">+ Ekle</button>
+            <span class="mini" id="nuMsg"></span>
+          </div>
+        </div>
+
+        <!-- AKTİF OTURUMLAR (sadece Yönetici) -->
+        <div class="form-card" id="sessCard" hidden style="margin-bottom:18px">
+          <h3 style="font-size:1.05rem;margin-bottom:10px">🖥 Aktif Oturumlar &amp; Cihazlar</h3>
+          <div id="sessList" class="mini"></div>
+        </div>
+
+        <div id="sosBand"></div>
+
+        <!-- DASHBOARD -->
+        <div class="dash" id="dashRoot"></div>
+
+        <!-- ARAÇLAR -->
+        <div class="adm-row" style="margin-bottom:10px" id="toolsRow">
+          <button class="btn btn-ghost btn-sm" id="csvBtn">⬇ Excel/CSV İndir</button>
+          <button class="btn btn-ghost btn-sm" id="backupBtn" hidden>💾 Yedek Al (.db)</button>
+          <button class="btn btn-ghost btn-sm" id="maintBtn" hidden></button>
+          <button class="btn btn-ghost btn-sm" id="tplBtn">✉️ Red Şablonları</button>
+          <button class="btn btn-ghost btn-sm" id="widgetReset" hidden>⚙ Gizli widget'ları göster</button>
+          <span class="mini" id="pulseInfo" style="margin-left:auto"></span>
+        </div>
+        <div class="form-card" id="tplCard" hidden style="margin-bottom:14px">
+          <p class="mini" style="margin-bottom:8px">Her satır bir red gerekçesi şablonudur (üyeye aynen iletilir):</p>
+          <textarea id="tplText" class="search-input" rows="6" style="width:100%;font-size:.85rem"></textarea>
+          <div class="adm-row"><button class="btn btn-gold btn-sm" id="tplSave">Kaydet</button><span class="mini" id="tplMsg"></span></div>
+        </div>
+
+        <!-- TOPLU İŞLEM ÇUBUĞU -->
+        <div id="bulkBar">
+          <strong id="bulkCount" style="font-size:.85rem"></strong>
+          <button class="btn btn-gold btn-sm" data-bulk="onaylandi">✓ Toplu Onayla</button>
+          <select class="adm-input" id="bulkRed" style="max-width:240px"><option value="">Red gerekçesi…</option></select>
+          <button class="btn btn-ghost btn-sm" data-bulk="reddedildi">✕ Toplu Reddet</button>
+          <button class="btn btn-ghost btn-sm" data-bulk="inceleniyor">↺ Beklet</button>
+          <button class="btn btn-ghost btn-sm" id="bulkClear">Seçimi Bırak</button>
+        </div>
+
+        <div class="adm-row" style="margin-bottom:14px">
+          <label class="mini" style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="selbox" id="selAll"> tümü</label>
+          <input class="adm-input" id="fText" placeholder="İsim / etiket / şehir / dövme ara…" style="flex:1;min-width:170px">
+          <select class="adm-input" id="fStatus">
+            <option value="">Tüm durumlar</option>
+            <option value="inceleniyor">⏳ Bekleyenler</option>
+            <option value="onaylandi">✓ Onaylılar</option>
+            <option value="reddedildi">✕ Reddedilenler</option>
+          </select>
+          <select class="adm-input" id="fCat"><option value="">Tüm kategoriler</option></select>
+          <input class="adm-input" id="fFrom" type="date" title="Kayıt tarihi: başlangıç">
+          <input class="adm-input" id="fTo" type="date" title="Kayıt tarihi: bitiş">
+          <select class="adm-input" id="fSort">
+            <option value="yeni">En yeni</option>
+            <option value="eski">En eski</option>
+            <option value="ad">İsme göre</option>
+          </select>
+          <span class="mini">Komisyon %</span><input class="adm-input" id="komInput" type="number" value="20" style="width:64px">
+          <span class="mini" id="countInfo"></span>
+        </div>
+
+        <div id="results"></div>
+
+        <h2 class="adm-section-title" data-widget-title="gorevler">📌 Ekip Görevleri</h2>
+        <div class="form-card" data-widget="gorevler">
+          <div class="adm-row">
+            <input class="adm-input" id="tTitle" placeholder="Görev (örn. Ahmet'in polaroidlerini iste)" style="flex:1;min-width:200px">
+            <select class="adm-input" id="tAssign"><option value="">Atanan…</option></select>
+            <button class="btn btn-gold btn-sm" id="tAdd">+ Görev</button>
+          </div>
+          <div id="taskList" class="mini" style="margin-top:10px"></div>
+        </div>
+
+        <h2 class="adm-section-title">📋 İş Teklifi Oluştur</h2>
+        <div class="form-card">
+          <div class="form-grid">
+            <div class="field"><label>İş Başlığı *</label><input type="text" id="jTitle" placeholder="örn. Teknoloji Fuarı Standı"></div>
+            <div class="field"><label>Tarih</label><input type="date" id="jDate"></div>
+            <div class="field"><label>Lokasyon</label><input type="text" id="jLoc" placeholder="İstanbul — TÜYAP"></div>
+            <div class="field"><label>Çalışma Saatleri</label><input type="text" id="jHours" placeholder="09:00 – 18:00"></div>
+            <div class="field"><label>Kaşe / Ücret</label><input type="text" id="jFee" placeholder="örn. 5.000 TL/gün"></div>
+            <div class="field full"><label>Not</label><input type="text" id="jNote" placeholder="Kıyafet, ulaşım vb."></div>
+            <div class="field full">
+              <div class="checkbox-row"><input type="checkbox" id="jSensitive">
+                <label for="jSensitive" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.86rem">🎨 Özel / Sanatsal proje (üyeden kabul sırasında <strong>ek muvafakat onayı</strong> istenir)</label>
+              </div>
+            </div>
+            <div class="field full" id="jUsageWrap" hidden>
+              <label>Kullanım Kapsamı (mecra + süre — muvafakatnameye yazılır)</label>
+              <input type="text" id="jUsage" placeholder="örn. Yalnızca X dergisi basılı sayı + 2 yıl web galerisi; billboard hariç">
+            </div>
+            <div class="field full"><label>Teklif Gönderilecek Üyeler</label><div id="jMembers" class="adm-row"></div></div>
+            <div class="full"><button class="btn btn-gold btn-sm" id="jSend">Teklifi Gönder</button> <span class="muted" id="jMsg" style="font-size:.84rem"></span></div>
+          </div>
+        </div>
+        <div id="jobsList" class="mt-2"></div>
+
+        <h2 class="adm-section-title">🔗 VIP Müşteri Paylaşımı (süreli özel link)</h2>
+        <div class="form-card">
+          <p class="mini" style="margin-bottom:10px">Seçtiğiniz üyelerin sedcard'larını müşteriye özel, süresi dolunca kendini kapatan bir bağlantıyla paylaşın. Sanatsal albüm yalnızca izin kutusunu işaretlerseniz görünür.</p>
+          <div class="field"><label>Paylaşılacak Üyeler</label><div id="shMembers" class="adm-row"></div></div>
+          <div class="adm-row">
+            <select class="adm-input" id="shHours">
+              <option value="24">24 saat geçerli</option>
+              <option value="72">3 gün geçerli</option>
+              <option value="168">7 gün geçerli</option>
+            </select>
+            <label style="display:inline-flex;gap:6px;align-items:center;font-size:.82rem">
+              <input type="checkbox" id="shSensitive"> Sanatsal albümler de görünsün
+            </label>
+            <button class="btn btn-gold btn-sm" id="shCreate">Link Oluştur</button>
+          </div>
+          <div class="mini mt-2" id="shResult"></div>
+          <div class="mini mt-2" id="shActive"></div>
+        </div>
+
+        <h2 class="adm-section-title" id="subTitle" hidden>✉️ Form Gönderimleri</h2>
+        <div id="subs"></div>
+
+        <h2 class="adm-section-title" id="logTitle" hidden>🕘 Aktivite Günlüğü</h2>
+        <div id="logs"></div>
       </div>
 
     </div>
@@ -377,17 +322,6 @@
 
   <script>
     const $ = id => document.getElementById(id);
-
-    /* ---------- Tab Sistemi ---------- */
-    function showTab(name) {
-      localStorage.setItem("admin-active-tab", name);
-      document.querySelectorAll('.tab-content').forEach(el => {
-        el.style.display = (el.dataset.tab === name) ? 'block' : 'none';
-      });
-      document.querySelectorAll('.sidebar-nav-item').forEach(el => {
-        el.classList.toggle('active', el.dataset.tab === name);
-      });
-    }
 
     /* ---------- Tema ---------- */
     const themeInit = localStorage.getItem("vera-theme") ||
@@ -440,7 +374,7 @@
       load();
     });
     $("admLogout").addEventListener("click", async () => { await api("/api/admin/logout"); location.reload(); });
-    $("pwBtn").addEventListener("click", () => showTab('settings'));
+    $("pwBtn").addEventListener("click", () => $("pwCard").hidden = !$("pwCard").hidden);
     $("pwSave").addEventListener("click", async () => {
       const res = await api("/api/admin/password", { old: $("pwOld").value, new: $("pwNew").value });
       $("pwMsg").textContent = res.ok ? "✓ Şifre değişti" : (res.err || "Hata");
@@ -463,7 +397,6 @@
       if (!r || !r.ok) { $("loginView").hidden = false; $("panelView").hidden = true; return; }
       DATA = await r.json();
       $("loginView").hidden = true; $("panelView").hidden = false;
-      showTab(localStorage.getItem("admin-active-tab") || "dashboard");
       const me = DATA.me || { username: "?", role: "admin" };
       const ROL_AD = { admin: "Yönetici", editor: "Editör", muhasebe: "Muhasebe" };
       $("meBadge").textContent = "👤 " + me.username + " · " + (ROL_AD[me.role] || me.role);
@@ -718,7 +651,7 @@
         body: JSON.stringify({ user_ids: ids, hours: +$("shHours").value, allow_sensitive: $("shSensitive").checked ? 1 : 0 }) }).catch(() => null);
       const d = r && r.ok ? await r.json() : null;
       if (!d) { $("shResult").textContent = "Hata."; return; }
-      const url = location.origin + "/paylasim?t=" + d.token;
+      const url = location.origin + "/paylasim.html?t=" + d.token;
       $("shResult").innerHTML = `✓ Link hazır (${d.hours} saat): <a class="gold" href="${url}" target="_blank">${url}</a>
         <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('${url}')">📋 Kopyala</button>`;
       load();
@@ -814,7 +747,7 @@
     function renderShares() {
       const list = DATA.shares || [];
       $("shActive").innerHTML = list.length
-        ? "Aktif linkler: " + list.map(x => `<a class="gold" href="/paylasim?t=${x.token}" target="_blank">${x.token.slice(0,8)}…</a> (üye: ${x.user_ids} · bitiş: ${x.expires?.slice(0,16).replace("T"," ")}${x.allow_sensitive ? " · 🎨" : ""})`).join(" · ")
+        ? "Aktif linkler: " + list.map(x => `<a class="gold" href="/paylasim.html?t=${x.token}" target="_blank">${x.token.slice(0,8)}…</a> (üye: ${x.user_ids} · bitiş: ${x.expires?.slice(0,16).replace("T"," ")}${x.allow_sensitive ? " · 🎨" : ""})`).join(" · ")
         : "";
     }
 
@@ -892,7 +825,7 @@
               <button class="btn btn-gold" data-act="onaylandi">✓ Onayla</button>
               <button class="btn btn-ghost" data-act="reddet-menu">✕ Reddet</button>
               <button class="btn btn-ghost" data-act="edit">✏️ Düzenle</button>
-              <a class="btn btn-ghost" href="sedcard?id=${u.id}" target="_blank">🪪 Sedcard</a>
+              <a class="btn btn-ghost" href="sedcard.html?id=${u.id}" target="_blank">🪪 Sedcard</a>
             </div>
           </div>
           <div class="adm-body">

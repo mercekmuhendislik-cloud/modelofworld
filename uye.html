@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=8af8f7d">
+  <link rel="stylesheet" href="assets/css/style.css?v=faea788">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
 </head>
 <body data-page="uye">
@@ -69,7 +69,7 @@
             <div class="checkbox-row">
               <input type="checkbox" id="rkvkk" required>
               <label for="rkvkk" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.84rem">
-                Kişisel verilerimin <a href="kvkk" class="gold" target="_blank">KVKK Aydınlatma Metni</a> kapsamında işlenmesini kabul ediyorum.
+                Kişisel verilerimin <a href="kvkk.html" class="gold" target="_blank">KVKK Aydınlatma Metni</a> kapsamında işlenmesini kabul ediyorum.
               </label>
             </div>
           </div>
@@ -82,12 +82,12 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=8af8f7d"></script>
-  <script src="assets/js/main.js?v=8af8f7d"></script>
+  <script src="assets/js/data.js?v=faea788"></script>
+  <script src="assets/js/main.js?v=faea788"></script>
   <script>
     (function () {
       /* Zaten girişliyse panele git */
-      fetch("/api/me").then(r => { if (r.ok) location.href = "panel"; }).catch(() => {});
+      fetch("/api/me").then(r => { if (r.ok) location.href = "panel.html"; }).catch(() => {});
 
       const tabs = document.querySelectorAll(".tab-btn");
       tabs.forEach(b => b.addEventListener("click", () => {
@@ -111,7 +111,7 @@
             body: JSON.stringify(payload),
           });
           const d = await r.json().catch(() => ({}));
-          if (r.ok) { location.href = "panel"; return; }
+          if (r.ok) { location.href = "panel.html"; return; }
           showErr(d.error || "Bir hata oluştu, tekrar deneyin.");
         } catch {
           showErr("Sunucuya ulaşılamadı. Lütfen daha sonra tekrar deneyin.");

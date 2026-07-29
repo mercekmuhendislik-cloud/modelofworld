@@ -2,7 +2,7 @@
    VERA AGENCY — Analitik & Pazarlama Entegrasyonları (stub)
    Yayına alırken aşağıdaki ID'leri doldurup blokları açın.
    Çerez onayı (cookie consent) alınmadan etkinleştirmeyin —
-   kvkk'deki çerez politikası da güncellenmelidir.
+   kvkk.html'deki çerez politikası da güncellenmelidir.
    ========================================================= */
 
 /* --- Google Tag Manager ---

@@ -8,12 +8,12 @@
 
   /* ---------- Ortak Header & Footer ---------- */
   const NAV = [
-    { href: "katalog",    label: "Cast / Katalog", key: "katalog" },
-    { href: "hizmetler",  label: "Hizmetlerimiz",  key: "hizmetler" },
-    { href: "produksiyon",label: "Prodüksiyon",    key: "produksiyon" },
+    { href: "katalog.html",    label: "Cast / Katalog", key: "katalog" },
+    { href: "hizmetler.html",  label: "Hizmetlerimiz",  key: "hizmetler" },
+    { href: "produksiyon.html",label: "Prodüksiyon",    key: "produksiyon" },
     { href: "basvuru.html",    label: "Başvuru Yap",    key: "basvuru" },
-    { href: "hakkimizda", label: "Hakkımızda",     key: "hakkimizda" },
-    { href: "iletisim",   label: "İletişim",       key: "iletisim" },
+    { href: "hakkimizda.html", label: "Hakkımızda",     key: "hakkimizda" },
+    { href: "iletisim.html",   label: "İletişim",       key: "iletisim" },
   ];
 
   /* ---------- Favoriler (Cast Listem) ---------- */
@@ -41,7 +41,7 @@
 
   /* ---------- Marka Logosu (tüm sayfalarda tek kaynak) ---------- */
   const LOGO = `
-    <a class="logo" href="/" aria-label="Model of World — Ana Sayfa">
+    <a class="logo" href="index.html" aria-label="Model of World — Ana Sayfa">
       <svg class="logo-mark" viewBox="0 0 48 48" aria-hidden="true">
         <circle cx="24" cy="25" r="20.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
         <path d="M24 0.8 L25.3 4.2 L28.8 5.5 L25.3 6.8 L24 10.2 L22.7 6.8 L19.2 5.5 L22.7 4.2 Z" fill="currentColor"/>
@@ -65,10 +65,10 @@
           ${NAV.map(n => `<a href="${n.href}" class="${n.key === active ? "active" : ""}">${n.label}</a>`).join("")}
         </nav>
         <div class="header-actions">
-          <a class="icon-btn" href="uye" aria-label="Üye Girişi" title="Üye Girişi / Aday Paneli">
+          <a class="icon-btn" href="uye.html" aria-label="Üye Girişi" title="Üye Girişi / Aday Paneli">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
           </a>
-          <a class="icon-btn" id="favHeaderBtn" href="cast-listem" aria-label="Cast Listem" title="Cast Listem">
+          <a class="icon-btn" id="favHeaderBtn" href="cast-listem.html" aria-label="Cast Listem" title="Cast Listem">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.8-10-9.3C.6 8.4 2.4 4.5 6 4.5c2.2 0 3.6 1.2 6 3.8 2.4-2.6 3.8-3.8 6-3.8 3.6 0 5.4 3.9 4 7.2C19.5 16.2 12 21 12 21Z"/></svg>
             <span class="fav-count" id="favCount" style="display:none">0</span>
           </a>
@@ -79,7 +79,7 @@
             <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
             <svg class="ic-sun hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
           </button>
-          <a class="btn btn-gold btn-sm header-cta" href="teklif">Teklif Al</a>
+          <a class="btn btn-gold btn-sm header-cta" href="teklif.html">Teklif Al</a>
           <button class="icon-btn nav-toggle" id="navToggle" aria-label="Menü">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
           </button>
@@ -105,7 +105,7 @@
           </div>
           <div>
             <h4>Hizmetler</h4>
-            <ul>${SERVICES.map(s => `<li><a href="hizmetler#${s.id}">${s.title}</a></li>`).join("")}</ul>
+            <ul>${SERVICES.map(s => `<li><a href="hizmetler.html#${s.id}">${s.title}</a></li>`).join("")}</ul>
           </div>
           <div>
             <h4>İletişim</h4>
@@ -113,8 +113,8 @@
               <li><a href="tel:${AGENCY.phone.replace(/[^\d+]/g, "")}">${AGENCY.phone}</a></li>
               <li><a href="mailto:${AGENCY.email}">${AGENCY.email}</a></li>
               <li><span class="muted">${AGENCY.address}</span></li>
-              <li><a href="blog">Blog & Haberler</a></li>
-              <li class="mt-2"><a class="btn btn-ghost btn-sm" href="teklif">Hızlı Teklif İste</a></li>
+              <li><a href="blog.html">Blog & Haberler</a></li>
+              <li class="mt-2"><a class="btn btn-ghost btn-sm" href="teklif.html">Hızlı Teklif İste</a></li>
             </ul>
             <h4 style="margin-top:26px">Yeni yüzlerden haberdar olun</h4>
             <form class="newsletter" id="newsletterForm">
@@ -132,7 +132,7 @@
         </div>
         <div class="footer-bottom">
           <span>© ${year} ${AGENCY.legal.title} — ${AGENCY.legal.taxOffice} · VN: ${AGENCY.legal.taxNo} · MERSİS: ${AGENCY.legal.mersis} · ${AGENCY.address}</span>
-          <span><a href="kvkk">KVKK & Gizlilik</a> · <a href="kvkk#cerez">Çerez Politikası</a> · <a href="sozlesme">Sözleşme & Şartlar</a></span>
+          <span><a href="kvkk.html">KVKK & Gizlilik</a> · <a href="kvkk.html#cerez">Çerez Politikası</a> · <a href="sozlesme.html">Sözleşme & Şartlar</a></span>
         </div>
       </div>
     </footer>
@@ -217,16 +217,16 @@
   const INDEX = [
     ...TALENTS.map(t => ({
       label: t.name, sub: CATEGORIES[t.category].label + " · " + (window.VERA.LABELS.city[t.city] || t.city),
-      href: `model-detay?id=${t.id}`,
+      href: `model-detay.html?id=${t.id}`,
       text: `${t.name} ${t.category} ${t.city} ${t.tags.join(" ")} ${(t.languages || []).join(" ")}`.toLowerCase(),
     })),
     ...SERVICES.map(s => ({
       label: s.title, sub: "Hizmet",
-      href: `hizmetler#${s.id}`,
+      href: `hizmetler.html#${s.id}`,
       text: `${s.title} ${s.short}`.toLowerCase(),
     })),
     { label: "Başvuru Formu", sub: "Model / Hostes olun", href: "basvuru.html", text: "başvuru basvuru model hostes kayıt" },
-    { label: "Teklif İste", sub: "Kurumsal müşteriler", href: "teklif", text: "teklif fiyat proje müşteri" },
+    { label: "Teklif İste", sub: "Kurumsal müşteriler", href: "teklif.html", text: "teklif fiyat proje müşteri" },
   ];
 
   function openSearch() { overlay?.classList.add("open"); setTimeout(() => input?.focus(), 80); }
@@ -312,7 +312,7 @@
       : window.VERA.talentPlaceholder(t);
     const fav = window.VERA.isFav?.(t.id);
     return `
-      <a class="talent-card reveal" href="model-detay?id=${t.id}" data-cursor="İncele">
+      <a class="talent-card reveal" href="model-detay.html?id=${t.id}" data-cursor="İncele">
         <div class="talent-media">
           <span class="talent-badge">${cat.short || cat.label}</span>
           <button class="fav-btn${fav ? " active" : ""}" data-fav="${t.id}" aria-label="Cast listeme ekle" title="Cast Listem'e ekle/çıkar">

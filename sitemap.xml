@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.modelofworld.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq></url>
-  <url><loc>https://www.modelofworld.com/katalog</loc><priority>0.9</priority><changefreq>daily</changefreq></url>
-  <url><loc>https://www.modelofworld.com/hizmetler</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://www.modelofworld.com/produksiyon</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://www.modelofworld.com/teklif</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.modelofworld.com/katalog.html</loc><priority>0.9</priority><changefreq>daily</changefreq></url>
+  <url><loc>https://www.modelofworld.com/hizmetler.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.modelofworld.com/produksiyon.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.modelofworld.com/teklif.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://www.modelofworld.com/basvuru.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://www.modelofworld.com/blog</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
-  <url><loc>https://www.modelofworld.com/hakkimizda</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://www.modelofworld.com/iletisim</loc><priority>0.6</priority><changefreq>yearly</changefreq></url>
-  <url><loc>https://www.modelofworld.com/kvkk</loc><priority>0.3</priority><changefreq>yearly</changefreq></url>
-  <url><loc>https://www.modelofworld.com/sozlesme</loc><priority>0.3</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://www.modelofworld.com/blog.html</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://www.modelofworld.com/hakkimizda.html</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.modelofworld.com/iletisim.html</loc><priority>0.6</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://www.modelofworld.com/kvkk.html</loc><priority>0.3</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://www.modelofworld.com/sozlesme.html</loc><priority>0.3</priority><changefreq>yearly</changefreq></url>
   <!-- Model detay sayfaları dinamiktir; CMS/SSG'ye geçişte her profil için <url> üretilecektir -->
 </urlset>
