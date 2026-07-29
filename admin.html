@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=a60c8d5">
+  <link rel="stylesheet" href="assets/css/style.css?v=20a3cdb">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -329,6 +329,9 @@
         <h2 class="adm-section-title" id="subTitle" hidden>✉️ Form Gönderimleri</h2>
         <div id="subs"></div>
 
+        <h2 class="adm-section-title" id="financeH2">💰 Finansal Takip &amp; Hakedişler</h2>
+        <div id="financeTab"></div>
+
         <h2 class="adm-section-title" id="logTitle" hidden>🕘 Aktivite Günlüğü</h2>
         <div id="logs"></div>
       </div>
@@ -433,6 +436,11 @@
       RED_SABLON = (DATA.templates && DATA.templates.length) ? DATA.templates : RED_SABLON_VARSAYILAN.slice();
       renderSos(); renderDash(); renderUsers(); renderJobForm(); renderJobs(); renderSubs(); renderLogs(); renderShares();
       renderAdmins(); renderSessions(); renderTotp(); renderTasks(); renderTools(); syncBulk(); updateTabCounts();
+
+      const canFin = DATA.me && (DATA.me.role === "admin" || DATA.me.role === "muhasebe");
+      const btnFin = document.querySelector('[data-tab="finance"]');
+      if (btnFin) btnFin.style.display = canFin ? "flex" : "none";
+      if (canFin) renderFinance();
     }
     load(); /* oturum varsa direkt panel açılır */
 
@@ -638,11 +646,12 @@
     $("palList").addEventListener("click", e => { const d = e.target.closest("[data-i]"); if (d) palGo(($("palList")._items || [])[+d.dataset.i]); });
     $("palette").addEventListener("click", e => { if (e.target.id === "palette") palClose(); });
 
-    /* ---------- Sekmeli Panel: bölümler 6 sekmeye taşınır ---------- */
+    /* ---------- Sekmeli Panel: bölümler sekmelere taşınır ---------- */
     const ATABS = [
       ["genel",   "📊", "Genel Bakış",        ["sosBand","dashRoot","logTitle","logs"]],
       ["uyeler",  "👥", "Üyeler & Onaylar",   ["toolsRow","tplCard","bulkBar","filterRow2","results"]],
       ["isler",   "💼", "İşler & Paylaşım",   ["jobH2","jobCard","jobsList","shareH2","shareCard"]],
+      ["finance", "💰", "Finansal Takip",      ["financeH2","financeTab"]],
       ["formlar", "✉️", "Gelen Formlar",      ["subTitle","subs"]],
       ["ekip",    "📌", "Ekip & Görevler",    ["tasksH2","tasksCard","usersCard"]],
       ["ayarlar", "⚙️", "Ayarlar & Güvenlik", ["pwCard","sessCard"]],
@@ -711,6 +720,7 @@
     }
 
     $("jSensitive").addEventListener("change", e => $("jUsageWrap").hidden = !e.target.checked);
+    $("jDate").addEventListener("change", renderJobForm);
     $("komInput").value = localStorage.getItem("mow-kom") || "20";
     $("komInput").addEventListener("change", () => { localStorage.setItem("mow-kom", $("komInput").value); renderUsers(); });
 
@@ -721,7 +731,7 @@
         body: JSON.stringify({ user_ids: ids, hours: +$("shHours").value, allow_sensitive: $("shSensitive").checked ? 1 : 0 }) }).catch(() => null);
       const d = r && r.ok ? await r.json() : null;
       if (!d) { $("shResult").textContent = "Hata."; return; }
-      const url = location.origin + "/paylasim.html?t=" + d.token;
+      const url = location.origin + "/paylasim?t=" + d.token;
       $("shResult").innerHTML = `✓ Link hazır (${d.hours} saat): <a class="gold" href="${url}" target="_blank">${url}</a>
         <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('${url}')">📋 Kopyala</button>`;
       load();
@@ -817,7 +827,22 @@
     function renderShares() {
       const list = DATA.shares || [];
       $("shActive").innerHTML = list.length
-        ? "Aktif linkler: " + list.map(x => `<a class="gold" href="/paylasim.html?t=${x.token}" target="_blank">${x.token.slice(0,8)}…</a> (üye: ${x.user_ids} · bitiş: ${x.expires?.slice(0,16).replace("T"," ")}${x.allow_sensitive ? " · 🎨" : ""})`).join(" · ")
+        ? "Aktif linkler: " + list.map(x => {
+            let likesBadge = "";
+            if (x.client_likes) {
+              try {
+                const likes = JSON.parse(x.client_likes);
+                if (likes && likes.length) {
+                  const names = likes.map(id => {
+                    const u = (DATA.users || []).find(usr => usr.id == id);
+                    return u ? u.fullname : `#${id}`;
+                  });
+                  likesBadge = ` <span class="adm-badge st-onaylandi" style="cursor:help;" title="${names.join(', ')}">❤️ Seçilen: ${likes.length} Model</span>`;
+                }
+              } catch(e) {}
+            }
+            return `<a class="gold" href="/paylasim?t=${x.token}" target="_blank">${x.token.slice(0,8)}…</a> (üye: ${x.user_ids} · bitiş: ${x.expires?.slice(0,16).replace("T"," ")}${x.allow_sensitive ? " · 🎨" : ""}${likesBadge})`;
+          }).join(" · ")
         : "";
     }
 
@@ -895,7 +920,7 @@
               <button class="btn btn-gold" data-act="onaylandi">✓ Onayla</button>
               <button class="btn btn-ghost" data-act="reddet-menu">✕ Reddet</button>
               <button class="btn btn-ghost" data-act="edit">✏️ Düzenle</button>
-              <a class="btn btn-ghost" href="sedcard.html?id=${u.id}" target="_blank">🪪 Sedcard</a>
+              <a class="btn btn-ghost" href="sedcard?id=${u.id}" target="_blank">🪪 Sedcard</a>
             </div>
           </div>
           <div class="adm-body">
@@ -1024,14 +1049,153 @@
     });
 
     /* ---------- İşler / gönderimler / günlük ---------- */
-    function renderJobForm() {
-      const chip = cls => DATA.users.map(u => `
-        <label style="display:inline-flex;gap:6px;align-items:center;font-size:.82rem;border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer">
-          <input type="checkbox" value="${u.id}" class="${cls}"> ${esc(u.fullname) || esc(u.email)}
-        </label>`).join("");
+        function renderJobForm() {
+      const jDate = $("jDate").value;
+      const bookedModels = {};
+      if (jDate) {
+        (DATA.jobs || []).forEach(j => {
+          if (j.date === jDate) {
+            (j.offers || []).forEach(o => {
+              if (o.status === "kabul") {
+                bookedModels[o.user_id] = j.title;
+              }
+            });
+          }
+        });
+      }
+
+      const chip = cls => DATA.users.map(u => {
+        const p = u.profile || {};
+        if (cls === "jm" && p.status !== "onaylandi") return "";
+        const conflict = bookedModels[u.id];
+        const conflictBadge = conflict ? `<span class="adm-badge st-reddedildi" style="margin-left:4px; padding:2px 6px; font-size:0.68rem;" title="Bu tarihte başka bir işi kabul etmiş: ${conflict}">⚠️ Çakışma</span>` : "";
+        return `
+          <label style="display:inline-flex;gap:6px;align-items:center;font-size:.82rem;border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer">
+            <input type="checkbox" value="${u.id}" class="${cls} ${cls === 'shm' ? 'shm' : 'jm'}"> ${esc(u.fullname) || esc(u.email)} ${cls === 'jm' ? conflictBadge : ''}
+          </label>
+        `;
+      }).join("");
+      
       $("jMembers").innerHTML = chip("jm");
       $("shMembers").innerHTML = chip("shm");
     }
+
+    /* ---------- Finansal Takip Modülü ---------- */
+    function renderFinance() {
+      let html = "";
+      let totalBudget = 0;
+      let totalCommission = 0;
+      let totalPending = 0;
+      let totalPaid = 0;
+      
+      const commRate = (+($("komInput")?.value || 20)) / 100;
+      const acceptedOffers = [];
+      
+      (DATA.jobs || []).forEach(j => {
+        (j.offers || []).forEach(o => {
+          if (o.status === "kabul") {
+            let feeNum = 0;
+            const feeStr = String(j.fee || "").replace(/[^0-9]/g, "");
+            if (feeStr) feeNum = parseInt(feeStr);
+            
+            const commission = Math.round(feeNum * commRate);
+            const netPayout = feeNum - commission;
+            const payStatus = o.payment_status || "odenecek";
+            
+            if (payStatus === "odendi") {
+              totalPaid += netPayout;
+            } else {
+              totalPending += netPayout;
+            }
+            totalBudget += feeNum;
+            totalCommission += commission;
+            
+            acceptedOffers.push({
+              offerId: o.id,
+              jobTitle: j.title,
+              jobDate: j.date,
+              modelName: o.fullname,
+              fee: feeNum,
+              commission,
+              netPayout,
+              status: payStatus
+            });
+          }
+        });
+      });
+      
+      html += `
+        <div class="dash" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:12px; margin-bottom: 20px;">
+          <div class="dash-card">
+            <span class="mini muted">💼 Toplam Bütçe</span>
+            <h2>${totalBudget.toLocaleString('tr-TR')} TL</h2>
+          </div>
+          <div class="dash-card">
+            <span class="mini muted">📈 Ajans Geliri (%${Math.round(commRate*100)})</span>
+            <h2 style="color:var(--ok)">${totalCommission.toLocaleString('tr-TR')} TL</h2>
+          </div>
+          <div class="dash-card">
+            <span class="mini muted">⏳ Ödenecek Kaşe</span>
+            <h2 style="color:var(--danger)">${totalPending.toLocaleString('tr-TR')} TL</h2>
+          </div>
+          <div class="dash-card">
+            <span class="mini muted">✓ Ödenen Kaşe</span>
+            <h2>${totalPaid.toLocaleString('tr-TR')} TL</h2>
+          </div>
+        </div>
+        
+        <h3 style="font-size:1.05rem; margin-bottom:12px;">Hakediş ve Ödeme Listesi</h3>
+        <div class="form-card" style="padding:0; overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.85rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--line); background: var(--bg-2);">
+                <th style="padding:10px;">Model</th>
+                <th style="padding:10px;">İş / Proje</th>
+                <th style="padding:10px;">Tarih</th>
+                <th style="padding:10px;">Brüt Kaşe</th>
+                <th style="padding:10px;">Net Ödeme</th>
+                <th style="padding:10px;">Durum</th>
+                <th style="padding:10px; text-align:center;">İşlem</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${acceptedOffers.length ? acceptedOffers.map(x => `
+                <tr style="border-bottom: 1px solid var(--line);">
+                  <td style="padding:10px; font-weight:600;">${esc(x.modelName)}</td>
+                  <td style="padding:10px;">${esc(x.jobTitle)}</td>
+                  <td style="padding:10px;">${esc(x.jobDate) || '—'}</td>
+                  <td style="padding:10px;">${x.fee.toLocaleString('tr-TR')} TL</td>
+                  <td style="padding:10px; font-weight:600; color:var(--gold);">${x.netPayout.toLocaleString('tr-TR')} TL</td>
+                  <td style="padding:10px;">
+                    <span class="adm-badge ${x.status === 'odendi' ? 'st-onaylandi' : 'st-inceleniyor'}">
+                      ${x.status === 'odendi' ? '✓ Ödendi' : '⏳ Bekliyor'}
+                    </span>
+                  </td>
+                  <td style="padding:10px; text-align:center;">
+                    <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:0.7rem;" onclick="togglePayment(${x.offerId}, '${x.status}')">
+                      ${x.status === 'odendi' ? '⏳ Geri Al' : '✓ Ödendi Yap'}
+                    </button>
+                  </td>
+                </tr>
+              `).join("") : `<tr><td colspan="7" class="muted center" style="padding:20px;">Henüz kabul edilmiş ve ödemesi olan iş teklifi bulunmamaktadır.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      `;
+      
+      $("financeTab").innerHTML = html;
+    }
+
+    window.togglePayment = async function(offerId, currentStatus) {
+      const newStatus = currentStatus === "odendi" ? "odenecek" : "odendi";
+      const res = await api("/api/admin/payment", { offer_id: offerId, status: newStatus });
+      if (res.ok) {
+        toast("Ödeme durumu güncellendi", "ok");
+        load();
+      } else {
+        toast(res.err || "Hata", "danger");
+      }
+    };
     $("jSend").addEventListener("click", async () => {
       const ids = [...document.querySelectorAll(".jm:checked")].map(c => +c.value);
       const res = await api("/api/admin/job", {

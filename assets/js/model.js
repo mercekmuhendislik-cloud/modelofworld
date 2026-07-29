@@ -1,6 +1,6 @@
 /* =========================================================
    VERA AGENCY — Model Detay / Sedcard
-   model-detay.html?id=<talent-id>
+   model-detay?id=<talent-id>
    Galeri sekmeleri: Stüdyo / Podyum / Polaroid / Video Book
    ========================================================= */
 (function () {
@@ -63,7 +63,7 @@
       </div>
 
       <div class="detail-actions no-print">
-        <a class="btn btn-gold" href="teklif.html?talent=${t.id}">Bu Profili Talep Et / Kirala</a>
+        <a class="btn btn-gold" href="teklif?talent=${t.id}">Bu Profili Talep Et / Kirala</a>
         <button class="btn btn-ghost" onclick="window.print()">Sedcard PDF İndir</button>
         <button class="btn btn-ghost fav-btn" data-fav="${t.id}" style="position:static;width:auto;height:auto;border-radius:999px;padding:14px 24px;background:none;backdrop-filter:none">
           <svg viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M12 21s-7.5-4.8-10-9.3C.6 8.4 2.4 4.5 6 4.5c2.2 0 3.6 1.2 6 3.8 2.4-2.6 3.8-3.8 6-3.8 3.6 0 5.4 3.9 4 7.2C19.5 16.2 12 21 12 21Z"/></svg>
@@ -105,5 +105,5 @@
 
   /* CTA kişiselleştirme */
   document.getElementById("ctaName").textContent = `${t.name} ile çalışmak ister misiniz?`;
-  document.getElementById("ctaQuote").href = `teklif.html?talent=${t.id}`;
+  document.getElementById("ctaQuote").href = `teklif?talent=${t.id}`;
 })();
