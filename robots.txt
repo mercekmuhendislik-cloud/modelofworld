@@ -1,11 +1,11 @@
 User-agent: *
 Allow: /
-Disallow: /cast-listem.html
-Disallow: /uye.html
-Disallow: /panel.html
-Disallow: /admin.html
-Disallow: /sedcard.html
-Disallow: /paylasim.html
+Disallow: /cast-listem
+Disallow: /uye
+Disallow: /panel
+Disallow: /admin
+Disallow: /sedcard
+Disallow: /paylasim
 Disallow: /api/
 
 Sitemap: https://www.modelofworld.com/sitemap.xml

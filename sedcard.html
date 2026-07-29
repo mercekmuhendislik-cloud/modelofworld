@@ -6,7 +6,7 @@
   <title>Sedcard — Model of World</title>
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=faea788">
+  <link rel="stylesheet" href="assets/css/style.css?v=8af8f7d">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     body { background: #f2f2f2; }
@@ -62,7 +62,7 @@
       const uid = +(new URLSearchParams(location.search).get("id") || 0);
       const r = await fetch("/api/admin/list").catch(() => null);
       if (!r || !r.ok) {
-        $("scErr").innerHTML = 'Oturum gerekli — önce <a class="gold" href="admin.html">yönetici girişi</a> yapın, sonra bu sayfayı yenileyin.';
+        $("scErr").innerHTML = 'Oturum gerekli — önce <a class="gold" href="admin">yönetici girişi</a> yapın, sonra bu sayfayı yenileyin.';
         return;
       }
       const d = await r.json();

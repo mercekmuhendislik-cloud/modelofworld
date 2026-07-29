@@ -142,7 +142,7 @@
     delete data.photos; delete data.video; /* dosyalar backend hazır olunca yüklenecek */
     const record = { kind, data, at: new Date().toISOString() };
 
-    /* Önce sunucuya gönder (admin.html'den görüntülenir); sunucu yoksa yerelde sakla */
+    /* Önce sunucuya gönder (admin'den görüntülenir); sunucu yoksa yerelde sakla */
     fetch("/api/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

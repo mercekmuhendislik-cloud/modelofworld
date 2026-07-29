@@ -256,7 +256,7 @@ const LABELS = {
 };
 
 /* ---------------------------------------------------------
-   Hizmetler — hizmetler.html, ana sayfa ve teklif formu
+   Hizmetler — hizmetler, ana sayfa ve teklif formu
    --------------------------------------------------------- */
 const SERVICES = [
   {
@@ -305,7 +305,7 @@ const SERVICES = [
       "Stüdyo, mekân, styling ve makyaj koordinasyonu",
       "Retouch, renk düzenleme ve teslim yönetimi",
     ],
-    gradient: ["#26261a", "#8c8c4a"], link: "produksiyon.html",
+    gradient: ["#26261a", "#8c8c4a"], link: "produksiyon",
   },
   {
     id: "dizi-film-cast", img: IMG("1478720568477-152d9b164e26"),

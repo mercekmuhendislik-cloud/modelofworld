@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=faea788">
+  <link rel="stylesheet" href="assets/css/style.css?v=8af8f7d">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -346,7 +346,7 @@
               <input type="checkbox" name="consent_kvkk" id="cKvkk">
               <label for="cKvkk" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.9rem">
                 Kişisel verilerimin (ölçüler, fotoğraf ve videolar dahil) casting değerlendirmesi amacıyla
-                <a class="gold" href="kvkk.html" target="_blank">KVKK Aydınlatma Metni</a> kapsamında işlenmesine açık rıza veriyorum. <span class="req">*</span>
+                <a class="gold" href="kvkk" target="_blank">KVKK Aydınlatma Metni</a> kapsamında işlenmesine açık rıza veriyorum. <span class="req">*</span>
               </label>
             </div>
           </div>
@@ -354,7 +354,7 @@
             <div class="checkbox-row">
               <input type="checkbox" name="consent_contract" id="cContract">
               <label for="cContract" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.9rem">
-                <a class="gold" href="sozlesme.html" target="_blank">Çalışma prensipleri ve şartlarını</a> okudum, kabul ediyorum.
+                <a class="gold" href="sozlesme" target="_blank">Çalışma prensipleri ve şartlarını</a> okudum, kabul ediyorum.
                 Ajansın adaylardan hiçbir ücret talep etmediğini biliyorum. <span class="req">*</span>
               </label>
             </div>
@@ -493,8 +493,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=faea788"></script>
-  <script src="assets/js/main.js?v=faea788"></script>
+  <script src="assets/js/data.js?v=8af8f7d"></script>
+  <script src="assets/js/main.js?v=8af8f7d"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -990,7 +990,7 @@
       /* ============ Yükle ============ */
       async function load(navigate = true) {
         const r = await fetch("/api/me").catch(() => null);
-        if (!r || !r.ok) { location.href = "uye.html"; return; }
+        if (!r || !r.ok) { location.href = "uye"; return; }
         ME = await r.json();
         $("userName").textContent = (ME.user?.fullname || ME.user?.email || "").split(" ")[0];
         const st = ME.profile?.status || "inceleniyor";
@@ -1045,7 +1045,7 @@
 
       $("logoutBtn").addEventListener("click", async () => {
         await fetch("/api/logout", { method: "POST" });
-        location.href = "uye.html";
+        location.href = "uye";
       });
 
       load();
