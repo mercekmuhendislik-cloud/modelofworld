@@ -127,14 +127,6 @@
     </div>
   </section>
 
-  <!-- MARKA LOGOLARI -->
-  <div class="brands-strip">
-    <div class="container">
-      <div class="brands-title">Güvenini kazandığımız markalar</div>
-      <div class="brands-row" id="brandsRow"></div>
-    </div>
-  </div>
-
   <!-- SON PROJELER -->
   <section>
     <div class="container">
@@ -195,7 +187,7 @@
   <script src="assets/js/analytics.js"></script>
   <script>
     (function () {
-      const { TALENTS, SERVICES, PROJECTS, COUNTERS, BRANDS, renderTalentCard, observeNew } = window.VERA;
+      const { TALENTS, SERVICES, PROJECTS, COUNTERS, renderTalentCard, observeNew } = window.VERA;
 
       /* --- Hızlı Cast Arama --- */
       document.getElementById("quickCast").addEventListener("submit", e => {
@@ -248,11 +240,6 @@
       car.addEventListener("scroll", syncCarNav, { passive: true });
       window.addEventListener("resize", syncCarNav);
       syncCarNav();
-
-      /* --- Marka logoları --- */
-      document.getElementById("brandsRow").innerHTML = BRANDS.map(b =>
-        b.logo ? `<span class="brand-logo"><img src="${b.logo}" alt="${b.name}"></span>`
-               : `<span class="brand-logo">${b.name}</span>`).join("");
 
       /* --- Son projeler --- */
       document.getElementById("projectsGrid").innerHTML = PROJECTS.map((p, i) => `
