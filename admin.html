@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=faea788">
+  <link rel="stylesheet" href="assets/css/style.css?v=529f54b">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -85,6 +85,28 @@
       box-shadow:var(--shadow); }
     #bulkBar.on { display:flex; }
     .selbox { width:16px; height:16px; accent-color:var(--gold); }
+
+    /* Sekmeli düzen: masaüstünde kenar çubuğu, mobilde yatay tab bar */
+    .admin-layout { display:grid; grid-template-columns:198px minmax(0,1fr); gap:16px; align-items:start; }
+    .admin-sidebar { position:sticky; top:14px; display:flex; flex-direction:column; gap:5px;
+      background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px; }
+    .atab-btn { text-align:left; padding:11px 13px; border-radius:9px; font-size:.84rem; color:var(--text-2);
+      transition:all .2s ease; display:flex; gap:9px; align-items:center; }
+    .atab-btn:hover { background:var(--bg-2); color:var(--text); transform:translateX(2px); }
+    .atab-btn.on { background:var(--gold-grad); color:#fff; font-weight:500; }
+    .atab-btn .cnt { margin-left:auto; font-size:.64rem; border-radius:999px; padding:2px 7px;
+      background:var(--bg-2); color:var(--gold); font-weight:600; }
+    .atab-btn.on .cnt { background:rgba(255,255,255,.28); color:#fff; }
+    .atab-pane { display:none; min-width:0; }
+    .atab-pane.on { display:block; animation:fadeUp .25s ease both; }
+    #jMembers, #shMembers { max-height:200px; overflow-y:auto; }
+    @media (max-width:900px) {
+      .admin-layout { grid-template-columns:1fr; }
+      .admin-sidebar { position:static !important; flex-direction:row !important; overflow-x:auto;
+        -webkit-overflow-scrolling:touch; padding:8px !important; gap:8px !important; }
+      .atab-btn { white-space:nowrap; }
+      .atab-btn:hover { transform:none; }
+    }
 
     /* Mobil */
     @media (max-width:720px) {
@@ -228,7 +250,7 @@
           <button class="btn btn-ghost btn-sm" id="bulkClear">Seçimi Bırak</button>
         </div>
 
-        <div class="adm-row" style="margin-bottom:14px">
+        <div class="adm-row" id="filterRow2" style="margin-bottom:14px">
           <label class="mini" style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="selbox" id="selAll"> tümü</label>
           <input class="adm-input" id="fText" placeholder="İsim / etiket / şehir / dövme ara…" style="flex:1;min-width:170px">
           <select class="adm-input" id="fStatus">
@@ -251,8 +273,8 @@
 
         <div id="results"></div>
 
-        <h2 class="adm-section-title" data-widget-title="gorevler">📌 Ekip Görevleri</h2>
-        <div class="form-card" data-widget="gorevler">
+        <h2 class="adm-section-title" id="tasksH2">📌 Ekip Görevleri</h2>
+        <div class="form-card" id="tasksCard">
           <div class="adm-row">
             <input class="adm-input" id="tTitle" placeholder="Görev (örn. Ahmet'in polaroidlerini iste)" style="flex:1;min-width:200px">
             <select class="adm-input" id="tAssign"><option value="">Atanan…</option></select>
@@ -261,8 +283,8 @@
           <div id="taskList" class="mini" style="margin-top:10px"></div>
         </div>
 
-        <h2 class="adm-section-title">📋 İş Teklifi Oluştur</h2>
-        <div class="form-card">
+        <h2 class="adm-section-title" id="jobH2">📋 İş Teklifi Oluştur</h2>
+        <div class="form-card" id="jobCard">
           <div class="form-grid">
             <div class="field"><label>İş Başlığı *</label><input type="text" id="jTitle" placeholder="örn. Teknoloji Fuarı Standı"></div>
             <div class="field"><label>Tarih</label><input type="date" id="jDate"></div>
@@ -285,8 +307,8 @@
         </div>
         <div id="jobsList" class="mt-2"></div>
 
-        <h2 class="adm-section-title">🔗 VIP Müşteri Paylaşımı (süreli özel link)</h2>
-        <div class="form-card">
+        <h2 class="adm-section-title" id="shareH2">🔗 VIP Müşteri Paylaşımı (süreli özel link)</h2>
+        <div class="form-card" id="shareCard">
           <p class="mini" style="margin-bottom:10px">Seçtiğiniz üyelerin sedcard'larını müşteriye özel, süresi dolunca kendini kapatan bir bağlantıyla paylaşın. Sanatsal albüm yalnızca izin kutusunu işaretlerseniz görünür.</p>
           <div class="field"><label>Paylaşılacak Üyeler</label><div id="shMembers" class="adm-row"></div></div>
           <div class="adm-row">
@@ -374,7 +396,7 @@
       load();
     });
     $("admLogout").addEventListener("click", async () => { await api("/api/admin/logout"); location.reload(); });
-    $("pwBtn").addEventListener("click", () => $("pwCard").hidden = !$("pwCard").hidden);
+    $("pwBtn").addEventListener("click", () => showAtab("ayarlar"));
     $("pwSave").addEventListener("click", async () => {
       const res = await api("/api/admin/password", { old: $("pwOld").value, new: $("pwNew").value });
       $("pwMsg").textContent = res.ok ? "✓ Şifre değişti" : (res.err || "Hata");
@@ -410,7 +432,7 @@
       }
       RED_SABLON = (DATA.templates && DATA.templates.length) ? DATA.templates : RED_SABLON_VARSAYILAN.slice();
       renderSos(); renderDash(); renderUsers(); renderJobForm(); renderJobs(); renderSubs(); renderLogs(); renderShares();
-      renderAdmins(); renderSessions(); renderTotp(); renderTasks(); renderTools(); syncBulk();
+      renderAdmins(); renderSessions(); renderTotp(); renderTasks(); renderTools(); syncBulk(); updateTabCounts();
     }
     load(); /* oturum varsa direkt panel açılır */
 
@@ -589,13 +611,16 @@
       if (!it) return;
       palClose();
       if (it.tip === "üye") {
+        showAtab("uyeler");
         $("fText").value = ""; $("fStatus").value = ""; $("fCat").value = ""; renderUsers();
         const card = document.querySelector(`.adm-user[data-uid="${it.uid}"]`);
         if (card) { card.classList.add("open"); card.scrollIntoView({ behavior: "smooth", block: "center" });
           card.style.borderColor = "var(--gold)"; setTimeout(() => card.style.borderColor = "", 2500); }
       } else {
-        if (it.sel === "#pwCard") $("pwCard").hidden = false;
-        document.querySelector(it.sel)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const hedef = document.querySelector(it.sel);
+        const pane = hedef?.closest(".atab-pane");
+        if (pane) showAtab(pane.dataset.tab);
+        hedef?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
     $("palBtn").addEventListener("click", palOpen);
@@ -612,6 +637,51 @@
     $("palInput").addEventListener("input", e => palRender(e.target.value));
     $("palList").addEventListener("click", e => { const d = e.target.closest("[data-i]"); if (d) palGo(($("palList")._items || [])[+d.dataset.i]); });
     $("palette").addEventListener("click", e => { if (e.target.id === "palette") palClose(); });
+
+    /* ---------- Sekmeli Panel: bölümler 6 sekmeye taşınır ---------- */
+    const ATABS = [
+      ["genel",   "📊", "Genel Bakış",        ["sosBand","dashRoot","logTitle","logs"]],
+      ["uyeler",  "👥", "Üyeler & Onaylar",   ["toolsRow","tplCard","bulkBar","filterRow2","results"]],
+      ["isler",   "💼", "İşler & Paylaşım",   ["jobH2","jobCard","jobsList","shareH2","shareCard"]],
+      ["formlar", "✉️", "Gelen Formlar",      ["subTitle","subs"]],
+      ["ekip",    "📌", "Ekip & Görevler",    ["tasksH2","tasksCard","usersCard"]],
+      ["ayarlar", "⚙️", "Ayarlar & Güvenlik", ["pwCard","sessCard"]],
+    ];
+    (function buildTabs() {
+      const layout = document.createElement("div");
+      layout.className = "admin-layout";
+      layout.innerHTML = '<nav class="admin-sidebar" id="atabNav"></nav><div id="atabContent"></div>';
+      $("panelView").appendChild(layout);
+      const nav = layout.querySelector("#atabNav");
+      const content = layout.querySelector("#atabContent");
+      ATABS.forEach(([k, ico, ad, ids]) => {
+        const btn = document.createElement("button");
+        btn.className = "atab-btn"; btn.dataset.tab = k;
+        btn.innerHTML = `${ico} ${ad} <span class="cnt" data-cnt="${k}" hidden></span>`;
+        btn.addEventListener("click", () => showAtab(k));
+        nav.appendChild(btn);
+        const pane = document.createElement("div");
+        pane.className = "atab-pane"; pane.dataset.tab = k; pane.id = "atab-" + k;
+        ids.forEach(id => { const el = $(id); if (el) pane.appendChild(el); });
+        content.appendChild(pane);
+      });
+      $("pwCard").hidden = false; /* güvenlik kartı artık kendi sekmesinde hep açık */
+    })();
+    function showAtab(k) {
+      document.querySelectorAll(".atab-btn").forEach(b => b.classList.toggle("on", b.dataset.tab === k));
+      document.querySelectorAll(".atab-pane").forEach(p => p.classList.toggle("on", p.dataset.tab === k));
+      localStorage.setItem("mow-atab", k);
+    }
+    showAtab(localStorage.getItem("mow-atab") || "genel");
+    function updateTabCounts() {
+      const bekleyen = (DATA.users || []).filter(u => (u.profile?.status || "inceleniyor") === "inceleniyor").length;
+      const acikGorev = (DATA.tasks || []).filter(t => t.status === "acik").length;
+      const setCnt = (k, n) => { const el = document.querySelector(`[data-cnt="${k}"]`); if (el) { el.hidden = !n; el.textContent = n; } };
+      setCnt("uyeler", bekleyen);
+      setCnt("ekip", acikGorev);
+      setCnt("genel", (DATA.sos || []).length);
+      setCnt("formlar", (DATA.submissions || []).length);
+    }
 
     /* ---------- Canlı nabız: 30 sn'de bir yeni kayıt / SOS bildirimi ---------- */
     let PULSE = null;
