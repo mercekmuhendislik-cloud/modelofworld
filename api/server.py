@@ -120,6 +120,10 @@ def init_db():
                 "feedback_rating", "feedback_note"]:
         try: c.execute(f"ALTER TABLE job_offers ADD COLUMN {col} TEXT")
         except sqlite3.OperationalError: pass
+    try: c.execute("ALTER TABLE shares ADD COLUMN client_likes TEXT DEFAULT '[]'")
+    except sqlite3.OperationalError: pass
+    try: c.execute("ALTER TABLE job_offers ADD COLUMN payment_status TEXT DEFAULT 'odenecek'")
+    except sqlite3.OperationalError: pass
     # Yönetici şifresi ilk kurulumda mevcut anahtara eşitlenir (sonra panelden değiştirilir)
     if not c.execute("SELECT 1 FROM settings WHERE k='admin_salt'").fetchone():
         salt = secrets.token_hex(16)
@@ -424,7 +428,10 @@ class Handler(BaseHTTPRequestHandler):
                     q += " AND album != 'sanatsal'"
                 photos = [r["id"] for r in db().execute(q + " ORDER BY CASE album WHEN 'studio' THEN 0 WHEN 'podium' THEN 1 ELSE 2 END, id", (uid,))]
                 out.append({"id": uid, "name": user["fullname"], "profile": pub, "photos": photos})
-            return self._json(200, {"members": out, "expires": sh["expires"]})
+            likes = []
+            try: likes = json.loads(sh["client_likes"]) if sh.get("client_likes") else []
+            except Exception: pass
+            return self._json(200, {"members": out, "expires": sh["expires"], "likes": likes})
 
         m = re.match(r"^/api/share-photo/([A-Za-z0-9_\-]+)/(\d+)$", p)
         if m:
@@ -469,7 +476,7 @@ class Handler(BaseHTTPRequestHandler):
             subs = [dict(r) for r in db().execute("SELECT * FROM submissions ORDER BY id DESC LIMIT 100")]
             logs = [dict(r) for r in db().execute("SELECT * FROM audit ORDER BY id DESC LIMIT 120")]
             sos = [dict(r) for r in db().execute("SELECT * FROM submissions WHERE kind='SOS' ORDER BY id DESC LIMIT 20")]
-            shares = [dict(r) for r in db().execute("SELECT token, user_ids, allow_sensitive, expires FROM shares WHERE expires >= ? ORDER BY rowid DESC LIMIT 20", (now(),))]
+            shares = [dict(r) for r in db().execute("SELECT token, user_ids, allow_sensitive, expires, client_likes FROM shares WHERE expires >= ? ORDER BY rowid DESC LIMIT 20", (now(),))]
             # Rol bazlı veri filtresi: finans izni olmayan roller IBAN/vergi göremez
             if not self._can(adm, "finance"):
                 for usr in users:
@@ -949,6 +956,38 @@ class Handler(BaseHTTPRequestHandler):
             audit("admin:" + adm["username"], "vip-paylasim", None, "{} üye, {} saat".format(len(ids), hours))
             db().commit()
             return self._json(200, {"ok": True, "token": tok, "hours": hours})
+
+        if p == "/api/share/like":
+            d = jbody()
+            tok = str(d.get("token") or "")
+            uid = int(d.get("user_id") or 0)
+            liked = bool(d.get("liked"))
+            sh = db().execute("SELECT * FROM shares WHERE token=?", (tok,)).fetchone()
+            if not sh or sh["expires"] < now():
+                return self._json(404, {"error": "Süresi dolmuş veya geçersiz"})
+            likes = []
+            try: likes = json.loads(sh["client_likes"]) if sh["client_likes"] else []
+            except Exception: pass
+            if liked:
+                if uid not in likes: likes.append(uid)
+            else:
+                if uid in likes: likes.remove(uid)
+            db().execute("UPDATE shares SET client_likes=? WHERE token=?", (json.dumps(likes), tok))
+            audit("vip-klient", "begeni-guncelleme", uid, f"tok:{tok[:8]} liked:{liked}")
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/admin/payment":
+            adm = self._admin(qs)
+            if not self._can(adm, "finance"): return self._json(403, {"error": "Finans yetkiniz yok"})
+            d = jbody()
+            offer_id = int(d.get("offer_id") or 0)
+            status = str(d.get("status") or "odenecek")
+            if status not in ("odenecek", "odendi"): return self._json(400, {"error": "Geçersiz durum"})
+            db().execute("UPDATE job_offers SET payment_status=?, updated=? WHERE id=?", (status, now(), offer_id))
+            audit("admin:" + adm["username"], "odeme-durumu-guncellendi", None, f"teklif:{offer_id} → {status}")
+            db().commit()
+            return self._json(200, {"ok": True})
 
         return self._json(404, {"error": "Bilinmeyen uç"})
 
