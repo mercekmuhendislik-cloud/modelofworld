@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=7594db3">
+  <link rel="stylesheet" href="assets/css/style.css?v=e1e34cb">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -51,6 +51,24 @@
 
     /* İmza */
     #sigCanvas { border:1px dashed var(--gold); border-radius:10px; background:#fff; touch-action:none; cursor:crosshair; width:100%; max-width:480px; height:150px; }
+
+    /* Çoklu seçim açılır menü */
+    .msel { position: relative; }
+    .msel-btn { width:100%; display:flex; justify-content:space-between; align-items:center; gap:10px;
+      padding:13px 16px; border-radius:10px; background:var(--bg-2); border:1px solid var(--line);
+      font:inherit; font-size:.94rem; color:var(--text); text-align:left; cursor:pointer; }
+    .msel.open .msel-btn { border-color:var(--gold); box-shadow:0 0 0 3px rgba(211,79,110,.12); }
+    .msel-txt { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .msel-txt.bos { color:var(--text-2); }
+    .msel-panel { display:none; position:absolute; z-index:40; top:calc(100% + 6px); left:0; right:0;
+      background:var(--surface); border:1px solid var(--line); border-radius:12px;
+      max-height:280px; overflow:auto; box-shadow:var(--shadow); padding:6px; }
+    .msel.open .msel-panel { display:block; }
+    .msel-opt { display:flex; gap:10px; align-items:center; padding:9px 12px; border-radius:8px;
+      cursor:pointer; font-size:.9rem; }
+    .msel-opt:hover { background:var(--bg-2); }
+    .msel-opt input { accent-color:var(--gold); width:15px; height:15px; }
+    .msel-opt input:disabled + span { opacity:.4; text-decoration:line-through; }
 
     /* İş teklifleri */
     .offer-card { border:1px solid var(--line); border-radius:12px; padding:20px; background:var(--surface); margin-bottom:14px; }
@@ -105,20 +123,9 @@
       <div class="form-card tab-pane active" id="tab-genel">
         <h3 style="margin-bottom:18px">Temel &amp; İletişim Bilgileri</h3>
         <div class="form-grid">
-          <div class="field full">
+          <div class="field">
             <label>Kategori(ler) <span class="req">*</span> <span class="muted" style="text-transform:none;letter-spacing:0">— birden fazla seçebilirsiniz</span></label>
-            <div class="skill-grid">
-              <label class="skill-check"><input type="checkbox" class="catx" value="model"><span>Manken / Model</span></label>
-              <label class="skill-check"><input type="checkbox" class="catx" value="hostes"><span>Fuar Hostesi</span></label>
-              <label class="skill-check"><input type="checkbox" class="catx" value="yuz"><span>Yüz Modeli</span></label>
-              <label class="skill-check"><input type="checkbox" class="catx" value="fitness"><span>Fitness / Spor</span></label>
-              <label class="skill-check"><input type="checkbox" class="catx" value="plus"><span>Büyük Beden</span></label>
-              <label class="skill-check"><input type="checkbox" class="catx" value="oyuncu"><span>Oyuncu / Cast</span></label>
-              <label class="skill-check"><input type="checkbox" class="catx" value="dans"><span>Dansçı</span></label>
-              <label class="skill-check"><input type="checkbox" class="catx" value="promo"><span>Tanıtım / Promosyon</span></label>
-              <label class="skill-check"><input type="checkbox" class="catx" value="nu"><span>Nü / Sanatsal (18+)</span></label>
-              <label class="skill-check"><input type="checkbox" class="catx" value="cocuk"><span>Çocuk Model (veli)</span></label>
-            </div>
+            <div id="catSel"></div>
           </div>
           <div class="field">
             <label>Cinsiyet <span class="req">*</span></label>
@@ -132,9 +139,9 @@
           <div class="field"><label>Şehir <span class="req">*</span></label>
             <select name="city"><option value="">Seçiniz…</option></select>
           </div>
-          <div class="field full">
-            <label>Yabancı Diller <span class="muted" style="text-transform:none;letter-spacing:0">— bildiklerinizi işaretleyin</span></label>
-            <div class="skill-grid" id="langGrid"></div>
+          <div class="field">
+            <label>Yabancı Diller <span class="muted" style="text-transform:none;letter-spacing:0">— birden fazla seçebilirsiniz</span></label>
+            <div id="langSel"></div>
             <input type="text" id="langExtra" class="search-input mt-2" placeholder="Seviye / başka dil (örn. İngilizce C1, Gürcüce)…">
           </div>
           <div class="field"><label>Instagram</label><input type="text" name="instagram" placeholder="@kullaniciadi"></div>
@@ -486,8 +493,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=7594db3"></script>
-  <script src="assets/js/main.js?v=7594db3"></script>
+  <script src="assets/js/data.js?v=e1e34cb"></script>
+  <script src="assets/js/main.js?v=e1e34cb"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -497,30 +504,52 @@
       const val = n => { const el = field(n); return el ? (el.type === "checkbox" ? (el.checked ? "1" : "") : el.value) : ""; };
 
       function age(b) { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); }
-      const getCats = () => [...document.querySelectorAll(".catx:checked")].map(c => c.value);
-      function isMinor() { const a = age(val("birthdate")); return getCats().includes("cocuk") || (a !== null && a < 18); }
+      /* --- Çoklu seçim açılır menü bileşeni --- */
+      function makeMsel(el, options, placeholder, onChange) {
+        el.classList.add("msel");
+        el.innerHTML = `<button type="button" class="msel-btn"><span class="msel-txt bos">${placeholder}</span><span style="color:var(--gold)">▾</span></button>
+          <div class="msel-panel">${options.map(o =>
+            `<label class="msel-opt"><input type="checkbox" value="${o.value}"><span>${o.label}</span></label>`).join("")}</div>`;
+        const txt = el.querySelector(".msel-txt");
+        el.querySelector(".msel-btn").addEventListener("click", () => el.classList.toggle("open"));
+        document.addEventListener("click", e => { if (!el.contains(e.target)) el.classList.remove("open"); });
+        function sync() {
+          const vals = api.get();
+          const labels = options.filter(o => vals.includes(o.value)).map(o => o.label);
+          txt.textContent = labels.length
+            ? (labels.length > 3 ? labels.slice(0, 3).join(", ") + " +" + (labels.length - 3) : labels.join(", "))
+            : placeholder;
+          txt.classList.toggle("bos", !labels.length);
+          if (onChange) onChange(vals);
+        }
+        el.querySelector(".msel-panel").addEventListener("change", sync);
+        const api = {
+          get: () => [...el.querySelectorAll("input:checked")].map(i => i.value),
+          set: vals => { el.querySelectorAll("input").forEach(i => i.checked = vals.includes(i.value)); sync(); },
+          disable: (v, d) => { const i = el.querySelector(`input[value="${v}"]`); if (i) { if (d) i.checked = false; i.disabled = d; sync(); } },
+        };
+        return api;
+      }
 
-      /* Şehir ve dil listelerini doldur */
+      const catSel = makeMsel($("catSel"),
+        Object.entries(window.VERA.CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
+        "Kategori seçin…", () => { syncParentFields(); syncMinorNu(); });
+      const langSel = makeMsel($("langSel"),
+        window.VERA.DILLER.map(d => ({ value: d, label: d })), "Dil seçin…");
+
+      const getCats = () => catSel.get();
+      function isMinor() { const a = age(val("birthdate")); return getCats().includes("cocuk") || (a !== null && a < 18); }
+      function syncMinorNu() { catSel.disable("nu", isMinor()); }
+
+      /* Şehir listesini doldur */
       field("city").innerHTML = '<option value="">Seçiniz…</option>' +
         window.VERA.ILLER.map(i => `<option>${i}</option>`).join("");
-      document.getElementById("langGrid").innerHTML = window.VERA.DILLER.map(d =>
-        `<label class="skill-check"><input type="checkbox" class="lng" value="${d}"><span>${d}</span></label>`).join("");
-
-      /* Küçük üye 'nü' kategorisini işaretleyemesin */
-      document.addEventListener("change", e => {
-        if (e.target.classList?.contains("catx") || e.target.name === "birthdate") {
-          const nuBox = document.querySelector('.catx[value="nu"]');
-          if (isMinor() && nuBox) { nuBox.checked = false; nuBox.disabled = true; }
-          else if (nuBox) nuBox.disabled = false;
-        }
-      });
       function syncParentFields() {
         const show = isMinor();
         $("parentTitle").style.display = show ? "" : "none";
         document.querySelectorAll(".parent-field").forEach(el => el.style.display = show ? "" : "none");
       }
-      field("birthdate").addEventListener("change", syncParentFields);
-      document.querySelectorAll(".catx").forEach(c => c.addEventListener("change", syncParentFields));
+      field("birthdate").addEventListener("change", () => { syncParentFields(); syncMinorNu(); });
 
       /* ============ GÖRSEL İŞLEME: sıkıştır + filigran + kırp ============ */
       function watermark(ctx, w, h) {
@@ -757,7 +786,7 @@
 
         if (key === "genel") {
           payload.category = getCats().join(",");
-          const langs = [...document.querySelectorAll(".lng:checked")].map(c => c.value);
+          const langs = langSel.get();
           const ekstra = $("langExtra").value.trim();
           payload.languages = langs.join(", ") + (ekstra ? (langs.length ? " · " : "") + ekstra : "");
         }
@@ -978,12 +1007,11 @@
           if (el.type === "checkbox") el.checked = v === "1";
           else if (el.type !== "radio") el.value = v;
         });
-        /* kategori çipleri */
-        const catList = (ME.profile?.category || "").split(",").filter(Boolean);
-        document.querySelectorAll(".catx").forEach(c => c.checked = catList.includes(c.value));
-        /* dil çipleri + ekstra */
+        /* kategori + dil bileşenleri */
+        catSel.set((ME.profile?.category || "").split(",").filter(Boolean));
         const rawLang = ME.profile?.languages || "";
-        document.querySelectorAll(".lng").forEach(c => c.checked = rawLang.includes(c.value));
+        langSel.set(window.VERA.DILLER.filter(d => rawLang.includes(d)));
+        syncMinorNu();
         const bilinen = window.VERA.DILLER.filter(d => rawLang.includes(d));
         let kalan = rawLang;
         bilinen.forEach(d => kalan = kalan.replace(d, ""));
