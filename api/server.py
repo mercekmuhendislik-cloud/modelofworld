@@ -9,7 +9,7 @@ yönetici onay havuzu (gerekçeli red), ajans içi not/puan/etiket,
 denetim günlüğü (audit), iş teklifi akışı (booking), dijital imza,
 video-book linki. Eski veritabanı otomatik yükseltilir.
 """
-import json, os, re, sqlite3, secrets, hashlib, mimetypes, threading
+import json, os, re, sqlite3, secrets, hashlib, mimetypes, threading, base64, struct, hmac, time as _time
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
@@ -92,6 +92,13 @@ def init_db():
     CREATE TABLE IF NOT EXISTS shares(
       token TEXT PRIMARY KEY, user_ids TEXT, allow_sensitive INTEGER DEFAULT 0,
       expires TEXT, created TEXT);
+    CREATE TABLE IF NOT EXISTS admin_users(
+      id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL,
+      pass_hash TEXT, salt TEXT, role TEXT DEFAULT 'admin',
+      totp_secret TEXT, totp_on INTEGER DEFAULT 0, created TEXT);
+    CREATE TABLE IF NOT EXISTS admin_sessions(
+      token TEXT PRIMARY KEY, username TEXT, expires TEXT,
+      ip TEXT, ua TEXT, created TEXT);
     """)
     for col in PROFILE_COLS + ADMIN_COLS + READONLY_COLS:
         try: c.execute(f"ALTER TABLE profiles ADD COLUMN {col} TEXT")
@@ -113,6 +120,17 @@ def init_db():
         c.execute("INSERT INTO settings(k,v) VALUES('admin_salt',?)", (salt,))
         c.execute("INSERT INTO settings(k,v) VALUES('admin_hash',?)",
                   (hashlib.pbkdf2_hmac("sha256", ADMIN_KEY.encode(), bytes.fromhex(salt), 200_000).hex(),))
+    try:
+        c.execute("ALTER TABLE audit ADD COLUMN ip TEXT")
+    except sqlite3.OperationalError:
+        pass
+    # v5: tekli şifreden çok kullanıcılı sisteme geçiş — 'admin' kullanıcısı
+    # mevcut şifreyi (settings'teki hash) devralır, giriş bilgileri değişmez.
+    if not c.execute("SELECT 1 FROM admin_users").fetchone():
+        h = c.execute("SELECT v FROM settings WHERE k='admin_hash'").fetchone()[0]
+        sl = c.execute("SELECT v FROM settings WHERE k='admin_salt'").fetchone()[0]
+        c.execute("INSERT INTO admin_users(username,pass_hash,salt,role,created) VALUES('admin',?,?,'admin',?)",
+                  (h, sl, datetime.now(timezone.utc).isoformat(timespec='seconds')))
     c.commit(); c.close()
 init_db()
 
@@ -122,8 +140,27 @@ def hash_pw(pw, salt):
 def now(): return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 def audit(who, action, user_id=None, detail=""):
-    db().execute("INSERT INTO audit(who,action,user_id,detail,created) VALUES(?,?,?,?,?)",
-                 (who, action, user_id, str(detail)[:400], now()))
+    db().execute("INSERT INTO audit(who,action,user_id,detail,created,ip) VALUES(?,?,?,?,?,?)",
+                 (who, action, user_id, str(detail)[:400], now(), getattr(_local, "ip", "")))
+
+# ---- TOTP (Google Authenticator) — stdlib ----
+def totp_at(secret_b32, offset=0):
+    key = base64.b32decode(secret_b32)
+    msg = struct.pack(">Q", int(_time.time() // 30) + offset)
+    h = hmac.new(key, msg, hashlib.sha1).digest()
+    o = h[-1] & 0x0F
+    return "{:06d}".format((struct.unpack(">I", h[o:o+4])[0] & 0x7FFFFFFF) % 1000000)
+
+def totp_ok(secret_b32, code):
+    code = str(code or "").strip()
+    return any(code == totp_at(secret_b32, d) for d in (-1, 0, 1))
+
+# Rol izinleri: hangi rol hangi işlemi yapabilir
+ROLE_PERMS = {
+    "admin":    {"list", "review", "note", "update", "job", "share", "users", "sessions", "finance"},
+    "editor":   {"list", "review", "note", "update", "job", "share"},
+    "muhasebe": {"list", "finance"},
+}
 
 def parse_multipart(body, ctype):
     m = re.search(r'boundary=([^;]+)', ctype)
@@ -166,7 +203,7 @@ def offers_of(uid):
     return [dict(r) for r in rows]
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "MOW/3.1"
+    server_version = "MOW/5.0"
 
     def _json(self, code, obj, cookie=None):
         raw = json.dumps(obj, ensure_ascii=False).encode()
@@ -198,30 +235,42 @@ class Handler(BaseHTTPRequestHandler):
         db().commit()
         return f"mow={tok}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age={SESSION_DAYS*86400}"
 
-    def _admin_session(self):
+    def _ip(self):
+        xf = self.headers.get("X-Forwarded-For") or ""
+        return xf.split(",")[0].strip() if xf else (self.client_address[0] if self.client_address else "")
+
+    def _admin_token(self):
         raw = self.headers.get("Cookie") or ""
         m = re.search(r'mowadm=([A-Za-z0-9_\-]+)', raw)
-        if not m: return False
-        row = db().execute("SELECT expires FROM sessions WHERE token=? AND user_id=-1", (m.group(1),)).fetchone()
-        return bool(row and row["expires"] >= now())
+        return m.group(1) if m else None
+
+    def _admin(self, qs=None):
+        """Aktif yönetici kimliği: {username, role} veya None. Yedek anahtar = tam yetkili."""
+        if qs is not None and qs.get("key", [""])[0] == ADMIN_KEY:
+            return {"username": "yedek-anahtar", "role": "admin"}
+        tok = self._admin_token()
+        if not tok: return None
+        row = db().execute("""SELECT s.username, s.expires, u.role FROM admin_sessions s
+            JOIN admin_users u ON u.username = s.username WHERE s.token=?""", (tok,)).fetchone()
+        if not row or row["expires"] < now(): return None
+        return {"username": row["username"], "role": row["role"] or "admin"}
 
     def _is_admin(self, qs):
-        return (qs.get("key", [""])[0] == ADMIN_KEY) or self._admin_session()
+        return self._admin(qs) is not None
 
-    def _check_admin_pw(self, pw):
-        salt = db().execute("SELECT v FROM settings WHERE k='admin_salt'").fetchone()["v"]
-        h = db().execute("SELECT v FROM settings WHERE k='admin_hash'").fetchone()["v"]
-        return hash_pw(pw or "", salt) == h
+    def _can(self, adm, perm):
+        return adm and perm in ROLE_PERMS.get(adm["role"], set())
 
     def log_message(self, fmt, *args):
         pass
 
     # ---------------- GET ----------------
     def do_GET(self):
+        _local.ip = self._ip()
         u = urlparse(self.path); qs = parse_qs(u.query); p = u.path
 
         if p == "/api/health":
-            return self._json(200, {"ok": True, "v": 4})
+            return self._json(200, {"ok": True, "v": 5})
 
         if p == "/api/me":
             uid = self._session_user()
@@ -304,7 +353,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if p == "/api/admin/list":
-            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            adm = self._admin(qs)
+            if not adm: return self._json(403, {"error": "Yetki yok"})
             users = [dict(r) for r in db().execute(
                 "SELECT id,email,fullname,phone,created FROM users ORDER BY id DESC")]
             for usr in users:
@@ -324,13 +374,28 @@ class Handler(BaseHTTPRequestHandler):
             logs = [dict(r) for r in db().execute("SELECT * FROM audit ORDER BY id DESC LIMIT 120")]
             sos = [dict(r) for r in db().execute("SELECT * FROM submissions WHERE kind='SOS' ORDER BY id DESC LIMIT 20")]
             shares = [dict(r) for r in db().execute("SELECT token, user_ids, allow_sensitive, expires FROM shares WHERE expires >= ? ORDER BY rowid DESC LIMIT 20", (now(),))]
-            return self._json(200, {"users": users, "jobs": jobs, "submissions": subs, "audit": logs,
-                                    "sos": sos, "shares": shares})
+            # Rol bazlı veri filtresi: finans izni olmayan roller IBAN/vergi göremez
+            if not self._can(adm, "finance"):
+                for usr in users:
+                    for f in ("iban", "bank_name", "account_name", "invoice_type", "tax_no"):
+                        if usr["profile"].get(f): usr["profile"][f] = "••• (yetki yok)"
+            out = {"users": users, "jobs": jobs, "submissions": subs, "audit": logs,
+                   "sos": sos, "shares": shares,
+                   "me": {"username": adm["username"], "role": adm["role"]}}
+            if self._can(adm, "sessions"):
+                mytok = self._admin_token()
+                out["sessions"] = [{**dict(r), "current": r["token"] == mytok, "token": r["token"][:12] + "…", "full_token": r["token"]}
+                                   for r in db().execute("SELECT * FROM admin_sessions WHERE expires >= ? ORDER BY created DESC", (now(),))]
+            if self._can(adm, "users"):
+                u2 = db().execute("SELECT username, role, totp_on, created FROM admin_users ORDER BY id").fetchall()
+                out["admins"] = [dict(r) for r in u2]
+            return self._json(200, out)
 
         return self._json(404, {"error": "Bilinmeyen uç"})
 
     # ---------------- POST ----------------
     def do_POST(self):
+        _local.ip = self._ip()
         u = urlparse(self.path); qs = parse_qs(u.query); p = u.path
         ctype = self.headers.get("Content-Type") or ""
         body = self._body()
@@ -519,45 +584,140 @@ class Handler(BaseHTTPRequestHandler):
         # ---- Yönetici uçları ----
         if p == "/api/admin/login":
             d = jbody()
-            if not self._check_admin_pw(d.get("password")):
-                audit("admin", "giris-hatali", None, "yanlış şifre denemesi")
+            uname = (d.get("username") or "admin").strip().lower()
+            u = db().execute("SELECT * FROM admin_users WHERE username=?", (uname,)).fetchone()
+            if not u or hash_pw(d.get("password") or "", u["salt"]) != u["pass_hash"]:
+                audit("admin:" + uname, "giris-hatali", None, "yanlış şifre denemesi")
                 db().commit()
-                return self._json(401, {"error": "Şifre hatalı"})
+                return self._json(401, {"error": "Kullanıcı adı veya şifre hatalı"})
+            if u["totp_on"]:
+                if not d.get("code"):
+                    return self._json(401, {"need_totp": True, "error": "Doğrulama kodu gerekli"})
+                if not totp_ok(u["totp_secret"], d.get("code")):
+                    audit("admin:" + uname, "giris-hatali", None, "yanlış 2FA kodu")
+                    db().commit()
+                    return self._json(401, {"need_totp": True, "error": "Doğrulama kodu hatalı"})
             tok = secrets.token_urlsafe(32)
             exp = (datetime.now(timezone.utc) + timedelta(hours=12)).isoformat(timespec="seconds")
-            db().execute("INSERT INTO sessions(token,user_id,expires) VALUES(?,-1,?)", (tok, exp))
-            audit("admin", "giris", None, "yönetici girişi")
+            db().execute("INSERT INTO admin_sessions(token,username,expires,ip,ua,created) VALUES(?,?,?,?,?,?)",
+                         (tok, uname, exp, self._ip(), (self.headers.get("User-Agent") or "")[:200], now()))
+            audit("admin:" + uname, "giris", None, "yönetici girişi")
             db().commit()
-            return self._json(200, {"ok": True},
+            return self._json(200, {"ok": True, "username": uname, "role": u["role"] or "admin"},
                 cookie=f"mowadm={tok}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=43200")
 
         if p == "/api/admin/logout":
-            raw = self.headers.get("Cookie") or ""
-            m = re.search(r'mowadm=([A-Za-z0-9_\-]+)', raw)
-            if m:
-                db().execute("DELETE FROM sessions WHERE token=?", (m.group(1),)); db().commit()
+            tok = self._admin_token()
+            if tok:
+                db().execute("DELETE FROM admin_sessions WHERE token=?", (tok,)); db().commit()
             return self._json(200, {"ok": True},
                 cookie="mowadm=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0")
 
         if p == "/api/admin/password":
-            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            adm = self._admin(qs)
+            if not adm: return self._json(403, {"error": "Yetki yok"})
             d = jbody()
-            # Yedek anahtar (admin-key.txt) eski şifre olmadan sıfırlayabilir
-            master = qs.get("key", [""])[0] == ADMIN_KEY
-            if not master and not self._check_admin_pw(d.get("old")):
+            hedef = adm["username"] if adm["username"] != "yedek-anahtar" else "admin"
+            master = adm["username"] == "yedek-anahtar"
+            u = db().execute("SELECT * FROM admin_users WHERE username=?", (hedef,)).fetchone()
+            if not master and (not u or hash_pw(d.get("old") or "", u["salt"]) != u["pass_hash"]):
                 return self._json(401, {"error": "Mevcut şifre hatalı"})
             new = d.get("new") or ""
             if len(new) < 8:
                 return self._json(400, {"error": "Yeni şifre en az 8 karakter olmalı"})
             salt = secrets.token_hex(16)
-            db().execute("UPDATE settings SET v=? WHERE k='admin_salt'", (salt,))
-            db().execute("UPDATE settings SET v=? WHERE k='admin_hash'", (hash_pw(new, salt),))
-            audit("admin", "sifre-degisti", None, "")
+            db().execute("UPDATE admin_users SET pass_hash=?, salt=? WHERE username=?",
+                         (hash_pw(new, salt), salt, hedef))
+            audit("admin:" + adm["username"], "sifre-degisti", None, hedef)
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/admin/totp":
+            adm = self._admin(qs)
+            if not adm or adm["username"] == "yedek-anahtar":
+                return self._json(403, {"error": "Yetki yok"})
+            d = jbody(); act = d.get("action")
+            u = db().execute("SELECT * FROM admin_users WHERE username=?", (adm["username"],)).fetchone()
+            if act == "setup":
+                secret = base64.b32encode(secrets.token_bytes(10)).decode().rstrip("=")
+                db().execute("UPDATE admin_users SET totp_secret=?, totp_on=0 WHERE username=?",
+                             (secret, adm["username"])); db().commit()
+                uri = f"otpauth://totp/ModelOfWorld:{adm['username']}?secret={secret}&issuer=Model%20of%20World"
+                return self._json(200, {"ok": True, "secret": secret, "uri": uri})
+            if act == "enable":
+                if not u["totp_secret"] or not totp_ok(u["totp_secret"], d.get("code")):
+                    return self._json(400, {"error": "Kod doğrulanamadı — uygulamadaki 6 haneli kodu girin"})
+                db().execute("UPDATE admin_users SET totp_on=1 WHERE username=?", (adm["username"],))
+                audit("admin:" + adm["username"], "2fa-acildi", None, "")
+                db().commit()
+                return self._json(200, {"ok": True})
+            if act == "disable":
+                if u["totp_on"] and not totp_ok(u["totp_secret"], d.get("code")):
+                    return self._json(400, {"error": "Kapatmak için geçerli kod gerekli"})
+                db().execute("UPDATE admin_users SET totp_on=0, totp_secret=NULL WHERE username=?", (adm["username"],))
+                audit("admin:" + adm["username"], "2fa-kapatildi", None, "")
+                db().commit()
+                return self._json(200, {"ok": True})
+            return self._json(400, {"error": "Geçersiz işlem"})
+
+        if p == "/api/admin/user":
+            adm = self._admin(qs)
+            if not self._can(adm, "users"): return self._json(403, {"error": "Bu işlem için Yönetici rolü gerekli"})
+            d = jbody(); act = d.get("action")
+            uname = (d.get("username") or "").strip().lower()
+            if not re.match(r"^[a-z0-9_\.]{3,30}$", uname):
+                return self._json(400, {"error": "Kullanıcı adı 3-30 karakter, harf/rakam olmalı"})
+            if act == "add":
+                if db().execute("SELECT 1 FROM admin_users WHERE username=?", (uname,)).fetchone():
+                    return self._json(409, {"error": "Bu kullanıcı adı zaten var"})
+                pw = d.get("password") or ""
+                if len(pw) < 8: return self._json(400, {"error": "Şifre en az 8 karakter"})
+                role = d.get("role") if d.get("role") in ROLE_PERMS else "editor"
+                salt = secrets.token_hex(16)
+                db().execute("INSERT INTO admin_users(username,pass_hash,salt,role,created) VALUES(?,?,?,?,?)",
+                             (uname, hash_pw(pw, salt), salt, role, now()))
+                audit("admin:" + adm["username"], "yetkili-eklendi", None, f"{uname} ({role})")
+            elif act == "delete":
+                if uname == "admin": return self._json(400, {"error": "Ana yönetici silinemez"})
+                db().execute("DELETE FROM admin_users WHERE username=?", (uname,))
+                db().execute("DELETE FROM admin_sessions WHERE username=?", (uname,))
+                audit("admin:" + adm["username"], "yetkili-silindi", None, uname)
+            elif act == "role":
+                role = d.get("role") if d.get("role") in ROLE_PERMS else None
+                if not role: return self._json(400, {"error": "Geçersiz rol"})
+                if uname == "admin": return self._json(400, {"error": "Ana yöneticinin rolü değiştirilemez"})
+                db().execute("UPDATE admin_users SET role=? WHERE username=?", (role, uname))
+                audit("admin:" + adm["username"], "rol-degisti", None, f"{uname} → {role}")
+            elif act == "resetpw":
+                pw = d.get("password") or ""
+                if len(pw) < 8: return self._json(400, {"error": "Şifre en az 8 karakter"})
+                salt = secrets.token_hex(16)
+                db().execute("UPDATE admin_users SET pass_hash=?, salt=?, totp_on=0, totp_secret=NULL WHERE username=?",
+                             (hash_pw(pw, salt), salt, uname))
+                db().execute("DELETE FROM admin_sessions WHERE username=?", (uname,))
+                audit("admin:" + adm["username"], "yetkili-sifre-sifirlandi", None, uname)
+            else:
+                return self._json(400, {"error": "Geçersiz işlem"})
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/admin/revoke":
+            adm = self._admin(qs)
+            if not adm: return self._json(403, {"error": "Yetki yok"})
+            d = jbody()
+            tok = str(d.get("token") or "")
+            row = db().execute("SELECT username FROM admin_sessions WHERE token=?", (tok,)).fetchone()
+            if not row: return self._json(404, {"error": "Oturum bulunamadı"})
+            if row["username"] != adm["username"] and not self._can(adm, "sessions"):
+                return self._json(403, {"error": "Başka oturumu sonlandırmak için Yönetici rolü gerekli"})
+            db().execute("DELETE FROM admin_sessions WHERE token=?", (tok,))
+            audit("admin:" + adm["username"], "oturum-sonlandirildi", None, row["username"])
             db().commit()
             return self._json(200, {"ok": True})
 
         if p == "/api/admin/update":
-            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            adm = self._admin(qs)
+            if not self._can(adm, "update"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
             d = jbody()
             uid = int(d.get("user_id") or 0)
             if not db().execute("SELECT 1 FROM users WHERE id=?", (uid,)).fetchone():
@@ -570,12 +730,13 @@ class Handler(BaseHTTPRequestHandler):
                 sets = ", ".join(f"{c}=?" for c in sent)
                 vals = [str(d.get(c) or "")[:LONG_COLS.get(c, 500)] for c in sent] + [uid]
                 db().execute(f"UPDATE profiles SET {sets} WHERE user_id=?", vals)
-            audit("admin", "uye-duzenleme", uid, ", ".join((["fullname"] if "fullname" in d else []) + sent))
+            audit("admin:" + adm["username"], "uye-duzenleme", uid, ", ".join((["fullname"] if "fullname" in d else []) + sent))
             db().commit()
             return self._json(200, {"ok": True})
 
         if p == "/api/admin/review":
-            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            adm = self._admin(qs)
+            if not self._can(adm, "review"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
             d = jbody()
             uid = int(d.get("user_id") or 0)
             st = d.get("status")
@@ -583,12 +744,13 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(400, {"error": "Geçersiz durum"})
             note = str(d.get("review_note") or "")[:1000]
             db().execute("UPDATE profiles SET status=?, review_note=? WHERE user_id=?", (st, note, uid))
-            audit("admin", "durum-" + st, uid, note[:100])
+            audit("admin:" + adm["username"], "durum-" + st, uid, note[:100])
             db().commit()
             return self._json(200, {"ok": True})
 
         if p == "/api/admin/note":
-            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            adm = self._admin(qs)
+            if not self._can(adm, "note"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
             d = jbody()
             uid = int(d.get("user_id") or 0)
             rating = str(d.get("admin_rating") or "")
@@ -597,12 +759,13 @@ class Handler(BaseHTTPRequestHandler):
             db().execute("UPDATE profiles SET admin_note=?, admin_rating=?, admin_tags=? WHERE user_id=?",
                          (str(d.get("admin_note") or "")[:2000], rating,
                           str(d.get("admin_tags") or "")[:400], uid))
-            audit("admin", "ic-not", uid, "not/puan/etiket güncellendi")
+            audit("admin:" + adm["username"], "ic-not", uid, "not/puan/etiket güncellendi")
             db().commit()
             return self._json(200, {"ok": True})
 
         if p == "/api/admin/job":
-            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            adm = self._admin(qs)
+            if not self._can(adm, "job"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
             d = jbody()
             title = str(d.get("title") or "").strip()
             if not title: return self._json(400, {"error": "İş başlığı gerekli"})
@@ -616,12 +779,13 @@ class Handler(BaseHTTPRequestHandler):
             for uid in ids:
                 db().execute("INSERT INTO job_offers(job_id,user_id,created) VALUES(?,?,?)",
                              (cur.lastrowid, uid, now()))
-            audit("admin", "is-teklifi", None, f"{title[:60]} → {len(ids)} üye")
+            audit("admin:" + adm["username"], "is-teklifi", None, f"{title[:60]} → {len(ids)} üye")
             db().commit()
             return self._json(200, {"ok": True, "id": cur.lastrowid})
 
         if p == "/api/admin/share":
-            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            adm = self._admin(qs)
+            if not self._can(adm, "share"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
             d = jbody()
             ids = [str(int(x)) for x in (d.get("user_ids") or []) if str(x).isdigit()]
             if not ids: return self._json(400, {"error": "En az bir üye seçin"})
@@ -630,7 +794,7 @@ class Handler(BaseHTTPRequestHandler):
             exp = (datetime.now(timezone.utc) + timedelta(hours=hours)).isoformat(timespec="seconds")
             db().execute("INSERT INTO shares(token,user_ids,allow_sensitive,expires,created) VALUES(?,?,?,?,?)",
                          (tok, ",".join(ids), 1 if d.get("allow_sensitive") else 0, exp, now()))
-            audit("admin", "vip-paylasim", None, "{} üye, {} saat".format(len(ids), hours))
+            audit("admin:" + adm["username"], "vip-paylasim", None, "{} üye, {} saat".format(len(ids), hours))
             db().commit()
             return self._json(200, {"ok": True, "token": tok, "hours": hours})
 
@@ -638,6 +802,7 @@ class Handler(BaseHTTPRequestHandler):
 
     # ---------------- DELETE ----------------
     def do_DELETE(self):
+        _local.ip = self._ip()
         m = re.match(r"^/api/photo/(\d+)$", urlparse(self.path).path)
         if not m: return self._json(404, {"error": "Bilinmeyen uç"})
         uid = self._session_user()

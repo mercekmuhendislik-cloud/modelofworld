@@ -6,7 +6,8 @@
   <title>Yönetim — Model of World</title>
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=93b443d">
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=e6506f3">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -41,6 +42,8 @@
     .nsfw.show { filter: none; }
     .sos-card { border:2px solid #c62828; background:rgba(198,40,40,.08); border-radius:12px; padding:14px 16px; margin-bottom:10px; font-size:.9rem; }
     .sos-card strong { color:#c62828; }
+    body.rol-muhasebe .adm-actions .btn:not([href]), body.rol-muhasebe [data-act], body.rol-muhasebe .edit-wrap,
+    body.rol-muhasebe [data-redsel] { display:none !important; }
   </style>
 </head>
 <body data-page="admin">
@@ -56,8 +59,16 @@
         <div class="form-card">
           <form id="adminLoginForm" class="form-grid" style="grid-template-columns:1fr">
             <div class="field">
-              <label>Yönetici Şifresi</label>
+              <label>Kullanıcı Adı</label>
+              <input type="text" id="adminUser" value="admin" autocomplete="username">
+            </div>
+            <div class="field">
+              <label>Şifre</label>
               <input type="password" id="adminPass" required placeholder="••••••••••••" autocomplete="current-password">
+            </div>
+            <div class="field" id="totpField" hidden>
+              <label>🔐 Doğrulama Kodu (Google Authenticator)</label>
+              <input type="text" id="adminCode" maxlength="6" inputmode="numeric" placeholder="6 haneli kod">
             </div>
             <button class="btn btn-gold full" type="submit">Giriş Yap</button>
             <span class="muted center" id="loginErr" style="font-size:.85rem"></span>
@@ -73,18 +84,66 @@
             <span class="eyebrow">Yönetim Paneli</span>
             <h1 style="font-size:1.9rem">Üyeler, Onaylar &amp; İşler</h1>
           </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost btn-sm" id="pwBtn">🔑 Şifre Değiştir</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span class="adm-badge" id="meBadge"></span>
+            <button class="btn btn-ghost btn-sm" id="pwBtn">🔑 Güvenlik</button>
             <button class="btn btn-ghost btn-sm" id="admLogout">Çıkış</button>
           </div>
         </div>
 
-        <div class="form-card" id="pwCard" hidden style="margin-bottom:18px;max-width:520px">
+        <div class="form-card" id="pwCard" hidden style="margin-bottom:18px;max-width:640px">
+          <h3 style="font-size:1.05rem;margin-bottom:12px">🔑 Şifre Değiştir</h3>
           <div class="form-grid" style="grid-template-columns:1fr 1fr">
             <div class="field"><label>Mevcut Şifre</label><input type="password" id="pwOld"></div>
             <div class="field"><label>Yeni Şifre (min. 8)</label><input type="password" id="pwNew"></div>
             <div class="full"><button class="btn btn-gold btn-sm" id="pwSave">Şifreyi Güncelle</button> <span class="muted" id="pwMsg" style="font-size:.82rem"></span></div>
           </div>
+          <h3 style="font-size:1.05rem;margin:20px 0 8px">📱 İki Adımlı Doğrulama (2FA)</h3>
+          <p class="mini" style="margin-bottom:10px">Google Authenticator (veya benzeri) uygulamasıyla girişinizi ikinci bir kodla koruyun.</p>
+          <div id="totpOff">
+            <button class="btn btn-gold btn-sm" id="totpSetup">2FA Kur</button>
+          </div>
+          <div id="totpSetupBox" hidden class="mt-2">
+            <p class="mini">1) Google Authenticator'da <strong>+ → QR kodu tara</strong> deyin ve bunu okutun:</p>
+            <div id="totpQr" style="background:#fff;padding:12px;border-radius:10px;display:inline-block;margin:10px 0"></div>
+            <p class="mini">QR okutamazsanız elle girin: <code id="totpSecret" style="user-select:all"></code></p>
+            <div class="adm-row">
+              <input class="adm-input" id="totpCode" maxlength="6" placeholder="Uygulamadaki 6 haneli kod">
+              <button class="btn btn-gold btn-sm" id="totpEnable">Doğrula ve Aç</button>
+              <span class="mini" id="totpMsg"></span>
+            </div>
+          </div>
+          <div id="totpOn" hidden class="mt-2">
+            <span class="adm-badge st-onaylandi">✓ 2FA AKTİF</span>
+            <div class="adm-row">
+              <input class="adm-input" id="totpOffCode" maxlength="6" placeholder="Kapatmak için kod">
+              <button class="btn btn-ghost btn-sm" id="totpDisable">2FA Kapat</button>
+              <span class="mini" id="totpMsg2"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- YETKİLİ KULLANICILAR (sadece Yönetici) -->
+        <div class="form-card" id="usersCard" hidden style="margin-bottom:18px">
+          <h3 style="font-size:1.05rem;margin-bottom:10px">👥 Yetkili Kullanıcılar <span class="mini">(rol bazlı erişim)</span></h3>
+          <div id="adminList" class="mini" style="margin-bottom:12px"></div>
+          <div class="adm-row">
+            <input class="adm-input" id="nuUser" placeholder="kullanıcı adı (küçük harf)">
+            <input class="adm-input" id="nuPass" type="password" placeholder="şifre (min 8)">
+            <select class="adm-input" id="nuRole">
+              <option value="editor">Editör — üye onay/düzenleme, işler (ödeme bilgisi GÖREMEZ)</option>
+              <option value="muhasebe">Muhasebe — sadece görüntüleme + ödeme bilgileri</option>
+              <option value="admin">Yönetici — tam yetki</option>
+            </select>
+            <button class="btn btn-gold btn-sm" id="nuAdd">+ Ekle</button>
+            <span class="mini" id="nuMsg"></span>
+          </div>
+        </div>
+
+        <!-- AKTİF OTURUMLAR (sadece Yönetici) -->
+        <div class="form-card" id="sessCard" hidden style="margin-bottom:18px">
+          <h3 style="font-size:1.05rem;margin-bottom:10px">🖥 Aktif Oturumlar &amp; Cihazlar</h3>
+          <div id="sessList" class="mini"></div>
         </div>
 
         <div id="sosBand"></div>
@@ -174,15 +233,21 @@
       const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload || {}) }).catch(() => null);
       const d = r ? await r.json().catch(() => ({})) : {};
-      return { ok: !!(r && r.ok), err: d.error };
+      return { ok: !!(r && r.ok), err: d.error, data: d };
     }
 
-    /* ---------- Giriş ---------- */
+    /* ---------- Giriş (kullanıcı adı + şifre + 2FA) ---------- */
     $("adminLoginForm").addEventListener("submit", async e => {
       e.preventDefault();
       $("loginErr").textContent = "Kontrol ediliyor…";
-      const res = await api("/api/admin/login", { password: $("adminPass").value });
-      if (!res.ok) { $("loginErr").textContent = res.err || "Şifre hatalı."; return; }
+      const r = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: $("adminUser").value, password: $("adminPass").value, code: $("adminCode").value }) }).catch(() => null);
+      const d = r ? await r.json().catch(() => ({})) : {};
+      if (!r || !r.ok) {
+        if (d.need_totp) $("totpField").hidden = false;
+        $("loginErr").textContent = d.error || "Giriş başarısız.";
+        return;
+      }
       $("loginErr").textContent = "";
       load();
     });
@@ -202,7 +267,19 @@
       if (!r || !r.ok) { $("loginView").hidden = false; $("panelView").hidden = true; return; }
       DATA = await r.json();
       $("loginView").hidden = true; $("panelView").hidden = false;
+      const me = DATA.me || { username: "?", role: "admin" };
+      const ROL_AD = { admin: "Yönetici", editor: "Editör", muhasebe: "Muhasebe" };
+      $("meBadge").textContent = "👤 " + me.username + " · " + (ROL_AD[me.role] || me.role);
+      /* rol bazlı arayüz: muhasebe işlem yapamaz */
+      document.body.classList.toggle("rol-muhasebe", me.role === "muhasebe");
+      if (me.role === "muhasebe") {
+        document.querySelectorAll(".adm-section-title, #jobCard, #jobsList").forEach(el => {
+          if (el.textContent && el.textContent.includes("İş Teklifi")) el.style.display = "none";
+        });
+        const jc = $("jTitle"); if (jc) jc.closest(".form-card").style.display = "none";
+      }
       renderSos(); renderUsers(); renderJobForm(); renderJobs(); renderSubs(); renderLogs(); renderShares();
+      renderAdmins(); renderSessions(); renderTotp();
     }
     load(); /* oturum varsa direkt panel açılır */
 
@@ -232,6 +309,93 @@
       $("shResult").innerHTML = `✓ Link hazır (${d.hours} saat): <a class="gold" href="${url}" target="_blank">${url}</a>
         <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('${url}')">📋 Kopyala</button>`;
       load();
+    });
+
+    function renderAdmins() {
+      const list = DATA.admins;
+      $("usersCard").hidden = !list;
+      if (!list) return;
+      $("adminList").innerHTML = list.map(u => `
+        <div class="adm-row" style="border-bottom:1px solid var(--line);padding-bottom:6px">
+          <strong>${u.username}</strong>
+          <span class="adm-badge">${{ admin: "Yönetici", editor: "Editör", muhasebe: "Muhasebe" }[u.role] || u.role}</span>
+          ${u.totp_on ? '<span class="adm-badge st-onaylandi">2FA ✓</span>' : ''}
+          <span style="flex:1"></span>
+          ${u.username !== "admin" ? `
+            <select class="adm-input" data-urole="${u.username}" style="padding:5px 8px">
+              ${["admin","editor","muhasebe"].map(r => `<option value="${r}" ${u.role === r ? "selected" : ""}>${{ admin: "Yönetici", editor: "Editör", muhasebe: "Muhasebe" }[r]}</option>`).join("")}
+            </select>
+            <button class="btn btn-ghost btn-sm" data-upw="${u.username}">Şifre Sıfırla</button>
+            <button class="btn btn-ghost btn-sm" data-udel="${u.username}">Sil</button>` : '<span class="mini">ana yönetici</span>'}
+        </div>`).join("");
+    }
+    $("usersCard").addEventListener("click", async e => {
+      const del = e.target.closest("[data-udel]");
+      const pw = e.target.closest("[data-upw]");
+      if (del && confirm(del.dataset.udel + " silinsin mi?")) {
+        await api("/api/admin/user", { action: "delete", username: del.dataset.udel }); load();
+      }
+      if (pw) {
+        const yeni = prompt(pw.dataset.upw + " için yeni şifre (min 8):");
+        if (yeni) { const r = await api("/api/admin/user", { action: "resetpw", username: pw.dataset.upw, password: yeni }); alert(r.ok ? "Şifre güncellendi" : r.err); }
+      }
+    });
+    $("usersCard").addEventListener("change", async e => {
+      const sel = e.target.closest("[data-urole]");
+      if (sel) { await api("/api/admin/user", { action: "role", username: sel.dataset.urole, role: sel.value }); load(); }
+    });
+    $("nuAdd").addEventListener("click", async () => {
+      const r = await api("/api/admin/user", { action: "add", username: $("nuUser").value, password: $("nuPass").value, role: $("nuRole").value });
+      $("nuMsg").textContent = r.ok ? "✓ Eklendi" : (r.err || "Hata");
+      if (r.ok) { $("nuUser").value = $("nuPass").value = ""; load(); }
+    });
+
+    function renderSessions() {
+      const list = DATA.sessions;
+      $("sessCard").hidden = !list;
+      if (!list) return;
+      $("sessList").innerHTML = list.map(x => `
+        <div class="adm-row" style="border-bottom:1px solid var(--line);padding-bottom:6px">
+          <strong>${x.username}</strong> ${x.current ? '<span class="adm-badge st-onaylandi">bu cihaz</span>' : ""}
+          <span>🌐 ${x.ip || "?"}</span>
+          <span title="${x.ua || ""}">💻 ${(x.ua || "").includes("Mobile") ? "Mobil" : "Masaüstü"} · ${(x.ua || "").split(" ")[0] || "?"}</span>
+          <span>🕐 ${x.created?.slice(0,16).replace("T"," ")}</span>
+          <span style="flex:1"></span>
+          <button class="btn btn-ghost btn-sm" data-rev="${x.full_token}">Sonlandır</button>
+        </div>`).join("") || '<span class="mini">Aktif oturum yok.</span>';
+    }
+    $("sessCard").addEventListener("click", async e => {
+      const b = e.target.closest("[data-rev]");
+      if (!b || !confirm("Bu oturum sonlandırılsın mı?")) return;
+      await api("/api/admin/revoke", { token: b.dataset.rev });
+      load();
+    });
+
+    function renderTotp() {
+      const me2fa = (DATA.admins || []).find(a => a.username === DATA.me?.username);
+      const on = me2fa ? !!me2fa.totp_on : null; /* admins listesi yoksa (editor) setup yine calisir */
+      $("totpOn").hidden = !(on === true);
+      $("totpOff").hidden = (on === true);
+    }
+    $("totpSetup").addEventListener("click", async () => {
+      const r = await fetch("/api/admin/totp", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "setup" }) });
+      const d = await r.json();
+      if (!r.ok) { $("totpMsg").textContent = d.error || "Hata"; return; }
+      $("totpSetupBox").hidden = false;
+      $("totpSecret").textContent = d.secret;
+      $("totpQr").innerHTML = "";
+      new QRCode($("totpQr"), { text: d.uri, width: 160, height: 160 });
+    });
+    $("totpEnable").addEventListener("click", async () => {
+      const r = await api("/api/admin/totp", { action: "enable", code: $("totpCode").value });
+      $("totpMsg").textContent = r.ok ? "✓ 2FA açıldı — bir sonraki girişte kod sorulacak" : (r.err || "Hata");
+      if (r.ok) { $("totpSetupBox").hidden = true; $("totpOff").hidden = true; $("totpOn").hidden = false; }
+    });
+    $("totpDisable").addEventListener("click", async () => {
+      const r = await api("/api/admin/totp", { action: "disable", code: $("totpOffCode").value });
+      $("totpMsg2").textContent = r.ok ? "✓ Kapatıldı" : (r.err || "Hata");
+      if (r.ok) { $("totpOn").hidden = true; $("totpOff").hidden = false; }
     });
 
     function renderShares() {
@@ -472,7 +636,7 @@
     function renderLogs() {
       $("logTitle").hidden = !(DATA.audit || []).length;
       $("logs").innerHTML = (DATA.audit || []).map(l =>
-        `<div class="adm-log">${l.created?.slice(0,16).replace("T"," ")} · <strong>${l.who}</strong> → ${l.action}${l.user_id ? " (üye #" + l.user_id + ")" : ""}${l.detail ? " — " + esc(l.detail) : ""}</div>`).join("");
+        `<div class="adm-log">${l.created?.slice(0,16).replace("T"," ")} · <strong>${l.who}</strong>${l.ip ? ' <span style="opacity:.6">[' + l.ip + ']</span>' : ""} → ${l.action}${l.user_id ? " (üye #" + l.user_id + ")" : ""}${l.detail ? " — " + esc(l.detail) : ""}</div>`).join("");
     }
   </script>
 </body>
