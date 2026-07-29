@@ -542,7 +542,9 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/admin/password":
             if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
             d = jbody()
-            if not self._check_admin_pw(d.get("old")):
+            # Yedek anahtar (admin-key.txt) eski şifre olmadan sıfırlayabilir
+            master = qs.get("key", [""])[0] == ADMIN_KEY
+            if not master and not self._check_admin_pw(d.get("old")):
                 return self._json(401, {"error": "Mevcut şifre hatalı"})
             new = d.get("new") or ""
             if len(new) < 8:
