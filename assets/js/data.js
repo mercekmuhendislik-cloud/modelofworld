@@ -32,10 +32,16 @@ const AGENCY = {
 
 /* Kategori tanımları */
 const CATEGORIES = {
-  model:  { label: "Manken / Model",        short: "Model",       icon: "◆" },
-  hostes: { label: "Fuar / Kongre Hostesi", short: "Hostes",      icon: "◈" },
-  yuz:    { label: "Yüz Modeli",            short: "Yüz Modeli",  icon: "◇" },
-  cocuk:  { label: "Çocuk Model",           short: "Çocuk Model", icon: "✦" },
+  model:   { label: "Manken / Model",           short: "Model",        icon: "◆" },
+  hostes:  { label: "Fuar / Kongre Hostesi",    short: "Hostes",       icon: "◈" },
+  yuz:     { label: "Yüz Modeli",               short: "Yüz Modeli",   icon: "◇" },
+  cocuk:   { label: "Çocuk Model",              short: "Çocuk Model",  icon: "✦" },
+  nu:      { label: "Nü / Sanatsal Model (18+)", short: "Nü / Sanatsal", icon: "●" },
+  fitness: { label: "Fitness / Spor Modeli",    short: "Fitness",      icon: "▲" },
+  plus:    { label: "Büyük Beden Model",        short: "Büyük Beden",  icon: "◗" },
+  oyuncu:  { label: "Reklam Oyuncusu / Cast",   short: "Oyuncu",       icon: "★" },
+  dans:    { label: "Dansçı / Performans",      short: "Dansçı",       icon: "♪" },
+  promo:   { label: "Tanıtım / Promosyon",      short: "Promosyon",    icon: "✚" },
 };
 
 /* ---------------------------------------------------------
@@ -144,6 +150,72 @@ const TALENTS = [
     gradient: ["#1c1c26", "#3f5c7a"],
     photo: IMG("1539571696357-5a69c17a67c6"),
     photos: {}, video: "", bio: "Uluslararası kongrelerde protokol karşılama ve simultane yönlendirme görevlerinde deneyimlidir."
+  },
+  {
+    id: "derin-s", name: "Derin S.", category: "nu", gender: "kadin",
+    age: 26, height: 175, weight: 56, bust: 87, waist: 61, hip: 90, shoe: 39, size: "36",
+    hair: "kahverengi", eye: "ela", city: "istanbul", license: false, available: true,
+    languages: ["Türkçe", "İngilizce"], langLevels: { "İngilizce": "B2" },
+    experience: "4 yıl", featured: false,
+    tags: ["sanatsal", "editoryal", "güzel sanatlar"],
+    gradient: ["#2e1520", "#8c4a63"],
+    photo: IMG("1581044777550-4cfa60707c03"),
+    photos: {}, video: "", bio: "Sanatsal ve estetik ağırlıklı projelerde deneyimli; yalnızca sözleşmeli, kapalı set ve refakatçili çekimlerde çalışmaktadır."
+  },
+  {
+    id: "berk-a", name: "Berk A.", category: "fitness", gender: "erkek",
+    age: 27, height: 186, weight: 85, bust: 104, waist: 79, hip: 97, shoe: 44, size: "50",
+    hair: "kahverengi", eye: "kahverengi", city: "istanbul", license: true, available: true,
+    languages: ["Türkçe", "İngilizce"], langLevels: { "İngilizce": "B2" },
+    experience: "5 yıl", featured: false,
+    tags: ["fitness", "spor markaları", "reklam"],
+    gradient: ["#14231a", "#4a7a5c"],
+    photo: IMG("1492562080023-ab3db95bfbce"),
+    photos: {}, video: "", bio: "Spor giyim ve supplement markalarıyla çalışmaktadır. Kişisel antrenör sertifikalıdır."
+  },
+  {
+    id: "selma-d", name: "Selma D.", category: "plus", gender: "kadin",
+    age: 29, height: 174, weight: 82, bust: 104, waist: 88, hip: 114, shoe: 39, size: "44",
+    hair: "siyah", eye: "kahverengi", city: "istanbul", license: true, available: true,
+    languages: ["Türkçe"], langLevels: {},
+    experience: "3 yıl", featured: false,
+    tags: ["büyük beden", "katalog çekimi", "e-ticaret"],
+    gradient: ["#2b1a2e", "#6b3f78"],
+    photo: IMG("1488426862026-3ee34a7d66df"),
+    photos: {}, video: "", bio: "Büyük beden giyim markalarının katalog ve e-ticaret çekimlerinde deneyimlidir."
+  },
+  {
+    id: "cem-t", name: "Cem T.", category: "oyuncu", gender: "erkek",
+    age: 33, height: 182, weight: 80, bust: 100, waist: 82, hip: 98, shoe: 43, size: "50",
+    hair: "siyah", eye: "kahverengi", city: "istanbul", license: true, available: true,
+    languages: ["Türkçe", "İngilizce"], langLevels: { "İngilizce": "C1" },
+    experience: "9 yıl", featured: false,
+    tags: ["reklam filmi", "dizi", "karakter oyuncusu"],
+    gradient: ["#101820", "#37596b"],
+    photo: IMG("1506794778202-cad84cf45f1d"),
+    photos: {}, video: "", bio: "Ulusal TV reklamları ve dizilerde yan rol deneyimi bulunan karakter oyuncusudur."
+  },
+  {
+    id: "nehir-k", name: "Nehir K.", category: "dans", gender: "kadin",
+    age: 24, height: 170, weight: 54, bust: 85, waist: 60, hip: 89, shoe: 38, size: "36",
+    hair: "sari", eye: "yesil", city: "izmir", license: false, available: true,
+    languages: ["Türkçe", "İngilizce"], langLevels: { "İngilizce": "B1" },
+    experience: "6 yıl", featured: false,
+    tags: ["modern dans", "koreografi", "sahne performansı"],
+    gradient: ["#0f2733", "#2f6b8c"],
+    photo: IMG("1438761681033-6461ffad8d80"),
+    photos: {}, video: "", bio: "Konservatuvar mezunu; lansman ve sahne şovlarında dans performansı sergilemektedir."
+  },
+  {
+    id: "asli-p", name: "Aslı P.", category: "promo", gender: "kadin",
+    age: 23, height: 172, weight: 55, bust: 86, waist: 62, hip: 90, shoe: 38, size: "36",
+    hair: "kahverengi", eye: "yesil", city: "ankara", license: true, available: true,
+    languages: ["Türkçe", "İngilizce"], langLevels: { "İngilizce": "B1" },
+    experience: "2 yıl", featured: false,
+    tags: ["tanıtım", "örnek ürün dağıtımı", "stant"],
+    gradient: ["#33200f", "#a3663a"],
+    photo: IMG("1573496359142-b8d87734a5a2"),
+    photos: {}, video: "", bio: "AVM ve saha aktivasyonlarında tanıtım ve örnek ürün dağıtım kampanyalarında görev almaktadır."
   },
   {
     id: "lina-r", name: "Lina R.", category: "yuz", gender: "kadin",

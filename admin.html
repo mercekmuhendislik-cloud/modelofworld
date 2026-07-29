@@ -167,7 +167,7 @@
       "Ölçü bilgileriniz eksik — lütfen ölçü kartınızı tamamlayın.",
       "Şu an kadromuz için uygun profil bulunmuyor; ileride tekrar değerlendirilecektir.",
     ];
-    const CATS = { model:"Model", hostes:"Hostes", yuz:"Yüz Modeli", cocuk:"Çocuk", oyuncu:"Oyuncu" };
+    const CATS = { model:"Model", hostes:"Hostes", yuz:"Yüz Modeli", cocuk:"Çocuk", oyuncu:"Oyuncu", nu:"Nü/Sanatsal", fitness:"Fitness", plus:"Büyük Beden", dans:"Dansçı", promo:"Promosyon" };
 
     async function api(path, payload) {
       const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" },
@@ -358,7 +358,7 @@
                 <div><label>Telefon</label><input class="adm-input" data-e="phone" value="${esc(u.phone)}"></div>
                 <div><label>Şehir</label><input class="adm-input" data-e="city" value="${esc(p.city)}"></div>
                 <div><label>Doğum</label><input class="adm-input" type="date" data-e="birthdate" value="${esc(p.birthdate)}"></div>
-                <div><label>Kategori</label><select class="adm-input" data-e="category">${["","model","hostes","yuz","cocuk","oyuncu"].map(c => `<option value="${c}" ${p.category === c ? "selected" : ""}>${CATS[c] || "—"}</option>`).join("")}</select></div>
+                <div><label>Kategori</label><select class="adm-input" data-e="category">${["","model","hostes","yuz","nu","fitness","plus","oyuncu","dans","promo","cocuk"].map(c => `<option value="${c}" ${p.category === c ? "selected" : ""}>${CATS[c] || "—"}</option>`).join("")}</select></div>
                 <div><label>Cinsiyet</label><select class="adm-input" data-e="gender"><option value="">—</option><option value="kadin" ${p.gender === "kadin" ? "selected" : ""}>Kadın</option><option value="erkek" ${p.gender === "erkek" ? "selected" : ""}>Erkek</option></select></div>
                 <div><label>Boy</label><input class="adm-input" data-e="height" value="${esc(p.height)}"></div>
                 <div><label>Kilo</label><input class="adm-input" data-e="weight" value="${esc(p.weight)}"></div>

@@ -43,7 +43,7 @@
         return;
       }
       const d = await r.json();
-      const CATS = { model: "Manken / Model", hostes: "Fuar & Kongre Hostesi", yuz: "Yüz Modeli", cocuk: "Çocuk Model", oyuncu: "Oyuncu / Cast" };
+      const CATS = { model: "Manken / Model", hostes: "Fuar & Kongre Hostesi", yuz: "Yüz Modeli", cocuk: "Çocuk Model", oyuncu: "Oyuncu / Cast", nu: "Nü / Sanatsal Model", fitness: "Fitness / Spor Modeli", plus: "Büyük Beden Model", dans: "Dansçı / Performans", promo: "Tanıtım / Promosyon" };
       root.innerHTML = d.members.map(m => {
         const p = m.profile || {};
         const rows = [["Boy", p.height && p.height + " cm"], ["Kilo", p.weight && p.weight + " kg"],

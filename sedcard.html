@@ -71,7 +71,7 @@
       const p = u.profile || {};
 
       $("scName").textContent = u.fullname || "—";
-      const CATS = { model: "Manken / Model", hostes: "Fuar & Kongre Hostesi", yuz: "Yüz Modeli", cocuk: "Çocuk Model", oyuncu: "Oyuncu / Cast" };
+      const CATS = { model: "Manken / Model", hostes: "Fuar & Kongre Hostesi", yuz: "Yüz Modeli", cocuk: "Çocuk Model", oyuncu: "Oyuncu / Cast", nu: "Nü / Sanatsal Model", fitness: "Fitness / Spor Modeli", plus: "Büyük Beden Model", dans: "Dansçı / Performans", promo: "Tanıtım / Promosyon" };
       $("scCat").textContent = CATS[p.category] || p.category || "";
 
       /* En iyi 4 fotoğraf: önce stüdyo, sonra podyum, sonra diğerleri (arşiv hariç) */

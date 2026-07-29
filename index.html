@@ -70,14 +70,8 @@
       <!-- Hızlı Cast Arama Modülü -->
       <div class="quick-cast reveal">
         <span class="qc-title">Hızlı Cast Arama</span>
+        <div class="chip-row" id="qcCats" style="margin-bottom:12px"></div>
         <form class="qc-row" id="quickCast">
-          <select id="qcCategory" aria-label="Kategori">
-            <option value="">Tüm Kategoriler</option>
-            <option value="model">Manken / Model</option>
-            <option value="hostes">Fuar Hostesi</option>
-            <option value="yuz">Yüz Modeli</option>
-            <option value="cocuk">Çocuk Model</option>
-          </select>
           <select id="qcGender" aria-label="Cinsiyet">
             <option value="">Kadın + Erkek</option>
             <option value="kadin">Kadın</option>
@@ -189,13 +183,30 @@
     (function () {
       const { TALENTS, SERVICES, PROJECTS, COUNTERS, renderTalentCard, observeNew } = window.VERA;
 
-      /* --- Hızlı Cast Arama --- */
+      /* --- Hızlı Cast Arama: çoklu kategori seçimi --- */
+      const CAT_META = window.VERA.CATEGORIES;
+      const qcCats = document.getElementById("qcCats");
+      qcCats.innerHTML = `<button type="button" class="chip active" data-val="">Tümü</button>` +
+        Object.entries(CAT_META).map(([k, v]) =>
+          `<button type="button" class="chip" data-val="${k}">${v.short}</button>`).join("");
+      qcCats.addEventListener("click", e => {
+        const c = e.target.closest(".chip");
+        if (!c) return;
+        if (c.dataset.val === "") {
+          qcCats.querySelectorAll(".chip").forEach(x => x.classList.toggle("active", x.dataset.val === ""));
+        } else {
+          c.classList.toggle("active");
+          qcCats.querySelector('[data-val=""]').classList.toggle("active",
+            !qcCats.querySelector('.chip.active:not([data-val=""])'));
+        }
+      });
       document.getElementById("quickCast").addEventListener("submit", e => {
         e.preventDefault();
         const p = new URLSearchParams();
-        const cat = document.getElementById("qcCategory").value;
+        const cats = [...qcCats.querySelectorAll('.chip.active[data-val]:not([data-val=""])')]
+          .map(c => c.dataset.val);
         const gen = document.getElementById("qcGender").value;
-        if (cat) p.set("cat", cat);
+        if (cats.length) p.set("cat", cats.join(","));
         if (gen) p.set("gender", gen);
         location.href = "katalog.html" + (p.toString() ? "?" + p : "");
       });

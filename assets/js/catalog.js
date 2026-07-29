@@ -37,7 +37,26 @@
   const langOpts = [...new Set(TALENTS.flatMap(t => t.languages || []))]
     .filter(l => l !== "Türkçe").map(l => [l, l]);
 
-  buildChips(document.getElementById("fCategory"), catOpts, "category");
+  /* Kategori: ÇOKLU seçim (diğer filtreler tekli) */
+  const catEl = document.getElementById("fCategory");
+  const catActive = () => state.category ? state.category.split(",") : [];
+  catEl.innerHTML = `<button class="chip ${state.category ? "" : "active"}" data-val="">Tümü</button>` +
+    catOpts.map(([val, label]) =>
+      `<button class="chip ${catActive().includes(val) ? "active" : ""}" data-val="${val}">${label}</button>`).join("");
+  catEl.addEventListener("click", e => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    if (chip.dataset.val === "") {
+      state.category = "";
+      catEl.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c.dataset.val === ""));
+    } else {
+      chip.classList.toggle("active");
+      const act = [...catEl.querySelectorAll('.chip.active[data-val]:not([data-val=""])')].map(c => c.dataset.val);
+      state.category = act.join(",");
+      catEl.querySelector('[data-val=""]').classList.toggle("active", !act.length);
+    }
+    apply();
+  });
   buildChips(document.getElementById("fCity"), cityOpts, "city");
   buildChips(document.getElementById("fHair"), hairOpts, "hair");
   buildChips(document.getElementById("fEye"), eyeOpts, "eye");
@@ -54,7 +73,7 @@
   /* ---- Filtreleme ---- */
   function apply() {
     let list = TALENTS.filter(t => {
-      if (state.category && t.category !== state.category) return false;
+      if (state.category && !state.category.split(",").includes(t.category)) return false;
       if (state.gender && t.gender !== state.gender) return false;
       if (t.height < state.minHeight) return false;
       if (state.maxWeight < 90 && (t.weight || 0) > state.maxWeight) return false;
@@ -101,7 +120,7 @@
       apply();
     });
   }
-  ["fCategory:category", "fGender:gender", "fCity:city", "fHair:hair", "fEye:eye",
+  ["fGender:gender", "fCity:city", "fHair:hair", "fEye:eye",
    "fShoe:shoe", "fSize:size", "fLang:lang"]
     .forEach(pair => { const [id, key] = pair.split(":"); bindChipGroup(id, key); });
 
