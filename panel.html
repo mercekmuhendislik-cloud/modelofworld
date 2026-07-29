@@ -93,6 +93,7 @@
         <button class="tab-btn active" data-tab="genel">Temel Bilgiler</button>
         <button class="tab-btn" data-tab="olculer">Ölçü Kartım</button>
         <button class="tab-btn" data-tab="medya">Fotoğraf &amp; Video</button>
+        <button class="tab-btn" data-tab="tercihler">Tercihler &amp; Güvenlik</button>
         <button class="tab-btn" data-tab="onaylar">İmza &amp; Onay</button>
         <button class="tab-btn" data-tab="teklifler">İş Tekliflerim <span id="offerBadge" class="fav-count" style="position:static;display:none"></span></button>
         <button class="tab-btn" data-tab="takvim">Müsaitlik</button>
@@ -182,10 +183,89 @@
             <label>Ten Rengi</label>
             <select name="skin"><option value="">Seçiniz…</option><option>Açık</option><option>Buğday</option><option>Esmer</option><option>Koyu</option></select>
           </div>
+
+          <div class="form-section-title">Fiziksel Öznitelikler (casting eşleşmesi için önemli)</div>
+          <div class="field"><label>Dövme (var mı, neresinde?)</label><input type="text" name="tattoo_info" placeholder="örn. Sol kol iç, küçük"></div>
+          <div class="field"><label>Yara İzi / Doğum Lekesi</label><input type="text" name="scar_info" placeholder="örn. Yok / sağ diz"></div>
+          <div class="field"><label>Estetik Operasyon</label><input type="text" name="aesthetic_info" placeholder="örn. Yok / burun"></div>
+
+          <div class="form-section-title">Ekstra Yetenekler</div>
+          <div class="field full">
+            <div class="skill-grid">
+              <label class="skill-check"><input type="checkbox" class="skl" value="Dans"><span>Dans</span></label>
+              <label class="skill-check"><input type="checkbox" class="skl" value="Akrobasi"><span>Akrobasi</span></label>
+              <label class="skill-check"><input type="checkbox" class="skl" value="Dövüş Sanatları"><span>Dövüş Sanatları</span></label>
+              <label class="skill-check"><input type="checkbox" class="skl" value="Yüzme/Dalış"><span>Yüzme / Dalış</span></label>
+              <label class="skill-check"><input type="checkbox" class="skl" value="Binicilik"><span>Binicilik</span></label>
+              <label class="skill-check"><input type="checkbox" class="skl" value="Ekstrem Spor"><span>Ekstrem Spor</span></label>
+              <label class="skill-check"><input type="checkbox" class="skl" value="Oyunculuk"><span>Oyunculuk</span></label>
+              <label class="skill-check"><input type="checkbox" class="skl" value="Spikerlik"><span>Spikerlik</span></label>
+            </div>
+            <input type="text" id="sklExtra" class="search-input mt-2" placeholder="Diğer yetenekleriniz (örn. Latin dansları, jimnastik)…">
+            <span class="hint">Yetenek videolarınızı "Fotoğraf &amp; Video" sekmesinden yükleyebilirsiniz.</span>
+          </div>
         </div>
         <div class="wizard-nav">
           <span class="muted" id="msg-olculer" style="font-size:.85rem"></span>
           <button class="btn btn-gold" data-save="olculer">Kaydet ve Devam Et →</button>
+        </div>
+      </div>
+
+      <!-- TERCİHLER & GÜVENLİK -->
+      <div class="form-card tab-pane" id="tab-tercihler">
+        <h3 style="margin-bottom:6px">Çekim Tercihleri &amp; Kişisel Sınırlarım</h3>
+        <p class="muted" style="font-size:.86rem;margin-bottom:16px">Bu tercihler yalnızca size uygun projelerin teklif edilmesi için kullanılır. İstediğiniz zaman değiştirebilirsiniz; hiçbir tercih sizi zorunda bırakmaz.</p>
+
+        <div class="guide-box" id="prefLock" style="display:none;margin-bottom:16px">
+          <strong>ℹ️ Bilgi</strong> 18 yaş altı üyelerde çekim tercihi "Standart Giyim" olarak sabittir ve değiştirilemez.
+        </div>
+
+        <div class="form-grid" style="grid-template-columns:1fr">
+          <div class="field" id="prefField">
+            <label>Kabul Ettiğim Çekim Türleri</label>
+            <div class="skill-grid">
+              <label class="skill-check"><input type="checkbox" class="prf" value="standart"><span>Standart Giyim</span></label>
+              <label class="skill-check"><input type="checkbox" class="prf" value="guzellik"><span>Güzellik / Yüz</span></label>
+              <label class="skill-check"><input type="checkbox" class="prf" value="ic_giyim"><span>İç Giyim / Bikini</span></label>
+              <label class="skill-check"><input type="checkbox" class="prf" value="yari_nu"><span>Yarı Nü (Sanatsal)</span></label>
+              <label class="skill-check"><input type="checkbox" class="prf" value="nu"><span>Nü (Sanatsal)</span></label>
+            </div>
+          </div>
+
+          <div class="field" id="bndField" style="display:none">
+            <label>Kesin Sınırlarım (Onay Matrisi) — bu koşullar sözleşmeye eklenir</label>
+            <div class="skill-grid">
+              <label class="skill-check"><input type="checkbox" class="bnd" value="Yüzüm görünmemeli"><span>Yüzüm görünmesin</span></label>
+              <label class="skill-check"><input type="checkbox" class="bnd" value="Çiftli/ikili çekim istemiyorum"><span>Çiftli çekim yok</span></label>
+              <label class="skill-check"><input type="checkbox" class="bnd" value="Yakın temas istemiyorum"><span>Yakın temas yok</span></label>
+              <label class="skill-check"><input type="checkbox" class="bnd" value="Sadece kadın fotoğrafçı"><span>Sadece kadın fotoğrafçı</span></label>
+              <label class="skill-check"><input type="checkbox" class="bnd" value="Sadece kapalı set"><span>Sadece kapalı set</span></label>
+            </div>
+            <input type="text" id="bndExtra" class="search-input mt-2" placeholder="Diğer sınırlarınız…">
+          </div>
+
+          <div class="field">
+            <label>Set Güvenliği / Refakatçi Tercihim</label>
+            <select name="chaperone">
+              <option value="">Seçiniz…</option>
+              <option value="gerek-yok">Refakatçiye gerek yok</option>
+              <option value="ajans-koordinator">Ajans set koordinatörü sette bulunsun</option>
+              <option value="kendi-refakatci">Kendi refakatçim sette bulunacak</option>
+            </select>
+            <span class="hint">Sanatsal/özel çekimlerde refakatçi bulundurma hakkınız her koşulda saklıdır.</span>
+          </div>
+
+          <div class="form-section-title">Taban Kaşe Ücretlerim (TL / gün)</div>
+          <div class="form-grid" style="padding:0">
+            <div class="field"><label>Katalog / E-ticaret</label><input type="number" name="rate_catalog" placeholder="örn. 5000"></div>
+            <div class="field"><label>Podyum / Defile</label><input type="number" name="rate_runway" placeholder="örn. 8000"></div>
+            <div class="field" id="rateArtWrap" style="display:none"><label>Sanatsal / Özel Çekim</label><input type="number" name="rate_artistic" placeholder="örn. 15000"></div>
+          </div>
+          <span class="hint">Ücretler müşteriye gösterilmez; ajansın size uygun teklif hazırlaması için kullanılır.</span>
+        </div>
+        <div class="wizard-nav">
+          <span class="muted" id="msg-tercihler" style="font-size:.85rem"></span>
+          <button class="btn btn-gold" data-save="tercihler">Kaydet</button>
         </div>
       </div>
 
@@ -204,10 +284,21 @@
         </div>
         <div class="my-photos" data-grid="podium"></div>
 
+        <div class="guide-box" id="polaroidWarn" style="display:none;margin-top:16px">
+          <strong>⏰ Polaroid güncellemesi gerekli</strong>
+          Doğal (makyajsız) polaroid fotoğraflarınız 6 aydan eski ya da hiç yok. Ajans standardı gereği lütfen güncel polaroid yükleyin.
+        </div>
         <div class="album-head"><h4>🤳 Polaroid (Makyajsız / Doğal)</h4>
           <label class="btn btn-gold btn-sm" style="cursor:pointer">+ Yükle<input type="file" class="albumInput" data-album="polaroid" accept="image/*" multiple style="display:none"></label>
         </div>
         <div class="my-photos" data-grid="polaroid"></div>
+
+        <div id="sanatsalWrap" style="display:none">
+          <div class="album-head"><h4>🎨 Sanatsal / Özel Albüm <span class="muted" style="letter-spacing:0;text-transform:none">(yalnızca yetkili ajans personeli görür, müşterilere izinsiz gösterilmez)</span></h4>
+            <label class="btn btn-gold btn-sm" style="cursor:pointer">+ Yükle<input type="file" class="albumInput" data-album="sanatsal" accept="image/*" multiple style="display:none"></label>
+          </div>
+          <div class="my-photos" data-grid="sanatsal"></div>
+        </div>
         <p class="muted mt-2" id="uploadStatus" style="font-size:.84rem"></p>
 
         <h3 style="margin:30px 0 6px">🎬 Video Book</h3>
@@ -249,6 +340,16 @@
                 <a class="gold" href="sozlesme.html" target="_blank">Çalışma prensipleri ve şartlarını</a> okudum, kabul ediyorum.
                 Ajansın adaylardan hiçbir ücret talep etmediğini biliyorum. <span class="req">*</span>
               </label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Kimlik &amp; Adli Sicil Belgesi <span class="muted" style="text-transform:none;letter-spacing:0">(güvenlik gereği — KVKK kapsamında şifreli saklanır, 3. kişilerle paylaşılmaz)</span></label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer">🪪 Kimlik Ön Yüzü
+                <input type="file" id="kimlikInput" accept=".pdf,image/*" style="display:none"></label>
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer">📋 Adli Sicil Kaydı (e-Devlet)
+                <input type="file" id="adliInput" accept=".pdf,image/*" style="display:none"></label>
+              <span class="muted" id="belgeStat" style="font-size:.82rem"></span>
             </div>
           </div>
           <div class="field">
@@ -368,6 +469,11 @@
     </div>
   </div>
 
+  <button id="sosBtn" title="Acil Durum — ajansa konumunuzla alarm gönderir"
+    style="position:fixed;left:20px;bottom:20px;z-index:90;background:#c62828;color:#fff;border-radius:999px;padding:13px 20px;font-weight:600;letter-spacing:.1em;box-shadow:0 10px 30px rgba(198,40,40,.45)">
+    🆘 SOS
+  </button>
+
   <div id="site-footer"></div>
 
   <script src="assets/js/data.js"></script>
@@ -396,7 +502,7 @@
         ctx.textAlign = "right"; ctx.textBaseline = "bottom";
         ctx.shadowColor = "rgba(0,0,0,.65)"; ctx.shadowBlur = fs / 2;
         ctx.fillStyle = "rgba(255,255,255,.85)";
-        ctx.fillText("MODEL OF WORLD", w - fs * 0.7, h - fs * 0.6);
+        ctx.fillText("MODEL OF WORLD ©", w - fs * 0.7, h - fs * 0.6);
         ctx.shadowBlur = 0;
       }
       function toWebp(canvas) {
@@ -522,6 +628,46 @@
         catch (err) { $("msg-genel").textContent = err.message; }
         e.target.value = ""; load(false);
       });
+      $("kimlikInput").addEventListener("change", async e => {
+        const f = e.target.files[0]; if (!f) return;
+        try { await upload("kimlik", "genel", f, f.name); } catch (err) { alert(err.message); }
+        e.target.value = ""; load(false);
+      });
+      $("adliInput").addEventListener("change", async e => {
+        const f = e.target.files[0]; if (!f) return;
+        try { await upload("adli", "genel", f, f.name); } catch (err) { alert(err.message); }
+        e.target.value = ""; load(false);
+      });
+
+      /* ---- SOS ---- */
+      $("sosBtn").addEventListener("click", () => {
+        if (!confirm("ACİL DURUM alarmı ajans yönetimine konumunuzla birlikte gönderilecek. Onaylıyor musunuz?")) return;
+        const send = async (lat, lng) => {
+          const msg = prompt("Kısaca durum (boş bırakabilirsiniz):") || "";
+          const r = await fetch("/api/sos", { method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat, lng, msg }) }).catch(() => null);
+          alert(r && r.ok ? "🆘 Alarm gönderildi. Ajans en kısa sürede sizinle iletişime geçecek. Acil tehlikedeyseniz 155'i arayın."
+                          : "Gönderilemedi — lütfen ajansı telefonla arayın.");
+        };
+        navigator.geolocation
+          ? navigator.geolocation.getCurrentPosition(p => send(p.coords.latitude, p.coords.longitude), () => send(null, null), { timeout: 6000 })
+          : send(null, null);
+      });
+
+      /* ---- Tercih gorunurlukleri ---- */
+      function syncPrefUI() {
+        const minor = isMinor();
+        $("prefLock").style.display = minor ? "" : "none";
+        document.querySelectorAll(".prf").forEach(c => c.disabled = minor);
+        const marked = [...document.querySelectorAll(".prf:checked")].map(c => c.value);
+        const sensitive = !minor && marked.some(v => ["ic_giyim", "yari_nu", "nu"].includes(v));
+        $("bndField").style.display = sensitive ? "" : "none";
+        $("rateArtWrap").style.display = sensitive ? "" : "none";
+        const sw = $("sanatsalWrap");
+        if (sw) sw.style.display = sensitive ? "" : "none";
+      }
+      document.querySelectorAll(".prf").forEach(c => c.addEventListener("change", syncPrefUI));
+      ["category", "birthdate"].forEach(n => field(n).addEventListener("change", syncPrefUI));
 
       /* ============ İmza ============ */
       const sc = $("sigCanvas"), sx2 = sc.getContext("2d");
@@ -564,7 +710,8 @@
       /* ============ Kaydetme ============ */
       const SAVE_FIELDS = {
         genel: ["category","gender","birthdate","city","languages","instagram","about","parent_name","parent_tc","parent_phone"],
-        olculer: ["height","weight","bust","waist","hip","shoe","size","hair","eye","skin"],
+        olculer: ["height","weight","bust","waist","hip","shoe","size","hair","eye","skin","tattoo_info","scar_info","aesthetic_info"],
+        tercihler: ["chaperone","rate_catalog","rate_runway","rate_artistic"],
         medya: ["video_link"],
         onaylar: ["consent_kvkk","consent_contract"],
         odeme: ["iban","account_name","bank_name","invoice_type","tax_no"],
@@ -580,6 +727,20 @@
           if (!sel) { msg.textContent = "Lütfen bir seçenek işaretleyin."; return; }
           payload.privacy = sel.value;
         } else (SAVE_FIELDS[key] || []).forEach(n => payload[n] = val(n));
+
+        if (key === "olculer") {
+          payload.skills = JSON.stringify({
+            list: [...document.querySelectorAll(".skl:checked")].map(c => c.value),
+            text: $("sklExtra").value.trim(),
+          });
+        }
+        if (key === "tercihler") {
+          payload.shoot_prefs = [...document.querySelectorAll(".prf:checked")].map(c => c.value).join(",") || "standart";
+          payload.boundaries = JSON.stringify({
+            list: [...document.querySelectorAll(".bnd:checked")].map(c => c.value),
+            text: $("bndExtra").value.trim(),
+          });
+        }
 
         if (key === "genel") {
           if (!payload.category || !payload.gender || !payload.birthdate || !payload.city) {
@@ -620,12 +781,23 @@
 
       /* ============ Medya listeleri ============ */
       function renderMedia() {
-        ["studio", "podium", "polaroid"].forEach(al => {
+        ["studio", "podium", "polaroid", "sanatsal"].forEach(al => {
           const items = ME.media.filter(m => m.kind === "photo" && (m.album === al || (al === "studio" && (!m.album || m.album === "genel"))));
-          document.querySelector(`[data-grid="${al}"]`).innerHTML = items.length
+          const gridEl = document.querySelector(`[data-grid="${al}"]`);
+          if (!gridEl) return;
+          gridEl.innerHTML = items.length
             ? items.map(m => `<div class="my-photo"><img src="/api/photo/${m.id}" loading="lazy"><button data-del="${m.id}">✕</button></div>`).join("")
             : `<p class="muted" style="grid-column:1/-1;font-size:.82rem">Bu albümde fotoğraf yok.</p>`;
         });
+        /* kimlik & adli belge durumu */
+        const kim = ME.media.filter(m => m.kind === "kimlik").length;
+        const adl = ME.media.filter(m => m.kind === "adli").length;
+        $("belgeStat").textContent = `Kimlik: ${kim ? "✓ yüklü" : "eksik"} · Adli sicil: ${adl ? "✓ yüklü" : "eksik"}`;
+        /* polaroid tazeliği (6 ay) */
+        const pols = ME.media.filter(m => m.kind === "photo" && m.album === "polaroid");
+        const newest = pols.map(m => m.created || "").sort().pop();
+        const eski = !newest || (Date.now() - new Date(newest).getTime()) > 15768e6;
+        $("polaroidWarn").style.display = eski ? "" : "none";
         const videos = ME.media.filter(m => m.kind === "video");
         $("videoGrid").innerHTML = videos.map(m =>
           `<div class="my-photo"><a class="file-chip" href="/api/photo/${m.id}" target="_blank"><span class="ico">🎬</span>${m.orig}</a><button data-del="${m.id}">✕</button></div>`).join("");
@@ -648,30 +820,78 @@
         const bek = list.filter(o => o.status === "beklemede").length;
         $("offerBadge").style.display = bek ? "inline-flex" : "none";
         $("offerBadge").textContent = bek;
-        $("offersRoot").innerHTML = list.length ? list.map(o => `
+        $("offersRoot").innerHTML = list.length ? list.map(o => {
+          const hassas = o.sensitive === "1";
+          return `
           <div class="offer-card">
             <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
-              <h4>${o.title}</h4>
+              <h4>${o.title} ${hassas ? '<span class="offer-state" style="color:var(--gold);border-color:var(--gold)">🎨 Özel / Sanatsal Proje</span>' : ""}</h4>
               <span class="offer-state ${o.status}">${o.status === "beklemede" ? "Yanıt bekliyor" : o.status === "kabul" ? "✓ Kabul ettiniz" : "Reddettiniz"}</span>
             </div>
             <div class="offer-meta">
               📅 ${o.date || "-"} &nbsp; 📍 ${o.location || "-"} &nbsp; 🕐 ${o.hours || "-"} &nbsp; 💰 ${o.fee || "görüşülecek"}
               ${o.note ? "<br>📝 " + o.note : ""}
+              ${hassas && o.usage ? "<br>📜 <strong>Kullanım kapsamı:</strong> " + o.usage : ""}
+              ${o.consent_at ? "<br>✍️ Ek muvafakat onayınız: " + o.consent_at.slice(0,16).replace("T"," ") : ""}
             </div>
             ${o.status === "beklemede" ? `
+            ${hassas ? `<label class="checkbox-row mt-2" style="font-size:.84rem">
+              <input type="checkbox" data-consent="${o.id}">
+              <span>Yukarıdaki kullanım kapsamını okudum; bu özel proje için <strong>ek muvafakat</strong> veriyorum. Setteki sınırlarım profilimde yazdığı gibidir.</span>
+            </label>` : ""}
             <div class="mt-2" style="display:flex;gap:10px">
               <button class="btn btn-gold btn-sm" data-offer="${o.id}" data-act="kabul">Kabul Et</button>
               <button class="btn btn-ghost btn-sm" data-offer="${o.id}" data-act="red">Reddet</button>
             </div>` : ""}
-          </div>`).join("")
+            ${o.status === "kabul" ? `
+            <div class="mt-2" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              ${!o.checkin_at ? `<button class="btn btn-gold btn-sm" data-checkin="${o.id}" data-type="in">📍 Sete Geldim (Check-in)</button>`
+                : `<span class="muted" style="font-size:.82rem">✓ Check-in: ${o.checkin_at.slice(0,16).replace("T"," ")}</span>`}
+              ${o.checkin_at && !o.checkout_at ? `<button class="btn btn-ghost btn-sm" data-checkin="${o.id}" data-type="out">🏁 Ayrıldım (Check-out)</button>`
+                : o.checkout_at ? `<span class="muted" style="font-size:.82rem">✓ Check-out: ${o.checkout_at.slice(0,16).replace("T"," ")}</span>` : ""}
+            </div>
+            ${!o.feedback_rating ? `
+            <div class="mt-2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <span class="muted" style="font-size:.82rem">Set / müşteri değerlendirmeniz (gizli — sadece ajans görür):</span>
+              <select data-fb-r="${o.id}" class="sort-select" style="padding:7px 10px;font-size:.82rem">
+                <option value="">Puan</option><option value="5">★★★★★</option><option value="4">★★★★</option><option value="3">★★★</option><option value="2">★★</option><option value="1">★</option>
+              </select>
+              <input data-fb-n="${o.id}" class="search-input" style="max-width:260px;padding:8px 12px;font-size:.82rem" placeholder="örn. Saygılı set ortamı, ödeme hızlı">
+              <button class="btn btn-ghost btn-sm" data-fb="${o.id}">Gönder</button>
+            </div>` : `<div class="muted mt-2" style="font-size:.82rem">✓ Bu seti değerlendirdiniz (${o.feedback_rating}/5)</div>`}
+            ` : ""}
+          </div>`; }).join("")
           : '<p class="muted">Şu an bekleyen iş teklifiniz yok. Yeni teklifler burada görünecek.</p>';
       }
       $("offersRoot").addEventListener("click", async e => {
+        const fb = e.target.closest("[data-fb]");
+        if (fb) {
+          const id = fb.dataset.fb;
+          const rating = document.querySelector(`[data-fb-r="${id}"]`).value;
+          if (!rating) { alert("Lütfen puan seçin."); return; }
+          await fetch("/api/offer-feedback", { method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: +id, rating, note: document.querySelector(`[data-fb-n="${id}"]`).value }) });
+          load(false); return;
+        }
+        const ci = e.target.closest("[data-checkin]");
+        if (ci) {
+          const send = async (lat, lng) => {
+            await fetch("/api/checkin", { method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: +ci.dataset.checkin, type: ci.dataset.type, lat, lng }) });
+            load(false);
+          };
+          navigator.geolocation
+            ? navigator.geolocation.getCurrentPosition(p => send(p.coords.latitude, p.coords.longitude), () => send(null, null), { timeout: 6000 })
+            : send(null, null);
+          return;
+        }
         const b = e.target.closest("[data-offer]");
         if (!b) return;
         if (b.dataset.act === "red" && !confirm("Bu iş teklifini reddetmek istediğinize emin misiniz?")) return;
-        await fetch("/api/offer", { method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: +b.dataset.offer, action: b.dataset.act }) });
+        const consentEl = document.querySelector(`[data-consent="${b.dataset.offer}"]`);
+        const r = await fetch("/api/offer", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: +b.dataset.offer, action: b.dataset.act, consent: consentEl ? (consentEl.checked ? 1 : 0) : 1 }) });
+        if (!r.ok) { const d = await r.json().catch(() => ({})); alert(d.error || "Hata"); return; }
         load(false);
       });
 
@@ -725,6 +945,21 @@
         });
         const pr = document.querySelector(`[name="privacy"][value="${ME.profile?.privacy || "private"}"]`);
         if (pr) pr.checked = true;
+
+        /* tercihler / sinirlar / yetenekler */
+        const prefs = (ME.profile?.shoot_prefs || "").split(",").filter(Boolean);
+        document.querySelectorAll(".prf").forEach(c => c.checked = prefs.includes(c.value));
+        try {
+          const b = JSON.parse(ME.profile?.boundaries || "{}");
+          document.querySelectorAll(".bnd").forEach(c => c.checked = (b.list || []).includes(c.value));
+          $("bndExtra").value = b.text || "";
+        } catch {}
+        try {
+          const sk = JSON.parse(ME.profile?.skills || "{}");
+          document.querySelectorAll(".skl").forEach(c => c.checked = (sk.list || []).includes(c.value));
+          $("sklExtra").value = sk.text || "";
+        } catch {}
+        syncPrefUI();
 
         try { AVAIL = JSON.parse(ME.profile?.availability || "{}") || {}; } catch { AVAIL = {}; }
         const t = new Date(); calY = t.getFullYear(); calM = t.getMonth();

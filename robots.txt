@@ -5,6 +5,7 @@ Disallow: /uye.html
 Disallow: /panel.html
 Disallow: /admin.html
 Disallow: /sedcard.html
+Disallow: /paylasim.html
 Disallow: /api/
 
 Sitemap: https://www.modelofworld.com/sitemap.xml

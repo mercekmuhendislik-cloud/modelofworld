@@ -25,8 +25,10 @@ UPLOAD_RULES = {
     "video": ({".mp4", ".mov", ".webm"}, 80 * 1024 * 1024, 3),
     "belge": ({".pdf", ".jpg", ".jpeg", ".png"}, 10 * 1024 * 1024, 3),
     "imza":  ({".png", ".jpg", ".jpeg"}, 2 * 1024 * 1024, 3),
+    "kimlik": ({".pdf", ".jpg", ".jpeg", ".png"}, 8 * 1024 * 1024, 2),
+    "adli":   ({".pdf", ".jpg", ".jpeg", ".png"}, 8 * 1024 * 1024, 2),
 }
-ALBUMS = {"studio", "podium", "polaroid", "genel"}
+ALBUMS = {"studio", "podium", "polaroid", "sanatsal", "genel"}
 MAX_BODY = 85 * 1024 * 1024
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -49,6 +51,9 @@ PROFILE_COLS = [
     "height", "weight", "bust", "waist", "hip", "shoe", "size",
     "hair", "eye", "skin", "languages", "instagram", "about",
     "availability", "privacy", "video_link",
+    "shoot_prefs", "boundaries", "chaperone",
+    "tattoo_info", "scar_info", "aesthetic_info", "skills",
+    "rate_catalog", "rate_runway", "rate_artistic",
     "iban", "bank_name", "account_name", "invoice_type", "tax_no",
     "parent_name", "parent_tc", "parent_phone",
     "consent_kvkk", "consent_contract",
@@ -84,6 +89,9 @@ def init_db():
       id INTEGER PRIMARY KEY, job_id INTEGER, user_id INTEGER,
       status TEXT DEFAULT 'beklemede', updated TEXT, created TEXT);
     CREATE TABLE IF NOT EXISTS settings(k TEXT PRIMARY KEY, v TEXT);
+    CREATE TABLE IF NOT EXISTS shares(
+      token TEXT PRIMARY KEY, user_ids TEXT, allow_sensitive INTEGER DEFAULT 0,
+      expires TEXT, created TEXT);
     """)
     for col in PROFILE_COLS + ADMIN_COLS + READONLY_COLS:
         try: c.execute(f"ALTER TABLE profiles ADD COLUMN {col} TEXT")
@@ -91,6 +99,13 @@ def init_db():
     for col, ddl in [("kind", "TEXT DEFAULT 'photo'"), ("album", "TEXT DEFAULT 'genel'"),
                      ("deleted", "INTEGER DEFAULT 0")]:
         try: c.execute(f"ALTER TABLE photos ADD COLUMN {col} {ddl}")
+        except sqlite3.OperationalError: pass
+    for col in ["sensitive", "usage"]:
+        try: c.execute(f"ALTER TABLE jobs ADD COLUMN {col} TEXT")
+        except sqlite3.OperationalError: pass
+    for col in ["consent_at", "checkin_at", "checkin_loc", "checkout_at", "checkout_loc",
+                "feedback_rating", "feedback_note"]:
+        try: c.execute(f"ALTER TABLE job_offers ADD COLUMN {col} TEXT")
         except sqlite3.OperationalError: pass
     # Yönetici şifresi ilk kurulumda mevcut anahtara eşitlenir (sonra panelden değiştirilir)
     if not c.execute("SELECT 1 FROM settings WHERE k='admin_salt'").fetchone():
@@ -130,9 +145,23 @@ def parse_multipart(body, ctype):
             fields[nm.group(1)] = data.decode("utf-8", "ignore")
     return fields, files
 
+def is_minor(uid):
+    """18 yas alti veya cocuk kategorisi - sanatsal/nu icerik sistemsel olarak kapali."""
+    row = db().execute("SELECT birthdate, category FROM profiles WHERE user_id=?", (uid,)).fetchone()
+    if not row: return False
+    if (row["category"] or "") == "cocuk": return True
+    b = row["birthdate"] or ""
+    try:
+        bd = datetime.fromisoformat(b)
+        return (datetime.now() - bd).days / 365.25 < 18
+    except Exception:
+        return False
+
 def offers_of(uid):
-    rows = db().execute("""SELECT o.id, o.status, o.updated, j.title, j.date, j.location,
-        j.hours, j.fee, j.note FROM job_offers o JOIN jobs j ON j.id=o.job_id
+    rows = db().execute("""SELECT o.id, o.status, o.updated, o.consent_at,
+        o.checkin_at, o.checkout_at, o.feedback_rating,
+        j.title, j.date, j.location, j.hours, j.fee, j.note, j.sensitive, j.usage
+        FROM job_offers o JOIN jobs j ON j.id=o.job_id
         WHERE o.user_id=? ORDER BY o.id DESC""", (uid,)).fetchall()
     return [dict(r) for r in rows]
 
@@ -192,7 +221,7 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path); qs = parse_qs(u.query); p = u.path
 
         if p == "/api/health":
-            return self._json(200, {"ok": True, "v": 3.1})
+            return self._json(200, {"ok": True, "v": 4})
 
         if p == "/api/me":
             uid = self._session_user()
@@ -202,7 +231,7 @@ class Handler(BaseHTTPRequestHandler):
             prof = dict(prof) if prof else {}
             for c in ADMIN_COLS: prof.pop(c, None)   # iç notlar üyeye sızmaz
             media = db().execute(
-                "SELECT id,kind,album,orig FROM photos WHERE user_id=? AND deleted=0 ORDER BY id",
+                "SELECT id,kind,album,orig,created FROM photos WHERE user_id=? AND deleted=0 ORDER BY id",
                 (uid,)).fetchall()
             return self._json(200, {
                 "user": dict(user) if user else None,
@@ -230,6 +259,50 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(data)
             return
 
+        m = re.match(r"^/api/share/([A-Za-z0-9_\-]+)$", p)
+        if m:
+            sh = db().execute("SELECT * FROM shares WHERE token=?", (m.group(1),)).fetchone()
+            if not sh or sh["expires"] < now():
+                return self._json(404, {"error": "Bu bağlantının süresi dolmuş"})
+            out = []
+            for uid_s in (sh["user_ids"] or "").split(","):
+                if not uid_s.isdigit(): continue
+                uid = int(uid_s)
+                user = db().execute("SELECT fullname FROM users WHERE id=?", (uid,)).fetchone()
+                prof = db().execute("SELECT * FROM profiles WHERE user_id=?", (uid,)).fetchone()
+                if not user or not prof: continue
+                pr = dict(prof)
+                pub = {k: pr.get(k) for k in ["category", "city", "height", "weight", "bust", "waist",
+                       "hip", "shoe", "size", "hair", "eye", "skin", "languages"]}
+                q = "SELECT id FROM photos WHERE user_id=? AND kind='photo' AND deleted=0"
+                if not sh["allow_sensitive"]:
+                    q += " AND album != 'sanatsal'"
+                photos = [r["id"] for r in db().execute(q + " ORDER BY CASE album WHEN 'studio' THEN 0 WHEN 'podium' THEN 1 ELSE 2 END, id", (uid,))]
+                out.append({"id": uid, "name": user["fullname"], "profile": pub, "photos": photos})
+            return self._json(200, {"members": out, "expires": sh["expires"]})
+
+        m = re.match(r"^/api/share-photo/([A-Za-z0-9_\-]+)/(\d+)$", p)
+        if m:
+            sh = db().execute("SELECT * FROM shares WHERE token=?", (m.group(1),)).fetchone()
+            if not sh or sh["expires"] < now():
+                return self._json(404, {"error": "Süresi dolmuş"})
+            row = db().execute("SELECT * FROM photos WHERE id=?", (int(m.group(2)),)).fetchone()
+            uids = (sh["user_ids"] or "").split(",")
+            if (not row or str(row["user_id"]) not in uids or row["deleted"]
+                    or row["kind"] != "photo"
+                    or (row["album"] == "sanatsal" and not sh["allow_sensitive"])):
+                return self._json(403, {"error": "Yetki yok"})
+            fp = os.path.join(UPLOAD_DIR, row["filename"])
+            if not os.path.exists(fp): return self._json(404, {"error": "Dosya yok"})
+            data = open(fp, "rb").read()
+            self.send_response(200)
+            self.send_header("Content-Type", mimetypes.guess_type(fp)[0] or "image/jpeg")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "private, max-age=600")
+            self.end_headers()
+            self.wfile.write(data)
+            return
+
         if p == "/api/admin/list":
             if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
             users = [dict(r) for r in db().execute(
@@ -244,11 +317,15 @@ class Handler(BaseHTTPRequestHandler):
             jobs = [dict(r) for r in db().execute("SELECT * FROM jobs ORDER BY id DESC LIMIT 50")]
             for j in jobs:
                 j["offers"] = [dict(r) for r in db().execute("""
-                    SELECT o.status, o.updated, u.fullname, u.id user_id
+                    SELECT o.status, o.updated, o.consent_at, o.checkin_at, o.checkout_at,
+                           o.checkin_loc, o.feedback_rating, o.feedback_note, u.fullname, u.id user_id
                     FROM job_offers o JOIN users u ON u.id=o.user_id WHERE o.job_id=?""", (j["id"],))]
             subs = [dict(r) for r in db().execute("SELECT * FROM submissions ORDER BY id DESC LIMIT 100")]
             logs = [dict(r) for r in db().execute("SELECT * FROM audit ORDER BY id DESC LIMIT 120")]
-            return self._json(200, {"users": users, "jobs": jobs, "submissions": subs, "audit": logs})
+            sos = [dict(r) for r in db().execute("SELECT * FROM submissions WHERE kind='SOS' ORDER BY id DESC LIMIT 20")]
+            shares = [dict(r) for r in db().execute("SELECT token, user_ids, allow_sensitive, expires FROM shares WHERE expires >= ? ORDER BY rowid DESC LIMIT 20", (now(),))]
+            return self._json(200, {"users": users, "jobs": jobs, "submissions": subs, "audit": logs,
+                                    "sos": sos, "shares": shares})
 
         return self._json(404, {"error": "Bilinmeyen uç"})
 
@@ -318,6 +395,8 @@ class Handler(BaseHTTPRequestHandler):
                 vals = [str(d.get(c) or "")[:LONG_COLS.get(c, 500)] for c in sent] + [uid]
                 db().execute(f"UPDATE profiles SET {sets} WHERE user_id=?", vals)
                 audit("uye", "profil-guncelleme", uid, ", ".join(sent))
+            if is_minor(uid):
+                db().execute("UPDATE profiles SET shoot_prefs='standart' WHERE user_id=?", (uid,))
             prof = db().execute("SELECT consent_kvkk, consent_contract, consent_at FROM profiles WHERE user_id=?",
                                 (uid,)).fetchone()
             if prof and prof["consent_kvkk"] == "1" and prof["consent_contract"] == "1" and not prof["consent_at"]:
@@ -335,6 +414,8 @@ class Handler(BaseHTTPRequestHandler):
             if kind not in UPLOAD_RULES: kind = "photo"
             album = fields.get("album", "genel")
             if album not in ALBUMS: album = "genel"
+            if album == "sanatsal" and is_minor(uid):
+                return self._json(403, {"error": "Bu albüm 18 yaş altı üyelere kapalıdır"})
             exts, max_size, max_count = UPLOAD_RULES[kind]
             count = db().execute("SELECT COUNT(*) c FROM photos WHERE user_id=? AND kind=? AND deleted=0",
                                  (uid, kind)).fetchone()["c"]
@@ -364,11 +445,63 @@ class Handler(BaseHTTPRequestHandler):
             act = d.get("action")
             if act not in ("kabul", "red"):
                 return self._json(400, {"error": "Geçersiz işlem"})
-            row = db().execute("SELECT * FROM job_offers WHERE id=? AND user_id=?",
+            row = db().execute("SELECT o.*, j.sensitive FROM job_offers o JOIN jobs j ON j.id=o.job_id WHERE o.id=? AND o.user_id=?",
                                (int(d.get("id") or 0), uid)).fetchone()
             if not row: return self._json(404, {"error": "Teklif bulunamadı"})
-            db().execute("UPDATE job_offers SET status=?, updated=? WHERE id=?", (act, now(), row["id"]))
-            audit("uye", "teklif-" + act, uid, f"teklif #{row['id']}")
+            if act == "kabul" and (row["sensitive"] or "0") == "1" and not d.get("consent"):
+                return self._json(400, {"error": "Bu özel proje için ek muvafakat onayı gerekli — kutucuğu işaretleyin"})
+            cat = now() if (act == "kabul" and (row["sensitive"] or "0") == "1") else None
+            db().execute("UPDATE job_offers SET status=?, updated=?, consent_at=COALESCE(?,consent_at) WHERE id=?",
+                         (act, now(), cat, row["id"]))
+            audit("uye", "teklif-" + act, uid, f"teklif #{row['id']}" + (" + ek muvafakat" if cat else ""))
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/sos":
+            uid = self._session_user()
+            if not uid: return self._json(401, {"error": "Oturum yok"})
+            d = jbody()
+            user = db().execute("SELECT fullname, phone FROM users WHERE id=?", (uid,)).fetchone()
+            loc = "{},{}".format(d.get("lat"), d.get("lng")) if d.get("lat") else "konum alinamadi"
+            payload = {"uye": user["fullname"], "tel": user["phone"], "konum": loc,
+                       "harita": "https://maps.google.com/?q=" + loc if d.get("lat") else "",
+                       "mesaj": str(d.get("msg") or "")[:300]}
+            db().execute("INSERT INTO submissions(kind,data,created) VALUES('SOS',?,?)",
+                         (json.dumps(payload, ensure_ascii=False), now()))
+            audit("uye", "SOS-ALARM", uid, loc)
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/checkin":
+            uid = self._session_user()
+            if not uid: return self._json(401, {"error": "Oturum yok"})
+            d = jbody()
+            row = db().execute("SELECT * FROM job_offers WHERE id=? AND user_id=? AND status='kabul'",
+                               (int(d.get("id") or 0), uid)).fetchone()
+            if not row: return self._json(404, {"error": "Kabul edilmiş teklif bulunamadı"})
+            loc = "{},{}".format(d.get("lat"), d.get("lng")) if d.get("lat") else ""
+            if d.get("type") == "out":
+                db().execute("UPDATE job_offers SET checkout_at=?, checkout_loc=? WHERE id=?", (now(), loc, row["id"]))
+                audit("uye", "check-out", uid, "teklif #{} {}".format(row["id"], loc))
+            else:
+                db().execute("UPDATE job_offers SET checkin_at=?, checkin_loc=? WHERE id=?", (now(), loc, row["id"]))
+                audit("uye", "check-in", uid, "teklif #{} {}".format(row["id"], loc))
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/offer-feedback":
+            uid = self._session_user()
+            if not uid: return self._json(401, {"error": "Oturum yok"})
+            d = jbody()
+            rating = str(d.get("rating") or "")
+            if rating not in ("1", "2", "3", "4", "5"):
+                return self._json(400, {"error": "Puan 1-5 olmalı"})
+            row = db().execute("SELECT id FROM job_offers WHERE id=? AND user_id=?",
+                               (int(d.get("id") or 0), uid)).fetchone()
+            if not row: return self._json(404, {"error": "Teklif bulunamadı"})
+            db().execute("UPDATE job_offers SET feedback_rating=?, feedback_note=? WHERE id=?",
+                         (rating, str(d.get("note") or "")[:500], row["id"]))
+            audit("uye", "set-degerlendirme", uid, "teklif #{}: {}/5".format(row["id"], rating))
             db().commit()
             return self._json(200, {"ok": True})
 
@@ -470,16 +603,31 @@ class Handler(BaseHTTPRequestHandler):
             if not title: return self._json(400, {"error": "İş başlığı gerekli"})
             ids = [int(x) for x in (d.get("user_ids") or []) if str(x).isdigit()]
             if not ids: return self._json(400, {"error": "En az bir üye seçin"})
-            cur = db().execute("INSERT INTO jobs(title,date,location,hours,fee,note,created) VALUES(?,?,?,?,?,?,?)",
+            cur = db().execute("INSERT INTO jobs(title,date,location,hours,fee,note,created,sensitive,usage) VALUES(?,?,?,?,?,?,?,?,?)",
                 (title[:200], str(d.get("date") or "")[:40], str(d.get("location") or "")[:200],
                  str(d.get("hours") or "")[:100], str(d.get("fee") or "")[:100],
-                 str(d.get("note") or "")[:1000], now()))
+                 str(d.get("note") or "")[:1000], now(),
+                 "1" if d.get("sensitive") else "0", str(d.get("usage") or "")[:500]))
             for uid in ids:
                 db().execute("INSERT INTO job_offers(job_id,user_id,created) VALUES(?,?,?)",
                              (cur.lastrowid, uid, now()))
             audit("admin", "is-teklifi", None, f"{title[:60]} → {len(ids)} üye")
             db().commit()
             return self._json(200, {"ok": True, "id": cur.lastrowid})
+
+        if p == "/api/admin/share":
+            if not self._is_admin(qs): return self._json(403, {"error": "Yetki yok"})
+            d = jbody()
+            ids = [str(int(x)) for x in (d.get("user_ids") or []) if str(x).isdigit()]
+            if not ids: return self._json(400, {"error": "En az bir üye seçin"})
+            hours = min(max(int(d.get("hours") or 24), 1), 168)
+            tok = secrets.token_urlsafe(16)
+            exp = (datetime.now(timezone.utc) + timedelta(hours=hours)).isoformat(timespec="seconds")
+            db().execute("INSERT INTO shares(token,user_ids,allow_sensitive,expires,created) VALUES(?,?,?,?,?)",
+                         (tok, ",".join(ids), 1 if d.get("allow_sensitive") else 0, exp, now()))
+            audit("admin", "vip-paylasim", None, "{} üye, {} saat".format(len(ids), hours))
+            db().commit()
+            return self._json(200, {"ok": True, "token": tok, "hours": hours})
 
         return self._json(404, {"error": "Bilinmeyen uç"})
 

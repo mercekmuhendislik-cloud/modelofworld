@@ -274,6 +274,14 @@
     });
   }
 
+  /* ---------- Görsel koruma: sağ tık + sürükleme engeli ---------- */
+  document.addEventListener("contextmenu", e => {
+    if (e.target.closest(".talent-media, .detail-media, .g-item, .gallery-grid, .my-photo, .vip-photos")) e.preventDefault();
+  });
+  document.addEventListener("dragstart", e => {
+    if (e.target.tagName === "IMG") e.preventDefault();
+  });
+
   /* ---------- Scroll Reveal ---------- */
   const io = new IntersectionObserver(entries => {
     entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } });

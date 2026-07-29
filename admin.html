@@ -37,6 +37,10 @@
     .edit-wrap { display:none; border-top:1px dashed var(--line); margin-top:10px; padding-top:10px; }
     .edit-wrap.open { display:block; }
     .mini { font-size:.76rem; color:var(--text-2); }
+    .nsfw { filter: blur(14px); cursor: pointer; transition: filter .25s; }
+    .nsfw.show { filter: none; }
+    .sos-card { border:2px solid #c62828; background:rgba(198,40,40,.08); border-radius:12px; padding:14px 16px; margin-bottom:10px; font-size:.9rem; }
+    .sos-card strong { color:#c62828; }
   </style>
 </head>
 <body data-page="admin">
@@ -83,7 +87,11 @@
           </div>
         </div>
 
+        <div id="sosBand"></div>
+
         <div class="adm-row" style="margin-bottom:14px">
+          <span class="mini">Ajans komisyonu:</span>
+          <input class="adm-input" id="komInput" type="number" value="20" style="width:70px"> <span class="mini">%</span>
           <input class="adm-input" id="fText" placeholder="İsim / etiket / şehir ara…" style="flex:1;min-width:200px">
           <select class="adm-input" id="fStatus">
             <option value="">Tüm durumlar</option>
@@ -105,11 +113,39 @@
             <div class="field"><label>Çalışma Saatleri</label><input type="text" id="jHours" placeholder="09:00 – 18:00"></div>
             <div class="field"><label>Kaşe / Ücret</label><input type="text" id="jFee" placeholder="örn. 5.000 TL/gün"></div>
             <div class="field full"><label>Not</label><input type="text" id="jNote" placeholder="Kıyafet, ulaşım vb."></div>
+            <div class="field full">
+              <div class="checkbox-row"><input type="checkbox" id="jSensitive">
+                <label for="jSensitive" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.86rem">🎨 Özel / Sanatsal proje (üyeden kabul sırasında <strong>ek muvafakat onayı</strong> istenir)</label>
+              </div>
+            </div>
+            <div class="field full" id="jUsageWrap" hidden>
+              <label>Kullanım Kapsamı (mecra + süre — muvafakatnameye yazılır)</label>
+              <input type="text" id="jUsage" placeholder="örn. Yalnızca X dergisi basılı sayı + 2 yıl web galerisi; billboard hariç">
+            </div>
             <div class="field full"><label>Teklif Gönderilecek Üyeler</label><div id="jMembers" class="adm-row"></div></div>
             <div class="full"><button class="btn btn-gold btn-sm" id="jSend">Teklifi Gönder</button> <span class="muted" id="jMsg" style="font-size:.84rem"></span></div>
           </div>
         </div>
         <div id="jobsList" class="mt-2"></div>
+
+        <h2 class="adm-section-title">🔗 VIP Müşteri Paylaşımı (süreli özel link)</h2>
+        <div class="form-card">
+          <p class="mini" style="margin-bottom:10px">Seçtiğiniz üyelerin sedcard'larını müşteriye özel, süresi dolunca kendini kapatan bir bağlantıyla paylaşın. Sanatsal albüm yalnızca izin kutusunu işaretlerseniz görünür.</p>
+          <div class="field"><label>Paylaşılacak Üyeler</label><div id="shMembers" class="adm-row"></div></div>
+          <div class="adm-row">
+            <select class="adm-input" id="shHours">
+              <option value="24">24 saat geçerli</option>
+              <option value="72">3 gün geçerli</option>
+              <option value="168">7 gün geçerli</option>
+            </select>
+            <label style="display:inline-flex;gap:6px;align-items:center;font-size:.82rem">
+              <input type="checkbox" id="shSensitive"> Sanatsal albümler de görünsün
+            </label>
+            <button class="btn btn-gold btn-sm" id="shCreate">Link Oluştur</button>
+          </div>
+          <div class="mini mt-2" id="shResult"></div>
+          <div class="mini mt-2" id="shActive"></div>
+        </div>
 
         <h2 class="adm-section-title" id="subTitle" hidden>✉️ Form Gönderimleri</h2>
         <div id="subs"></div>
@@ -165,12 +201,67 @@
       if (!r || !r.ok) { $("loginView").hidden = false; $("panelView").hidden = true; return; }
       DATA = await r.json();
       $("loginView").hidden = true; $("panelView").hidden = false;
-      renderUsers(); renderJobForm(); renderJobs(); renderSubs(); renderLogs();
+      renderSos(); renderUsers(); renderJobForm(); renderJobs(); renderSubs(); renderLogs(); renderShares();
     }
     load(); /* oturum varsa direkt panel açılır */
 
+    function renderSos() {
+      const sos = DATA.sos || [];
+      $("sosBand").innerHTML = sos.slice(0, 5).map(x => {
+        let d = {}; try { d = JSON.parse(x.data); } catch {}
+        return `<div class="sos-card">🆘 <strong>ACİL DURUM ALARMI</strong> — ${x.created?.slice(0,16).replace("T"," ")}<br>
+          ${d.uye || "?"} · 📞 <a class="gold" href="tel:${(d.tel || "").replace(/\D/g,"")}">${d.tel || "?"}</a>
+          ${d.harita ? ` · 📍 <a class="gold" href="${d.harita}" target="_blank">Haritada Gör</a>` : " · konum yok"}
+          ${d.mesaj ? `<br>💬 ${d.mesaj}` : ""}</div>`;
+      }).join("");
+    }
+
+    $("jSensitive").addEventListener("change", e => $("jUsageWrap").hidden = !e.target.checked);
+    $("komInput").value = localStorage.getItem("mow-kom") || "20";
+    $("komInput").addEventListener("change", () => { localStorage.setItem("mow-kom", $("komInput").value); renderUsers(); });
+
+    $("shCreate").addEventListener("click", async () => {
+      const ids = [...document.querySelectorAll(".shm:checked")].map(c => +c.value);
+      if (!ids.length) { $("shResult").textContent = "En az bir üye seçin."; return; }
+      const r = await fetch("/api/admin/share", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_ids: ids, hours: +$("shHours").value, allow_sensitive: $("shSensitive").checked ? 1 : 0 }) }).catch(() => null);
+      const d = r && r.ok ? await r.json() : null;
+      if (!d) { $("shResult").textContent = "Hata."; return; }
+      const url = location.origin + "/paylasim.html?t=" + d.token;
+      $("shResult").innerHTML = `✓ Link hazır (${d.hours} saat): <a class="gold" href="${url}" target="_blank">${url}</a>
+        <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('${url}')">📋 Kopyala</button>`;
+      load();
+    });
+
+    function renderShares() {
+      const list = DATA.shares || [];
+      $("shActive").innerHTML = list.length
+        ? "Aktif linkler: " + list.map(x => `<a class="gold" href="/paylasim.html?t=${x.token}" target="_blank">${x.token.slice(0,8)}…</a> (üye: ${x.user_ids} · bitiş: ${x.expires?.slice(0,16).replace("T"," ")}${x.allow_sensitive ? " · 🎨" : ""})`).join(" · ")
+        : "";
+    }
+
     /* ---------- Üye kartları (sıkı + düzenlenebilir) ---------- */
     function esc(v) { return String(v == null ? "" : v).replace(/"/g, "&quot;").replace(/</g, "&lt;"); }
+
+    const PREF_AD = { standart:"Standart", guzellik:"Güzellik/Yüz", ic_giyim:"İç Giyim/Bikini", yari_nu:"Yarı Nü", nu:"Nü" };
+    function prefLine(p) {
+      const prefs = (p.shoot_prefs || "").split(",").filter(Boolean).map(x => PREF_AD[x] || x).join(", ");
+      let bnd = "";
+      try { const b = JSON.parse(p.boundaries || "{}"); bnd = [...(b.list || []), b.text].filter(Boolean).join("; "); } catch {}
+      const chap = { "gerek-yok":"gerekmiyor", "ajans-koordinator":"ajans koordinatörü", "kendi-refakatci":"kendi refakatçisi" }[p.chaperone] || "—";
+      let skl = "";
+      try { const k = JSON.parse(p.skills || "{}"); skl = [...(k.list || []), k.text].filter(Boolean).join(", "); } catch {}
+      return `<br>🎬 Tercihler: <strong>${prefs || "belirtilmedi"}</strong> · 👥 Refakatçi: ${chap}` +
+             (bnd ? `<br>⛔ Sınırları: <strong>${esc(bnd)}</strong>` : "") +
+             (skl ? `<br>🤸 Yetenekler: ${esc(skl)}` : "") +
+             ((p.tattoo_info || p.scar_info || p.aesthetic_info) ? `<br>🖋 Dövme: ${esc(p.tattoo_info) || "—"} · İz: ${esc(p.scar_info) || "—"} · Estetik: ${esc(p.aesthetic_info) || "—"}` : "");
+    }
+    function rateLine(p) {
+      const k = (+($("komInput")?.value || 20)) / 100;
+      const f = (v) => v ? `${(+v).toLocaleString("tr-TR")} TL (müşteriye: ~${Math.round(v / (1 - k)).toLocaleString("tr-TR")} TL)` : null;
+      const parts = [["Katalog", f(p.rate_catalog)], ["Defile", f(p.rate_runway)], ["Sanatsal", f(p.rate_artistic)]].filter(x => x[1]);
+      return parts.length ? `<br>💰 Kaşe: ${parts.map(x => x[0] + " " + x[1]).join(" · ")}` : "";
+    }
 
     function renderUsers() {
       const q = ($("fText").value || "").toLowerCase();
@@ -178,7 +269,7 @@
       const users = DATA.users.filter(u => {
         const p = u.profile || {};
         if (stF && (p.status || "inceleniyor") !== stF) return false;
-        if (q && !`${u.fullname} ${u.email} ${p.city} ${p.category} ${p.admin_tags}`.toLowerCase().includes(q)) return false;
+        if (q && !`${u.fullname} ${u.email} ${p.city} ${p.category} ${p.admin_tags} ${p.tattoo_info} ${p.scar_info} ${p.skills} ${p.shoot_prefs}`.toLowerCase().includes(q)) return false;
         return true;
       });
       $("countInfo").textContent = users.length + " üye";
@@ -220,9 +311,13 @@
             📏 ${olcu || "ölçü yok"}<br>
             🗣 ${esc(p.languages) || "—"} · 📸 ${esc(p.instagram) || "—"} · 🎬 ${p.video_link ? `<a class="gold" href="${esc(p.video_link)}" target="_blank">video linki</a>` : "—"}
             ${p.about ? "<br>💬 " + esc(p.about) : ""}
+            ${prefLine(p)}
+            ${rateLine(p)}
             ${p.review_note ? `<br>📮 Üyeye iletilen not: "${esc(p.review_note)}"` : ""}
             <div class="adm-photos">
-              ${fotolar.map(m => `<a href="/api/photo/${m.id}" target="_blank" title="${m.album}"><img src="/api/photo/${m.id}" loading="lazy"></a>`).join("")}
+              ${fotolar.map(m => m.album === "sanatsal"
+                ? `<img class="nsfw" src="/api/photo/${m.id}" loading="lazy" title="Sanatsal — netleştirmek için tıklayın" onclick="this.classList.toggle('show')">`
+                : `<a href="/api/photo/${m.id}" target="_blank" title="${m.album}"><img src="/api/photo/${m.id}" loading="lazy"></a>`).join("")}
               ${videolar.map(m => `<a class="btn btn-ghost btn-sm" href="/api/photo/${m.id}" target="_blank">🎬 ${esc(m.orig)}</a>`).join("")}
             </div>
             <div class="adm-row">
@@ -338,16 +433,19 @@
 
     /* ---------- İşler / gönderimler / günlük ---------- */
     function renderJobForm() {
-      $("jMembers").innerHTML = DATA.users.map(u => `
+      const chip = cls => DATA.users.map(u => `
         <label style="display:inline-flex;gap:6px;align-items:center;font-size:.82rem;border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer">
-          <input type="checkbox" value="${u.id}" class="jm"> ${esc(u.fullname) || esc(u.email)}
+          <input type="checkbox" value="${u.id}" class="${cls}"> ${esc(u.fullname) || esc(u.email)}
         </label>`).join("");
+      $("jMembers").innerHTML = chip("jm");
+      $("shMembers").innerHTML = chip("shm");
     }
     $("jSend").addEventListener("click", async () => {
       const ids = [...document.querySelectorAll(".jm:checked")].map(c => +c.value);
       const res = await api("/api/admin/job", {
         title: $("jTitle").value, date: $("jDate").value, location: $("jLoc").value,
         hours: $("jHours").value, fee: $("jFee").value, note: $("jNote").value, user_ids: ids,
+        sensitive: $("jSensitive").checked ? 1 : 0, usage: $("jUsage").value,
       });
       $("jMsg").textContent = res.ok ? "✓ Teklif üyelerin paneline düştü" : (res.err || "Başlık ve en az bir üye gerekli");
       if (res.ok) { ["jTitle","jDate","jLoc","jHours","jFee","jNote"].forEach(i => $(i).value = ""); load(); }
@@ -356,7 +454,13 @@
       $("jobsList").innerHTML = (DATA.jobs || []).map(j => `
         <div class="adm-user open"><div class="adm-body" style="display:block">
           <strong style="color:var(--text)">${esc(j.title)}</strong> <span class="mini">${j.date || ""} · ${esc(j.location) || ""} · ${esc(j.hours) || ""} · ${esc(j.fee) || ""}</span><br>
-          Yanıtlar: ${j.offers.map(o => `${esc(o.fullname)}: <strong>${o.status === "kabul" ? "✓ kabul" : o.status === "red" ? "✕ red" : "⏳"}</strong>`).join(" · ") || "—"}
+          ${j.sensitive === "1" ? '🎨 <strong>Özel/Sanatsal proje</strong>' + (j.usage ? " — kapsam: " + esc(j.usage) : "") + "<br>" : ""}
+          Yanıtlar: ${j.offers.map(o => `${esc(o.fullname)}: <strong>${o.status === "kabul" ? "✓ kabul" : o.status === "red" ? "✕ red" : "⏳"}</strong>` +
+            (o.consent_at ? " (muvafakat ✍️)" : "") +
+            (o.checkin_at ? ` · 📍in ${o.checkin_at.slice(11,16)}${o.checkin_loc ? ` <a class='gold' href='https://maps.google.com/?q=${o.checkin_loc}' target='_blank'>konum</a>` : ""}` : "") +
+            (o.checkout_at ? ` · 🏁out ${o.checkout_at.slice(11,16)}` : "") +
+            (o.feedback_rating ? ` · üye seti puanladı: ${"★".repeat(+o.feedback_rating)}` : "")
+          ).join(" · ") || "—"}
         </div></div>`).join("");
     }
     function renderSubs() {
