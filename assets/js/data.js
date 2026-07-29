@@ -241,6 +241,12 @@ const TALENTS = [
   },
 ];
 
+/* Türkiye illeri (paneldeki şehir seçimi için) */
+const ILLER = ["Adana","Adıyaman","Afyonkarahisar","Ağrı","Aksaray","Amasya","Ankara","Antalya","Ardahan","Artvin","Aydın","Balıkesir","Bartın","Batman","Bayburt","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Bursa","Çanakkale","Çankırı","Çorum","Denizli","Diyarbakır","Düzce","Edirne","Elazığ","Erzincan","Erzurum","Eskişehir","Gaziantep","Giresun","Gümüşhane","Hakkari","Hatay","Iğdır","Isparta","İstanbul","İzmir","Kahramanmaraş","Karabük","Karaman","Kars","Kastamonu","Kayseri","Kırıkkale","Kırklareli","Kırşehir","Kilis","Kocaeli","Konya","Kütahya","Malatya","Manisa","Mardin","Mersin","Muğla","Muş","Nevşehir","Niğde","Ordu","Osmaniye","Rize","Sakarya","Samsun","Siirt","Sinop","Sivas","Şanlıurfa","Şırnak","Tekirdağ","Tokat","Trabzon","Tunceli","Uşak","Van","Yalova","Yozgat","Zonguldak"];
+
+/* Dil listesi (paneldeki çoklu dil seçimi için) */
+const DILLER = ["İngilizce","Almanca","Fransızca","Rusça","Arapça","İspanyolca","İtalyanca","Yunanca","Farsça","Çince","Japonca","Korece","Portekizce","Hollandaca","Ukraynaca","Azerice"];
+
 /* Filtre seçeneklerinde gösterilecek etiketler */
 const LABELS = {
   gender: { kadin: "Kadın", erkek: "Erkek" },
@@ -478,7 +484,7 @@ function formatLanguages(t) {
 
 /* Diğer scriptlerin erişimi için global */
 window.VERA = {
-  AGENCY, CATEGORIES, TALENTS, LABELS, SERVICES,
+  AGENCY, CATEGORIES, TALENTS, LABELS, SERVICES, ILLER, DILLER,
   RATES, HEADCOUNT_MID, DURATION_DAYS, FAQ_CANDIDATES, FAQ_CLIENTS,
   PROJECTS, COUNTERS, BRANDS, TESTIMONIALS, BLOG_POSTS,
   talentPlaceholder, formatLanguages,

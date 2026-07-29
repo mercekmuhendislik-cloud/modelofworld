@@ -149,7 +149,7 @@ def is_minor(uid):
     """18 yas alti veya cocuk kategorisi - sanatsal/nu icerik sistemsel olarak kapali."""
     row = db().execute("SELECT birthdate, category FROM profiles WHERE user_id=?", (uid,)).fetchone()
     if not row: return False
-    if (row["category"] or "") == "cocuk": return True
+    if "cocuk" in (row["category"] or ""): return True
     b = row["birthdate"] or ""
     try:
         bd = datetime.fromisoformat(b)
@@ -397,7 +397,9 @@ class Handler(BaseHTTPRequestHandler):
                 audit("uye", "profil-guncelleme", uid, ", ".join(sent))
             if is_minor(uid):
                 db().execute("UPDATE profiles SET shoot_prefs='standart' WHERE user_id=?", (uid,))
-                db().execute("UPDATE profiles SET category='cocuk' WHERE user_id=? AND category='nu'", (uid,))
+                row2 = db().execute("SELECT category FROM profiles WHERE user_id=?", (uid,)).fetchone()
+                cats = [c for c in (row2["category"] or "").split(",") if c and c != "nu"]
+                db().execute("UPDATE profiles SET category=? WHERE user_id=?", (",".join(cats), uid))
             prof = db().execute("SELECT consent_kvkk, consent_contract, consent_at FROM profiles WHERE user_id=?",
                                 (uid,)).fetchone()
             if prof and prof["consent_kvkk"] == "1" and prof["consent_contract"] == "1" and not prof["consent_at"]:

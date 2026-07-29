@@ -6,7 +6,7 @@
   <title>Yönetim — Model of World</title>
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=f1a3b06">
+  <link rel="stylesheet" href="assets/css/style.css?v=7594db3">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -167,6 +167,7 @@
       "Ölçü bilgileriniz eksik — lütfen ölçü kartınızı tamamlayın.",
       "Şu an kadromuz için uygun profil bulunmuyor; ileride tekrar değerlendirilecektir.",
     ];
+    const catAd = v => (v || "").split(",").filter(Boolean).map(c => CATS[c] || c).join(", ") || "?";
     const CATS = { model:"Model", hostes:"Hostes", yuz:"Yüz Modeli", cocuk:"Çocuk", oyuncu:"Oyuncu", nu:"Nü/Sanatsal", fitness:"Fitness", plus:"Büyük Beden", dans:"Dansçı", promo:"Promosyon" };
 
     async function api(path, payload) {
@@ -294,7 +295,7 @@
             ${thumb}
             <div class="adm-id">
               <strong>${esc(u.fullname) || "(isimsiz)"} <span class="adm-stars">${stars}</span></strong>
-              <small>#${u.id} · ${esc(p.city) || "?"} · ${CATS[p.category] || "?"} · ${u.created?.slice(0,10) || ""}</small>
+              <small>#${u.id} · ${esc(p.city) || "?"} · ${catAd(p.category)} · ${u.created?.slice(0,10) || ""}</small>
             </div>
             <span class="adm-badge st-${st}">${st === "onaylandi" ? "✓ onaylı" : st === "reddedildi" ? "✕ red" : "⏳ bekliyor"}</span>
             ${p.privacy === "public" ? '<span class="adm-badge">🌍</span>' : '<span class="adm-badge">🔒</span>'}
@@ -358,7 +359,7 @@
                 <div><label>Telefon</label><input class="adm-input" data-e="phone" value="${esc(u.phone)}"></div>
                 <div><label>Şehir</label><input class="adm-input" data-e="city" value="${esc(p.city)}"></div>
                 <div><label>Doğum</label><input class="adm-input" type="date" data-e="birthdate" value="${esc(p.birthdate)}"></div>
-                <div><label>Kategori</label><select class="adm-input" data-e="category">${["","model","hostes","yuz","nu","fitness","plus","oyuncu","dans","promo","cocuk"].map(c => `<option value="${c}" ${p.category === c ? "selected" : ""}>${CATS[c] || "—"}</option>`).join("")}</select></div>
+                <div><label>Kategori(ler) — virgülle: model,hostes,nu…</label><input class="adm-input" data-e="category" value="${esc(p.category)}" placeholder="model,fitness"></div>
                 <div><label>Cinsiyet</label><select class="adm-input" data-e="gender"><option value="">—</option><option value="kadin" ${p.gender === "kadin" ? "selected" : ""}>Kadın</option><option value="erkek" ${p.gender === "erkek" ? "selected" : ""}>Erkek</option></select></div>
                 <div><label>Boy</label><input class="adm-input" data-e="height" value="${esc(p.height)}"></div>
                 <div><label>Kilo</label><input class="adm-input" data-e="weight" value="${esc(p.weight)}"></div>

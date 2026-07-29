@@ -6,7 +6,7 @@
   <title>Sedcard — Model of World</title>
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=f1a3b06">
+  <link rel="stylesheet" href="assets/css/style.css?v=7594db3">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     body { background: #f2f2f2; }
@@ -72,7 +72,7 @@
 
       $("scName").textContent = u.fullname || "—";
       const CATS = { model: "Manken / Model", hostes: "Fuar & Kongre Hostesi", yuz: "Yüz Modeli", cocuk: "Çocuk Model", oyuncu: "Oyuncu / Cast", nu: "Nü / Sanatsal Model", fitness: "Fitness / Spor Modeli", plus: "Büyük Beden Model", dans: "Dansçı / Performans", promo: "Tanıtım / Promosyon" };
-      $("scCat").textContent = CATS[p.category] || p.category || "";
+      $("scCat").textContent = (p.category || "").split(",").filter(Boolean).map(c => CATS[c] || c).join(" · ");
 
       /* En iyi 4 fotoğraf: önce stüdyo, sonra podyum, sonra diğerleri (arşiv hariç) */
       const pool = (u.media || []).filter(m => m.kind === "photo" && !m.deleted);
