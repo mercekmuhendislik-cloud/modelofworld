@@ -11,7 +11,7 @@
 
   document.title = `${t.name} — Sedcard | VERA Agency`;
 
-  const cat = CATEGORIES[t.category];
+  const cat = CATEGORIES[t.category] || { label: "Model", short: "Model", icon: "◆" };
   const city = LABELS.city[t.city] || t.city;
   const hair = LABELS.hair[t.hair] || t.hair;
   const eye = LABELS.eye[t.eye] || t.eye;
@@ -34,14 +34,17 @@
      farklı kadraj/tonlarından üretilir (photos.studio vb. doldurulursa onlar kullanılır) */
   const v = (extra, w = 640, h = 854) =>
     `${t.photo}?q=80&auto=format&fit=crop&w=${w}&h=${h}${extra}`;
-  const variants = {
+  /* Gerçek üyede yalnızca kendi yüklediği fotoğraflar; demo profilde kadraj varyantları */
+  const variants = t.real ? {
+    studio: t.photos?.studio || [], podium: t.photos?.podium || [], polaroid: t.photos?.polaroid || [],
+  } : {
     studio:   t.photos?.studio?.length   ? t.photos.studio   : t.photo ? [v("&crop=faces"), v("&crop=entropy"), v("", 640, 960), v("&crop=edges")] : [],
     podium:   t.photos?.podium?.length   ? t.photos.podium   : t.photo ? [v("&crop=top", 640, 960), v("&crop=entropy&con=15"), v("&crop=faces&con=10")] : [],
     polaroid: t.photos?.polaroid?.length ? t.photos.polaroid : t.photo ? [v("&sat=-85"), v("&sat=-85&crop=faces"), v("&sat=-60&con=-5", 640, 960)] : [],
   };
 
   const media = t.photo
-    ? `<img src="${v("&crop=faces", 900, 1200)}" alt="${t.name} — ${cat.label} sedcard fotoğrafı">`
+    ? `<img src="${t.real ? t.photo : v("&crop=faces", 900, 1200)}" alt="${t.name} — ${cat.label} sedcard fotoğrafı">`
     : talentPlaceholder(t, true);
 
   document.getElementById("detailRoot").innerHTML = `

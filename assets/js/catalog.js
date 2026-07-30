@@ -73,7 +73,11 @@
   /* ---- Filtreleme ---- */
   function apply() {
     let list = TALENTS.filter(t => {
-      if (state.category && !state.category.split(",").includes(t.category)) return false;
+      if (state.category) {
+        const secili = state.category.split(",");
+        const kats = (t.categories && t.categories.length) ? t.categories : [t.category];
+        if (!kats.some(k => secili.includes(k))) return false;
+      }
       if (state.gender && t.gender !== state.gender) return false;
       if (t.height < state.minHeight) return false;
       if (state.maxWeight < 90 && (t.weight || 0) > state.maxWeight) return false;
@@ -84,7 +88,7 @@
       if (state.eye && t.eye !== state.eye) return false;
       if (state.lang && !(t.languages || []).includes(state.lang)) return false;
       if (state.q) {
-        const hay = `${t.name} ${t.tags.join(" ")} ${(t.languages || []).join(" ")} ${t.city} ${CATEGORIES[t.category].label}`.toLowerCase();
+        const hay = `${t.name} ${(t.tags || []).join(" ")} ${(t.languages || []).join(" ")} ${t.city} ${(CATEGORIES[t.category] || {}).label || ""}`.toLowerCase();
         if (!hay.includes(state.q)) return false;
       }
       return true;

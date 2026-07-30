@@ -62,6 +62,8 @@ PROFILE_COLS = [
 ]
 # Yalnızca yönetici alanları — /api/me bunları asla döndürmez
 ADMIN_COLS = ["admin_note", "admin_rating", "admin_tags"]
+# Yayın bayrakları: yalnızca yönetici değiştirir, üye görebilir
+FLAG_COLS = ["published", "featured"]
 # Üyeye görünen ama üyenin değiştiremediği alanlar
 READONLY_COLS = ["status", "review_note", "consent_at"]
 LONG_COLS = {"availability": 6000, "about": 2000, "admin_note": 2000, "review_note": 1000}
@@ -106,7 +108,7 @@ def init_db():
       assigned_to TEXT, created_by TEXT, status TEXT DEFAULT 'acik',
       user_ref INTEGER, created TEXT, updated TEXT);
     """)
-    for col in PROFILE_COLS + ADMIN_COLS + READONLY_COLS:
+    for col in PROFILE_COLS + ADMIN_COLS + READONLY_COLS + FLAG_COLS:
         try: c.execute(f"ALTER TABLE profiles ADD COLUMN {col} TEXT")
         except sqlite3.OperationalError: pass
     for col, ddl in [("kind", "TEXT DEFAULT 'photo'"), ("album", "TEXT DEFAULT 'genel'"),
@@ -241,6 +243,60 @@ def is_minor(uid):
     except Exception:
         return False
 
+def public_name(fullname):
+    """Gizlilik kuralı: sitede yalnızca ad + soyad baş harfi yayınlanır."""
+    parcalar = (fullname or "").strip().split()
+    if not parcalar: return "İsimsiz"
+    if len(parcalar) == 1: return parcalar[0]
+    return " ".join(parcalar[:-1]) + " " + parcalar[-1][0].upper() + "."
+
+def _sayi(v):
+    try: return int(str(v).strip())
+    except Exception: return None
+
+def cast_list():
+    """Siteye çıkacak kadro: onaylı + yayında + profili herkese açık üyeler.
+       Öne çıkanlar başta. Hassas/kişisel hiçbir alan dışa verilmez."""
+    rows = db().execute("""
+        SELECT u.fullname, p.* FROM profiles p JOIN users u ON u.id = p.user_id
+        WHERE COALESCE(p.published,'0') = '1'
+          AND COALESCE(p.status,'') = 'onaylandi'
+          AND COALESCE(p.privacy,'private') = 'public'
+        ORDER BY CASE WHEN COALESCE(p.featured,'0')='1' THEN 0 ELSE 1 END, p.user_id DESC
+    """).fetchall()
+    liste = []
+    for r in rows:
+        uid = r["user_id"]
+        gruplar = {"studio": [], "podium": [], "polaroid": []}
+        for f in db().execute("""SELECT id, album FROM photos WHERE user_id=? AND kind='photo'
+                AND deleted=0 AND COALESCE(album,'genel') != 'sanatsal' ORDER BY id""", (uid,)):
+            al = f["album"] if f["album"] in gruplar else "studio"
+            gruplar[al].append("/api/cast-photo/%d" % f["id"])
+        tumFoto = gruplar["studio"] + gruplar["podium"] + gruplar["polaroid"]
+        diller = ["Türkçe"] + [d.strip() for d in (r["languages"] or "").split(",") if d.strip()]
+        try: yetenekler = (json.loads(r["skills"] or "{}").get("list") or [])
+        except Exception: yetenekler = []
+        katlar = [c for c in (r["category"] or "").split(",") if c]
+        liste.append({
+            "id": "u%d" % uid, "real": True,
+            "name": public_name(r["fullname"]),
+            "category": katlar[0] if katlar else "model",
+            "categories": katlar,
+            "gender": r["gender"] or "",
+            "age": _sayi(r["age"]), "height": _sayi(r["height"]), "weight": _sayi(r["weight"]),
+            "bust": _sayi(r["bust"]), "waist": _sayi(r["waist"]), "hip": _sayi(r["hip"]),
+            "shoe": _sayi(r["shoe"]), "size": r["size"] or "",
+            "hair": r["hair"] or "", "eye": r["eye"] or "", "skin": r["skin"] or "",
+            "city": r["city"] or "", "languages": diller, "langLevels": {},
+            "experience": "", "featured": (r["featured"] or "0") == "1", "available": True,
+            "tags": yetenekler,
+            "gradient": ["#2b1d34", "#7a5c8f"],
+            "photo": tumFoto[0] if tumFoto else "",
+            "photos": gruplar, "video": r["video_link"] or "",
+            "bio": r["about"] or "",
+        })
+    return liste
+
 def offers_of(uid):
     rows = db().execute("""SELECT o.id, o.status, o.updated, o.consent_at,
         o.checkin_at, o.checkout_at, o.feedback_rating,
@@ -250,7 +306,7 @@ def offers_of(uid):
     return [dict(r) for r in rows]
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "MOW/5.0"
+    server_version = "MOW/7.0"
 
     def _json(self, code, obj, cookie=None):
         raw = json.dumps(obj, ensure_ascii=False).encode()
@@ -338,7 +394,40 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path); qs = parse_qs(u.query); p = u.path
 
         if p == "/api/health":
-            return self._json(200, {"ok": True, "v": 6})
+            return self._json(200, {"ok": True, "v": 7})
+
+        if p == "/api/cast":
+            return self._json(200, {"cast": cast_list()})
+
+        if p == "/api/cast.js":
+            raw = ("window.VERA_CAST = " + json.dumps(cast_list(), ensure_ascii=False) + ";").encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/javascript; charset=utf-8")
+            self.send_header("Content-Length", str(len(raw)))
+            self.send_header("Cache-Control", "public, max-age=30")
+            self.end_headers()
+            self.wfile.write(raw)
+            return
+
+        m = re.match(r"^/api/cast-photo/(\d+)$", p)
+        if m:
+            row = db().execute("""SELECT ph.filename FROM photos ph JOIN profiles pr ON pr.user_id = ph.user_id
+                WHERE ph.id=? AND ph.deleted=0 AND ph.kind='photo'
+                  AND COALESCE(ph.album,'genel') != 'sanatsal'
+                  AND COALESCE(pr.published,'0') = '1'
+                  AND COALESCE(pr.status,'') = 'onaylandi'
+                  AND COALESCE(pr.privacy,'private') = 'public'""", (int(m.group(1)),)).fetchone()
+            if not row: return self._json(404, {"error": "Yok"})
+            fp = os.path.join(UPLOAD_DIR, row["filename"])
+            if not os.path.exists(fp): return self._json(404, {"error": "Dosya yok"})
+            data = open(fp, "rb").read()
+            self.send_response(200)
+            self.send_header("Content-Type", mimetypes.guess_type(fp)[0] or "image/jpeg")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.end_headers()
+            self.wfile.write(data)
+            return
 
         if p == "/api/flags":
             row = db().execute("SELECT v FROM settings WHERE k='maintenance'").fetchone()
@@ -911,6 +1000,32 @@ class Handler(BaseHTTPRequestHandler):
             db().commit()
             return self._json(200, {"ok": True})
 
+        if p == "/api/admin/publish":
+            adm = self._admin(qs)
+            if not self._can(adm, "review"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            d = jbody()
+            uid = int(d.get("user_id") or 0)
+            pr = db().execute("SELECT status, privacy, published, featured FROM profiles WHERE user_id=?", (uid,)).fetchone()
+            if not pr: return self._json(404, {"error": "Üye bulunamadı"})
+
+            if "published" in d:
+                yayin = "1" if d.get("published") else "0"
+                if yayin == "1" and (pr["status"] or "") != "onaylandi":
+                    return self._json(400, {"error": "Siteye çıkarmak için üyeyi önce onaylamalısınız"})
+                db().execute("UPDATE profiles SET published=? WHERE user_id=?", (yayin, uid))
+                audit("admin:" + adm["username"], "yayin-" + ("acildi" if yayin == "1" else "kaldirildi"), uid, "")
+                if yayin == "1" and (pr["privacy"] or "private") != "public":
+                    db().commit()
+                    return self._json(200, {"ok": True, "uyari": "Üye profilini 'özel' seçtiği için herkese açık katalogda görünmeyecek; yalnızca VIP paylaşım linklerinde yer alır."})
+
+            if "featured" in d:
+                one = "1" if d.get("featured") else "0"
+                db().execute("UPDATE profiles SET featured=? WHERE user_id=?", (one, uid))
+                audit("admin:" + adm["username"], "one-cikan-" + ("eklendi" if one == "1" else "kaldirildi"), uid, "")
+
+            db().commit()
+            return self._json(200, {"ok": True})
+
         if p == "/api/admin/review":
             adm = self._admin(qs)
             if not self._can(adm, "review"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
@@ -921,6 +1036,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(400, {"error": "Geçersiz durum"})
             note = str(d.get("review_note") or "")[:1000]
             db().execute("UPDATE profiles SET status=?, review_note=? WHERE user_id=?", (st, note, uid))
+            if st != "onaylandi":   # onay kalkarsa siteden de düşsün
+                db().execute("UPDATE profiles SET published='0' WHERE user_id=?", (uid,))
             audit("admin:" + adm["username"], "durum-" + st, uid, note[:100])
             db().commit()
             return self._json(200, {"ok": True})

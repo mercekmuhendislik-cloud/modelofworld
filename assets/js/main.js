@@ -305,10 +305,12 @@
 
   /* ---------- Kart render yardımcıları (diğer sayfalar kullanır) ---------- */
   window.VERA.renderTalentCard = function (t) {
-    const cat = CATEGORIES[t.category];
+    const cat = CATEGORIES[t.category] || { label: "Model", short: "Model", icon: "◆" };
     const city = window.VERA.LABELS.city[t.city] || t.city;
+    /* Gerçek üye fotoğrafları sunucudan gelir (Unsplash parametresi eklenmez) */
+    const src = t.real ? t.photo : `${t.photo}?q=80&auto=format&fit=crop&w=640&h=854`;
     const media = t.photo
-      ? `<img src="${t.photo}?q=80&auto=format&fit=crop&w=640&h=854" alt="${t.name} — ${cat.label}" loading="lazy">`
+      ? `<img src="${src}" alt="${t.name} — ${cat.label}" loading="lazy">`
       : window.VERA.talentPlaceholder(t);
     const fav = window.VERA.isFav?.(t.id);
     return `

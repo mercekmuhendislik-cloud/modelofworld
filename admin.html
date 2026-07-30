@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=2b6ae14">
+  <link rel="stylesheet" href="assets/css/style.css?v=b81a3f0">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -469,6 +469,7 @@
         kart("onayli", `<strong>${onayli}</strong><span>Kadroda</span>`) +
         kart("yeni", `<strong>+${yeni}</strong><span>Son 7 Gün</span>`) +
         kart("kabul", `<strong>${kabul}</strong><span>Kabul Edilen İş</span>`) +
+        kart("sitede", `<strong style="color:#20744c">${users.filter(u => u.profile?.published === "1").length}</strong><span>Sitede Yayında</span>`) +
         kart("grafik", `<span>Üye Artışı (8 hafta)</span><canvas id="chBar" width="300" height="90" style="width:100%"></canvas>`).replace('dash-card"', 'dash-card dash-wide"') +
         kart("durum", `<span>Durum Dağılımı</span><canvas id="chDonut" width="90" height="90" style="float:right"></canvas><div class="mini" style="margin-top:8px">⏳ ${bekleyen} · ✓ ${onayli} · ✕ ${users.length - bekleyen - onayli}</div>`) +
         (H && !gizli.includes("saglik") ? kart("saglik",
@@ -914,11 +915,19 @@
               <small>#${u.id} · ${esc(p.city) || "?"} · ${catAd(p.category)} · ${u.created?.slice(0,10) || ""}</small>
             </div>
             <span class="adm-badge st-${st}">${st === "onaylandi" ? "✓ onaylı" : st === "reddedildi" ? "✕ red" : "⏳ bekliyor"}</span>
-            ${p.privacy === "public" ? '<span class="adm-badge">🌍</span>' : '<span class="adm-badge">🔒</span>'}
+            ${p.published === "1"
+              ? '<span class="adm-badge" style="color:#20744c;border-color:#4da878">🌐 SİTEDE</span>'
+              : '<span class="adm-badge" style="opacity:.65">⚪ sitede değil</span>'}
+            ${p.featured === "1" ? '<span class="adm-badge" style="color:var(--gold);border-color:var(--gold)">⭐ öne çıkan</span>' : ""}
+            ${p.privacy === "public"
+              ? '<span class="adm-badge" title="Üye profilinin herkese açık olmasını seçti">🌍 açık</span>'
+              : '<span class="adm-badge" title="Üye profilini özel seçti — yayınlansa bile katalogda görünmez, yalnızca VIP paylaşımlarda çıkar">🔒 özel</span>'}
             ${p.admin_tags ? `<span class="adm-badge">🏷 ${esc(p.admin_tags)}</span>` : ""}
             <div class="adm-actions">
               <button class="btn btn-gold" data-act="onaylandi">✓ Onayla</button>
               <button class="btn btn-ghost" data-act="reddet-menu">✕ Reddet</button>
+              <button class="btn ${p.published === "1" ? "btn-ghost" : "btn-gold"}" data-act="yayin">${p.published === "1" ? "⛔ Yayından Al" : "🌐 Siteye Çıkar"}</button>
+              <button class="btn btn-ghost" data-act="one">${p.featured === "1" ? "☆ Öne Çıkarma" : "⭐ Öne Çıkar"}</button>
               <button class="btn btn-ghost" data-act="edit">✏️ Düzenle</button>
               <a class="btn btn-ghost" href="sedcard?id=${u.id}" target="_blank">🪪 Sedcard</a>
             </div>
@@ -1013,6 +1022,34 @@
       }
       if (!b) return;
       const act = b.dataset.act;
+
+      /* --- Siteye çıkarma / öne çıkarma --- */
+      if (act === "yayin" || act === "one") {
+        const uye = (DATA.users || []).find(x => x.id === uid) || {};
+        const pr = uye.profile || {};
+        const gonder = { user_id: uid };
+        if (act === "yayin") {
+          const yeni = pr.published !== "1";
+          if (yeni && (pr.status || "") !== "onaylandi") {
+            toast("Siteye çıkarmak için üyeyi önce onaylamanız gerekiyor.", "hata");
+            msg.textContent = "Önce onaylayın"; return;
+          }
+          if (yeni && !(uye.media || []).some(m => m.kind === "photo" && !m.deleted)
+              && !confirm("Bu üyenin yayınlanabilir fotoğrafı yok — katalogda boş görünecek. Yine de yayınlansın mı?")) return;
+          if (yeni && !confirm((uye.fullname || "Üye") + " herkese açık katalogda YAYINLANACAK. Onaylıyor musunuz?")) return;
+          if (!yeni && !confirm("Üye siteden kaldırılacak (profili silinmez). Onaylıyor musunuz?")) return;
+          gonder.published = yeni ? 1 : 0;
+        } else {
+          gonder.featured = pr.featured === "1" ? 0 : 1;
+        }
+        const sonuc = await api("/api/admin/publish", gonder);
+        if (!sonuc.ok) { toast(sonuc.err || "Hata", "hata"); return; }
+        if (sonuc.data && sonuc.data.uyari) toast(sonuc.data.uyari, "hata");
+        else toast(act === "yayin"
+          ? (gonder.published ? "🌐 Üye sitede yayında" : "Üye yayından alındı")
+          : (gonder.featured ? "⭐ Öne çıkarıldı — ana sayfada önce görünür" : "Öne çıkarma kaldırıldı"));
+        load(); return;
+      }
 
       if (act === "edit") { card.classList.add("open"); card.querySelector("[data-editwrap]").classList.toggle("open"); return; }
       if (act === "reddet-menu") { card.classList.add("open"); card.querySelector("[data-redsel]").focus(); return; }

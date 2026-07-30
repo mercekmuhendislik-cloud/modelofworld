@@ -484,9 +484,18 @@ function formatLanguages(t) {
     .join(", ");
 }
 
+/* ---------------------------------------------------------
+   Panelden yayınlanan gerçek kadro (/api/cast.js ile gelir).
+   Yayında üye varsa demo profiller devreden çıkar; hiç yoksa
+   site boş görünmesin diye örnek kadro gösterilir.
+   --------------------------------------------------------- */
+const CAST_CANLI = Array.isArray(window.VERA_CAST) ? window.VERA_CAST : [];
+const KADRO = CAST_CANLI.length ? CAST_CANLI : TALENTS;
+
 /* Diğer scriptlerin erişimi için global */
 window.VERA = {
-  AGENCY, CATEGORIES, TALENTS, LABELS, SERVICES, ILLER, ILLER_POPULER, DILLER,
+  TALENTS: KADRO, TALENTS_DEMO: TALENTS, CANLI_KADRO: CAST_CANLI.length > 0,
+  AGENCY, CATEGORIES, LABELS, SERVICES, ILLER, ILLER_POPULER, DILLER,
   RATES, HEADCOUNT_MID, DURATION_DAYS, FAQ_CANDIDATES, FAQ_CLIENTS,
   PROJECTS, COUNTERS, BRANDS, TESTIMONIALS, BLOG_POSTS,
   talentPlaceholder, formatLanguages,
