@@ -668,13 +668,29 @@
     /* Silme çağrısı tek yerden yapılır: tek üye de toplu silme de aynı ucu kullanır */
     async function uyeleriSil(ids) {
       toast("⏳ " + ids.length + " üye siliniyor…");
-      const sonuc = await api("/api/admin/delete", { user_ids: ids });
-      if (!sonuc.ok) { toast(sonuc.err || "Silinemedi", "hata"); return false; }
-      const d = sonuc.data || {};
-      toast("🗑 " + (d.silinen || ids.length) + " üye kalıcı olarak silindi" +
-            (d.dosya ? " (" + d.dosya + " dosya)" : ""));
-      load();
-      return true;
+      /* user_id de gönderilir: sunucu henüz yeniden başlatılmadıysa tek silme yine çalışsın */
+      const sonuc = await api("/api/admin/delete", { user_ids: ids, user_id: ids.length === 1 ? ids[0] : 0 });
+      if (sonuc.ok) {
+        const d = sonuc.data || {};
+        toast("🗑 " + (d.silinen || ids.length) + " üye kalıcı olarak silindi" +
+              (d.dosya ? " (" + d.dosya + " dosya)" : ""));
+        load();
+        return true;
+      }
+      /* Sunucu sürümü toplu silmeyi bilmiyorsa (API yeniden başlatılmamış) tek tek sil */
+      if (ids.length > 1) {
+        let basarili = 0;
+        for (const uid of ids) { if ((await api("/api/admin/delete", { user_id: uid })).ok) basarili++; }
+        if (basarili) {
+          toast("🗑 " + basarili + " üye kalıcı olarak silindi" +
+                (basarili < ids.length ? " (" + (ids.length - basarili) + " üye silinemedi)" : ""),
+                basarili < ids.length ? "hata" : "");
+          load();
+          return true;
+        }
+      }
+      toast(sonuc.err || "Silinemedi", "hata");
+      return false;
     }
     document.addEventListener("change", e => { if (e.target.classList?.contains("uSel") || e.target.id === "selAll") {
       if (e.target.id === "selAll") document.querySelectorAll(".uSel").forEach(c => c.checked = e.target.checked);
