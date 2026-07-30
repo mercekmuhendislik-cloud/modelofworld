@@ -288,7 +288,7 @@
 
   /* ---------- Görsel koruma: sağ tık + sürükleme engeli ---------- */
   document.addEventListener("contextmenu", e => {
-    if (e.target.closest(".talent-media, .detail-media, .g-item, .gallery-grid, .my-photo, .vip-photos")) e.preventDefault();
+    if (e.target.closest(".talent-media, .detail-media, .g-item, .gallery-grid, .my-photo, .vip-photos, .isik-govde")) e.preventDefault();
   });
   document.addEventListener("dragstart", e => {
     if (e.target.tagName === "IMG") e.preventDefault();
