@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=06bd3a5">
+  <link rel="stylesheet" href="assets/css/style.css?v=93131dc">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -52,23 +52,20 @@
     /* İmza */
     #sigCanvas { border:1px dashed var(--gold); border-radius:10px; background:#fff; touch-action:none; cursor:crosshair; width:100%; max-width:480px; height:150px; }
 
-    /* Çoklu seçim açılır menü */
-    .msel { position: relative; }
-    .msel-btn { width:100%; display:flex; justify-content:space-between; align-items:center; gap:10px;
-      padding:13px 16px; border-radius:10px; background:var(--bg-2); border:1px solid var(--line);
-      font:inherit; font-size:.94rem; color:var(--text); text-align:left; cursor:pointer; }
-    .msel.open .msel-btn { border-color:var(--gold); box-shadow:0 0 0 3px rgba(211,79,110,.12); }
-    .msel-txt { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .msel-txt.bos { color:var(--text-2); }
-    .msel-panel { display:none; position:absolute; z-index:40; top:calc(100% + 6px); left:0; right:0;
-      background:var(--surface); border:1px solid var(--line); border-radius:12px;
-      max-height:280px; overflow:auto; box-shadow:var(--shadow); padding:6px; }
-    .msel.open .msel-panel { display:block; }
-    .msel-opt { display:flex; gap:10px; align-items:center; padding:9px 12px; border-radius:8px;
-      cursor:pointer; font-size:.9rem; }
-    .msel-opt:hover { background:var(--bg-2); }
-    .msel-opt input { accent-color:var(--gold); width:15px; height:15px; }
-    .msel-opt input:disabled + span { opacity:.4; text-decoration:line-through; }
+    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=93131dc */
+
+    /* Profil tamamlanma ölçeri */
+    .tamam-kart { border:1px solid var(--gold); border-radius:14px; padding:18px 20px; margin-bottom:24px;
+      background:color-mix(in srgb, var(--gold) 6%, var(--surface)); }
+    .tamam-ust { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; }
+    .tamam-ust strong { font-family:var(--font-serif); font-size:1.14rem; }
+    .tamam-yuzde { font-family:var(--font-serif); font-size:1.7rem; color:var(--gold); line-height:1; }
+    .tamam-cubuk { height:9px; border-radius:999px; background:var(--bg-2); overflow:hidden; margin:12px 0 10px; }
+    .tamam-dolu { height:100%; border-radius:999px; background:var(--gold-grad); width:0; transition:width .6s ease; }
+    .tamam-eksik { font-size:.86rem; color:var(--text-2); line-height:2 }
+    .tamam-eksik button { background:none; border:0; padding:0; font:inherit; color:var(--gold);
+      text-decoration:underline; cursor:pointer; }
+    .tamam-eksik button:hover { opacity:.75; }
 
     /* İş teklifleri */
     .offer-card { border:1px solid var(--line); border-radius:12px; padding:20px; background:var(--surface); margin-bottom:14px; }
@@ -105,6 +102,15 @@
         <div class="wstep" data-ob="3"><span class="dot">3</span> Fotoğraf / Video</div>
         <div class="wline"></div>
         <div class="wstep" data-ob="4"><span class="dot">4</span> İmza &amp; Onay</div>
+      </div>
+
+      <div class="tamam-kart no-print" id="tamamKart" style="display:none">
+        <div class="tamam-ust">
+          <strong>Profil Tamamlanma Durumu</strong>
+          <span class="tamam-yuzde" id="tamamYuzde">%0</span>
+        </div>
+        <div class="tamam-cubuk"><div class="tamam-dolu" id="tamamDolu"></div></div>
+        <div class="tamam-eksik" id="tamamEksik"></div>
       </div>
 
       <div class="tabs no-print" id="panelTabs" style="margin-bottom:24px">
@@ -499,8 +505,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=06bd3a5"></script>
-  <script src="assets/js/main.js?v=06bd3a5"></script>
+  <script src="assets/js/data.js?v=93131dc"></script>
+  <script src="assets/js/main.js?v=93131dc"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -510,39 +516,8 @@
       const val = n => { const el = field(n); return el ? (el.type === "checkbox" ? (el.checked ? "1" : "") : el.value) : ""; };
 
       const yasHesap = b => { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); };
-      /* --- Çoklu seçim açılır menü bileşeni --- */
-      function makeMsel(el, options, placeholder, onChange) {
-        el.classList.add("msel");
-        el.innerHTML = `<button type="button" class="msel-btn"><span class="msel-txt bos">${placeholder}</span><span style="color:var(--gold)">▾</span></button>
-          <div class="msel-panel">${options.map(o =>
-            `<label class="msel-opt"><input type="checkbox" value="${o.value}"><span>${o.label}</span></label>`).join("")}</div>`;
-        const txt = el.querySelector(".msel-txt");
-        el.querySelector(".msel-btn").addEventListener("click", () => el.classList.toggle("open"));
-        document.addEventListener("click", e => { if (!el.contains(e.target)) el.classList.remove("open"); });
-        let bildiriliyor = false;
-        function sync(bildir = true) {
-          const vals = api.get();
-          const labels = options.filter(o => vals.includes(o.value)).map(o => o.label);
-          txt.textContent = labels.length
-            ? (labels.length > 3 ? labels.slice(0, 3).join(", ") + " +" + (labels.length - 3) : labels.join(", "))
-            : placeholder;
-          txt.classList.toggle("bos", !labels.length);
-          /* Geri bildirim döngüsünü engelle (disable → sync → onChange → disable …) */
-          if (bildir && onChange && !bildiriliyor) {
-            bildiriliyor = true;
-            try { onChange(vals); } finally { bildiriliyor = false; }
-          }
-        }
-        el.querySelector(".msel-panel").addEventListener("change", sync);
-        const api = {
-          get: () => [...el.querySelectorAll("input:checked")].map(i => i.value),
-          set: vals => { el.querySelectorAll("input").forEach(i => i.checked = vals.includes(i.value)); sync(); },
-          disable: (v, d) => { const i = el.querySelector(`input[value="${v}"]`); if (i) { if (d) i.checked = false; i.disabled = d; sync(false); } },
-          hide: (v, h) => { const i = el.querySelector(`input[value="${v}"]`); if (i) { if (h) i.checked = false; i.closest(".msel-opt").style.display = h ? "none" : ""; sync(false); } },
-        };
-        return api;
-      }
-
+      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=93131dc) */
+      const makeMsel = window.VERA.makeMsel;
       const catSel = makeMsel($("catSel"),
         Object.entries(window.VERA.CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
         "Kategori seçin…", () => { syncParentFields(); syncMinorNu(); syncPrefUI(); });
@@ -785,8 +760,49 @@
         }
         if (firstOpen) { document.querySelector(`[data-ob="${firstOpen}"]`).classList.add("active"); $("obSteps").style.display = ""; }
         else $("obSteps").style.display = "none";
+        tamamlamaCiz();
         return firstOpen;
       }
+      /* ============ Profil tamamlanma ölçeri ============ */
+      const TAMAM_MADDE = [
+        { ad: "Temel bilgiler", puan: 15, tab: "genel",
+          ok: (p) => (p.category || "").length > 0 && p.gender && (p.age || p.birthdate) && p.city },
+        { ad: "Boy & kilo", puan: 15, tab: "olculer", ok: (p) => p.height && p.weight },
+        { ad: "Detaylı ölçüler (göğüs/bel/basen, ayakkabı)", puan: 10, tab: "olculer",
+          ok: (p) => p.bust && p.waist && p.hip && p.shoe },
+        { ad: "Saç & göz rengi", puan: 5, tab: "olculer", ok: (p) => p.hair && p.eye },
+        { ad: "En az 1 fotoğraf", puan: 20, tab: "medya", ok: (p, m) => m.some(x => x.kind === "photo") },
+        { ad: "3 veya daha fazla fotoğraf", puan: 5, tab: "medya",
+          ok: (p, m) => m.filter(x => x.kind === "photo").length >= 3 },
+        { ad: "İmza & onaylar", puan: 15, tab: "onaylar",
+          ok: (p) => p.consent_kvkk === "1" && p.consent_contract === "1" },
+        { ad: "Çekim tercihleri", puan: 5, tab: "tercihler", ok: (p) => (p.shoot_prefs || "").length > 0 },
+        { ad: "Müsaitlik takvimi", puan: 5, tab: "takvim",
+          ok: (p) => { try { return Object.keys(JSON.parse(p.availability || "{}")).length > 0; } catch { return false; } } },
+        { ad: "Ödeme bilgileri", puan: 5, tab: "odeme", ok: (p) => p.iban && p.account_name },
+      ];
+      function tamamlamaCiz() {
+        const p = ME.profile || {}, m = ME.media || [];
+        let puan = 0;
+        const eksik = [];
+        TAMAM_MADDE.forEach(md => {
+          if (md.ok(p, m)) puan += md.puan;
+          else eksik.push(md);
+        });
+        $("tamamKart").style.display = "";
+        $("tamamYuzde").textContent = "%" + puan;
+        $("tamamDolu").style.width = puan + "%";
+        $("tamamEksik").innerHTML = eksik.length
+          ? "Eksik olanlar: " + eksik.map(md =>
+              `<button type="button" data-git="${md.tab}">${md.ad}</button>`).join(" · ") +
+            '<br><span style="opacity:.8">Profili tamamlanmış adaylar müşteri sunumlarında öne çıkar.</span>'
+          : "🎉 Profiliniz eksiksiz — casting ekibimiz sizi tüm projelerde değerlendirebilir.";
+      }
+      $("tamamEksik").addEventListener("click", e => {
+        const b = e.target.closest("[data-git]");
+        if (b) showTab(b.dataset.git);
+      });
+
       const TAB_ORDER = ["genel", "olculer", "medya", "onaylar"];
       function showTab(key) {
         document.querySelectorAll("#panelTabs .tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === key));

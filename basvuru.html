@@ -3,26 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Model & Hostes Başvurusu — Model of World</title>
-  <meta name="description" content="Ajansımıza model veya hostes olarak başvurun. Kayıt ücreti alınmaz.">
+  <title>Model &amp; Hostes Başvurusu — Model of World</title>
+  <meta name="description" content="Ajansımıza model veya hostes olarak başvurun. 2 dakikada kaydınızı oluşturun, fotoğraflarınızı yükleyin. Kayıt ücreti alınmaz.">
   <!-- Open Graph & Twitter Cards -->
-  <link rel="canonical" href="https://www.modelofworld.com/basvuru.html">
+  <link rel="canonical" href="https://www.modelofworld.com/basvuru">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Model of World">
   <meta property="og:locale" content="tr_TR">
-  <meta property="og:title" content="Model & Hostes Başvurusu — Model of World">
-  <meta property="og:description" content="Ajansımıza model veya hostes olarak başvurun. Kayıt ücreti alınmaz.">
-  <meta property="og:url" content="https://www.modelofworld.com/basvuru.html">
+  <meta property="og:title" content="Model &amp; Hostes Başvurusu — Model of World">
+  <meta property="og:description" content="2 dakikada başvurun: profil bilgileriniz, fotoğraflarınız ve hesabınız. Kayıt ücreti alınmaz.">
+  <meta property="og:url" content="https://www.modelofworld.com/basvuru">
   <meta property="og:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Model & Hostes Başvurusu — Model of World">
-  <meta name="twitter:description" content="Ajansımıza model veya hostes olarak başvurun. Kayıt ücreti alınmaz.">
+  <meta name="twitter:title" content="Model &amp; Hostes Başvurusu — Model of World">
+  <meta name="twitter:description" content="2 dakikada başvurun: profil bilgileriniz, fotoğraflarınız ve hesabınız. Kayıt ücreti alınmaz.">
   <meta name="twitter:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=06bd3a5">
+  <link rel="stylesheet" href="assets/css/style.css?v=93131dc">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
+  <style>
+    /* --- Kayıt blokları --- */
+    .blok { border:1px solid var(--line); border-radius:14px; padding:22px 20px; margin-bottom:20px; background:var(--surface); }
+    .blok.hatali { border-color:var(--danger); box-shadow:0 0 0 3px rgba(200,60,60,.1); }
+    .blok-bas { display:flex; align-items:center; gap:12px; font-family:var(--font-serif);
+      font-size:1.22rem; margin-bottom:6px; }
+    .blok-no { width:30px; height:30px; flex:0 0 30px; border-radius:50%; background:var(--gold-grad); color:#fff;
+      display:inline-flex; align-items:center; justify-content:center; font-family:var(--font-sans);
+      font-size:.86rem; font-weight:600; }
+    .blok-alt { color:var(--text-2); font-size:.86rem; margin:0 0 18px 42px; }
+
+    /* --- Fotoğraf seçimi --- */
+    .foto-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; margin:4px 0 14px; }
+    .foto-kutu { position:relative; aspect-ratio:3/4; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:var(--bg-2); }
+    .foto-kutu img { width:100%; height:100%; object-fit:cover; display:block; }
+    .foto-sil { position:absolute; top:6px; right:6px; width:26px; height:26px; border-radius:50%;
+      background:rgba(20,5,12,.72); color:#fff; border:0; cursor:pointer; font-size:.9rem; line-height:1;
+      display:flex; align-items:center; justify-content:center; }
+    .foto-ekle { aspect-ratio:3/4; border:1.5px dashed var(--gold); border-radius:10px; background:transparent;
+      color:var(--gold); cursor:pointer; display:flex; flex-direction:column; align-items:center;
+      justify-content:center; gap:6px; font:inherit; font-size:.8rem; text-align:center; padding:8px; }
+    .foto-ekle:hover { background:color-mix(in srgb, var(--gold) 8%, transparent); }
+    .foto-ekle span:first-child { font-size:1.5rem; }
+    .uyari { border:1px solid var(--danger); border-radius:10px; padding:12px 14px; margin-top:6px;
+      color:var(--danger); font-size:.86rem; background:color-mix(in srgb, var(--danger) 8%, transparent); }
+    #kayitMsg { display:none; border-radius:10px; padding:13px 16px; margin:6px 0 16px; font-size:.9rem; }
+    #kayitMsg.hata { display:block; color:var(--danger); border:1px solid var(--danger);
+      background:color-mix(in srgb, var(--danger) 8%, transparent); }
+    #kayitMsg.bilgi { display:block; color:var(--gold); border:1px solid var(--gold);
+      background:color-mix(in srgb, var(--gold) 8%, transparent); }
+    .sonra-notu { margin-top:22px; font-size:.86rem; color:var(--text-2); text-align:center; line-height:1.9; }
+    @media (max-width:700px) {
+      .blok { padding:18px 15px; }
+      .blok-alt { margin-left:0; }
+      .foto-grid { grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:10px; }
+    }
+  </style>
 </head>
 <body data-page="basvuru">
   <div id="site-header"></div>
@@ -31,192 +68,132 @@
     <div class="container center">
       <span class="eyebrow" style="justify-content:center">Kariyer</span>
       <h1>Ajansımıza Katılın</h1>
-      <p class="muted mt-2" style="max-width:58ch;margin-inline:auto">Model veya hostes kadromuzda yer almak için iki adımlık formu doldurun. Başvurunuz casting ekibimizce 5 iş günü içinde değerlendirilir. <strong class="gold">Ajansımız adaylardan hiçbir aşamada kayıt ücreti almaz.</strong></p>
+      <p class="muted mt-2" style="max-width:58ch;margin-inline:auto">Başvurunuz yaklaşık <strong class="gold">2 dakika</strong> sürer: profil bilgileriniz, fotoğraflarınız ve hesabınız. Kaydınız oluştuğunda ölçülerinizi ve diğer bilgileri panelinizden tamamlarsınız. <strong class="gold">Ajansımız adaylardan hiçbir aşamada kayıt ücreti almaz.</strong></p>
     </div>
   </div>
 
   <section style="padding-top:16px">
-    <div class="container" style="max-width:860px">
-      <div class="guide-box mt-2" style="margin-bottom:22px;text-align:center">
-        <strong style="display:inline">Fotoğraflarınızı yüklemek mi istiyorsunuz?</strong>
-        <span class="muted" style="font-size:.88rem"> Ücretsiz üye olun, aday panelinizden profilinizi oluşturup fotoğraflarınızı yükleyin.</span>
-        <div class="mt-2"><a class="btn btn-gold btn-sm" href="uye">Üye Ol / Giriş Yap →</a></div>
-      </div>
-      <div class="form-card">
+    <div class="container" style="max-width:760px">
 
-        <form id="applyForm" novalidate>
-          <!-- Adım göstergesi -->
-          <div class="wizard-steps no-print">
-            <div class="wstep active" data-step="1"><span class="dot">1</span> Kişisel Bilgiler</div>
-            <div class="wline"></div>
-            <div class="wstep" data-step="2"><span class="dot">2</span> Ölçüler &amp; Fotoğraflar</div>
-          </div>
+      <div class="form-card" id="kayitKart">
+        <form id="kayitForm" novalidate>
 
-          <!-- ADIM 1: Kişisel Bilgiler -->
-          <div class="wizard-pane active" data-pane="1">
+          <!-- ================= 1) PROFİL ================= -->
+          <div class="blok" id="blok1">
+            <div class="blok-bas"><span class="blok-no">1</span> Profil Bilgileri</div>
+            <p class="blok-alt">Sizi hangi işlere yönlendirebileceğimizi bilelim.</p>
             <div class="form-grid">
-              <div class="field">
-                <label>Ad Soyad <span class="req">*</span></label>
-                <input type="text" name="fullname" required minlength="5" placeholder="Adınız Soyadınız">
-                <span class="err">Lütfen adınızı ve soyadınızı girin.</span>
-              </div>
-              <div class="field">
-                <label>Doğum Tarihi <span class="req">*</span></label>
-                <input type="date" name="birthdate" required>
-                <span class="err">Doğum tarihi gereklidir.</span>
-              </div>
-              <div class="field">
-                <label>E-posta <span class="req">*</span></label>
-                <input type="email" name="email" required placeholder="ornek@mail.com">
-                <span class="err">Geçerli bir e-posta adresi girin.</span>
-              </div>
-              <div class="field">
-                <label>Telefon <span class="req">*</span></label>
-                <input type="tel" name="phone" required pattern="[0-9+() \-]{10,}" placeholder="05xx xxx xx xx">
-                <span class="err">Geçerli bir telefon numarası girin.</span>
-              </div>
-              <div class="field">
-                <label>Şehir <span class="req">*</span></label>
-                <input type="text" name="city" required placeholder="İstanbul">
-                <span class="err">Şehir bilgisi gereklidir.</span>
-              </div>
-              <div class="field">
-                <label>Instagram Kullanıcı Adı</label>
-                <input type="text" name="instagram" placeholder="@kullaniciadi">
-                <span class="hint">Portfolyonuzu görebilmemiz için önerilir; sitede asla yayınlanmaz.</span>
-              </div>
-              <div class="field">
-                <label>Başvuru Kategorisi <span class="req">*</span></label>
-                <select name="category" required>
-                  <option value="">Seçiniz…</option>
-                  <option value="model">Manken / Model</option>
-                  <option value="hostes">Fuar / Kongre Hostesi</option>
-                  <option value="yuz">Yüz Modeli</option>
-                  <option value="nu">Nü / Sanatsal Model (18+)</option>
-                  <option value="fitness">Fitness / Spor Modeli</option>
-                  <option value="plus">Büyük Beden Model</option>
-                  <option value="oyuncu">Reklam Oyuncusu / Cast</option>
-                  <option value="dans">Dansçı / Performans</option>
-                  <option value="promo">Tanıtım / Promosyon</option>
-                  <option value="cocuk">Çocuk Model (veli başvurusu)</option>
-                </select>
-                <span class="err">Bir kategori seçin.</span>
+              <div class="field full" id="fCat">
+                <label>Kategori(ler) <span class="req">*</span> <span class="muted" style="text-transform:none;letter-spacing:0">— birden fazla seçebilirsiniz</span></label>
+                <div id="catSel"></div>
+                <span class="err">En az bir kategori seçin.</span>
               </div>
               <div class="field">
                 <label>Cinsiyet <span class="req">*</span></label>
-                <select name="gender" required>
+                <select name="gender">
                   <option value="">Seçiniz…</option>
                   <option value="kadin">Kadın</option>
                   <option value="erkek">Erkek</option>
                 </select>
                 <span class="err">Seçim yapınız.</span>
               </div>
-              <div class="field full">
-                <label>Kendinizden Bahsedin</label>
-                <textarea name="about" placeholder="Deneyimleriniz, çalıştığınız markalar, uygunluk durumunuz…"></textarea>
+              <div class="field">
+                <label>Yaş <span class="req">*</span></label>
+                <select name="age"><option value="">Seçiniz…</option></select>
+                <span class="err">Yaşınızı seçin.</span>
               </div>
-            </div>
-            <div class="wizard-err" id="wizError" style="display:none;color:var(--danger);font-size:.86rem;margin-top:18px;text-align:center">
-              Lütfen kırmızıyla işaretlenen zorunlu alanları doldurun.
-            </div>
-            <div class="wizard-nav">
-              <span></span>
-              <button type="button" class="btn btn-gold" id="toStep2">Devam Et — Ölçüler →</button>
+              <div class="field">
+                <label>Şehir <span class="req">*</span></label>
+                <select name="city"><option value="">Seçiniz…</option></select>
+                <span class="err">Şehir seçin.</span>
+              </div>
+              <div class="field">
+                <label>Instagram</label>
+                <input type="text" name="instagram" placeholder="@kullaniciadi">
+                <span class="hint">Portfolyonuzu görebilmemiz için önerilir; sitede asla yayınlanmaz.</span>
+              </div>
+              <div class="field full">
+                <label>Yabancı Diller</label>
+                <div id="langSel"></div>
+              </div>
+              <div class="field full">
+                <label>Kısaca Kendinizden Bahsedin</label>
+                <textarea name="about" rows="3" placeholder="Deneyiminiz, çalıştığınız markalar, müsaitlik durumunuz… (opsiyonel)"></textarea>
+              </div>
+
+              <!-- 18 yaş altı: veli bilgileri -->
+              <div class="field full" id="veliWrap" style="display:none">
+                <div class="guide-box" style="margin-bottom:14px">
+                  <strong>18 yaş altı başvuru</strong>
+                  <p class="muted" style="font-size:.86rem;margin-top:6px">Reşit olmayan adaylar için veli/vasi bilgisi zorunludur. İmzalı <em>veli muvafakatnamesi</em> ve kimlik belgesini, kaydınız oluştuktan sonra panelinizden yükleyeceksiniz. Onaysız hiçbir çekime yönlendirme yapılmaz.</p>
+                </div>
+                <div class="form-grid" style="gap:16px">
+                  <div class="field">
+                    <label>Veli / Vasi Ad Soyad <span class="req">*</span></label>
+                    <input type="text" name="parent_name" placeholder="Anne / baba / vasi">
+                    <span class="err">Veli adı gereklidir.</span>
+                  </div>
+                  <div class="field">
+                    <label>Veli / Vasi Telefon <span class="req">*</span></label>
+                    <input type="tel" name="parent_phone" placeholder="05xx xxx xx xx">
+                    <span class="err">Veli telefonu gereklidir.</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- ADIM 2: Ölçüler & Fotoğraflar -->
-          <div class="wizard-pane" data-pane="2">
+          <!-- ================= 2) FOTOĞRAFLAR ================= -->
+          <div class="blok" id="blok2">
+            <div class="blok-bas"><span class="blok-no">2</span> Fotoğraflarınız <span class="req">*</span></div>
+            <p class="blok-alt">Fotoğrafsız başvurular değerlendirmeye alınamaz.</p>
+
+            <div class="guide-box" style="margin-bottom:16px">
+              <strong>Nasıl fotoğraf yüklemelisiniz?</strong>
+              <ul>
+                <li>1 yakın portre (önden) + 1 tüm boy fotoğrafı önerilir</li>
+                <li>Doğal ışıkta, makyajsız veya az makyajlı, <em>filtresiz</em></li>
+                <li>Düz bir duvar önünde, sade kıyafetle</li>
+                <li>Güneş gözlüğü, şapka ve yoğun rötuşlu fotoğraf kabul edilmez</li>
+              </ul>
+            </div>
+
+            <div class="foto-grid" id="fotoGrid"></div>
+            <input type="file" id="fotoInput" accept="image/*" multiple style="display:none">
+            <span class="hint">En fazla 4 fotoğraf · JPG, PNG veya HEIC · fotoğraflarınız otomatik sıkıştırılır ve <strong>Model of World</strong> filigranı eklenir.</span>
+            <div class="uyari" id="fotoUyari" style="display:none">
+              <strong>Fotoğraf zorunludur.</strong> Başvurunuzu gönderebilmek için en az 1 fotoğraf eklemelisiniz.
+            </div>
+          </div>
+
+          <!-- ================= 3) HESAP ================= -->
+          <div class="blok" id="blok3">
+            <div class="blok-bas"><span class="blok-no">3</span> Hesap Bilgileri</div>
+            <p class="blok-alt">Panelinize <strong>e-posta adresiniz ve şifrenizle</strong> giriş yapacaksınız.</p>
             <div class="form-grid">
-              <div class="form-section-title">Fiziksel Bilgiler</div>
-
               <div class="field">
-                <label>Boy (cm) <span class="req">*</span></label>
-                <input type="number" name="height" required min="100" max="220" placeholder="175">
-                <span class="err">Geçerli bir boy girin.</span>
+                <label>Ad Soyad <span class="req">*</span></label>
+                <input type="text" name="fullname" placeholder="Adınız Soyadınız">
+                <span class="err">Ad ve soyadınızı girin.</span>
               </div>
               <div class="field">
-                <label>Kilo (kg) <span class="req">*</span></label>
-                <input type="number" name="weight" required min="20" max="150" placeholder="60">
-                <span class="err">Geçerli bir kilo girin.</span>
+                <label>Telefon <span class="req">*</span></label>
+                <input type="tel" name="phone" placeholder="05xx xxx xx xx">
+                <span class="err">Geçerli bir telefon numarası girin.</span>
               </div>
               <div class="field">
-                <label>Beden</label>
-                <input type="text" name="size" placeholder="36 / S">
+                <label>E-posta <span class="req">*</span></label>
+                <input type="email" name="email" placeholder="ornek@mail.com" autocomplete="email">
+                <span class="err">Geçerli bir e-posta adresi girin.</span>
               </div>
               <div class="field">
-                <label>Ayakkabı Numarası</label>
-                <input type="number" name="shoe" min="20" max="50" placeholder="39">
+                <label>Şifre <span class="req">*</span></label>
+                <input type="password" name="password" placeholder="En az 6 karakter" autocomplete="new-password">
+                <span class="err">Şifre en az 6 karakter olmalı.</span>
               </div>
-              <div class="field">
-                <label>Dövme / Piercing</label>
-                <select name="tattoo">
-                  <option value="yok">Yok</option>
-                  <option value="gizlenebilir">Var — kıyafetle gizlenebilir</option>
-                  <option value="gorunur">Var — görünür</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>Deneyim Süresi</label>
-                <select name="experience">
-                  <option value="yok">Deneyimim yok</option>
-                  <option value="0-1">0–1 yıl</option>
-                  <option value="1-3">1–3 yıl</option>
-                  <option value="3-5">3–5 yıl</option>
-                  <option value="5+">5+ yıl</option>
-                </select>
-              </div>
-
-              <div class="form-section-title">Diller &amp; Ekstra Yetenekler</div>
-
-              <div class="field full">
-                <label>Bildiğiniz Yabancı Diller (seviyesiyle)</label>
-                <input type="text" name="languages" placeholder="İngilizce C1, Rusça B2…">
-              </div>
-              <div class="field full">
-                <label>Yetenekler</label>
-                <div class="skill-grid">
-                  <label class="skill-check"><input type="checkbox" name="skills" value="ehliyet"><span>Ehliyet (B)</span></label>
-                  <label class="skill-check"><input type="checkbox" name="skills" value="dans"><span>Dans</span></label>
-                  <label class="skill-check"><input type="checkbox" name="skills" value="oyunculuk"><span>Oyunculuk</span></label>
-                  <label class="skill-check"><input type="checkbox" name="skills" value="yuzme"><span>Yüzme</span></label>
-                  <label class="skill-check"><input type="checkbox" name="skills" value="binicilik"><span>Binicilik</span></label>
-                  <label class="skill-check"><input type="checkbox" name="skills" value="enstruman"><span>Enstrüman</span></label>
-                  <label class="skill-check"><input type="checkbox" name="skills" value="spikerlik"><span>Spikerlik</span></label>
-                  <label class="skill-check"><input type="checkbox" name="skills" value="barista"><span>Barista</span></label>
-                </div>
-              </div>
-
-              <div class="form-section-title">Fotoğraf &amp; Video</div>
-
-              <div class="field full">
-                <div class="guide-box">
-                  <strong>Nasıl fotoğraf yüklemelisiniz?</strong>
-                  <ul>
-                    <li>Doğal ışıkta, makyajsız veya az makyajlı, <em>filtresiz</em> çekin</li>
-                    <li>1 yakın portre (önden) + 1 tüm boy fotoğrafı zorunlu</li>
-                    <li>Düz bir duvar önünde, sade kıyafetle çekilmiş olmalı</li>
-                    <li>Güneş gözlüğü, şapka ve yoğun rötuşlu fotoğraf kabul edilmez</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div class="field full">
-                <label>Fotoğraflarınız (2–6 adet) <span class="req">*</span></label>
-                <input type="file" name="photos" accept="image/*" multiple required>
-                <span class="hint">Maks. 10 MB/adet · JPG, PNG veya HEIC</span>
-                <span class="err">Lütfen en az bir fotoğraf ekleyin.</span>
-              </div>
-
-              <div class="field full">
-                <label>Video Başvuru / Audition (opsiyonel)</label>
-                <input type="file" name="video" accept="video/*">
-                <span class="hint">10–15 saniyelik tanıtım veya yürüyüş (catwalk) videosu — dikey veya yatay. Maks. 100 MB.</span>
-              </div>
-
               <div class="field full">
                 <div class="checkbox-row">
-                  <input type="checkbox" name="kvkk" id="kvkk" required>
+                  <input type="checkbox" id="kvkk">
                   <label for="kvkk" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.86rem">
                     Kişisel verilerimin başvuru değerlendirme amacıyla <a href="kvkk" class="gold" target="_blank">KVKK Aydınlatma Metni</a> kapsamında işlenmesini kabul ediyorum; <a href="sozlesme" class="gold" target="_blank">çalışma prensipleri ve şartları</a> okudum. <span class="req">*</span>
                   </label>
@@ -224,21 +201,26 @@
                 <span class="err">Devam etmek için onay gereklidir.</span>
               </div>
             </div>
-
-            <div class="wizard-nav">
-              <button type="button" class="btn btn-ghost" id="backStep1">← Geri</button>
-              <button type="submit" class="btn btn-gold" style="min-width:240px">Başvuruyu Gönder</button>
-            </div>
           </div>
-        </form>
 
-        <div class="form-success" id="applySuccess">
-          <div class="tick">✓</div>
-          <h3>Başvurunuz Alındı</h3>
-          <p>Teşekkürler! Casting ekibimiz başvurunuzu inceleyecek ve uygun bulunması halinde 5 iş günü içinde sizinle iletişime geçecektir. Başvuru durumunuzu e-posta adresinize gelecek bağlantıdan takip edebilirsiniz.</p>
-          <a class="btn btn-ghost" href="/">Ana Sayfaya Dön</a>
-        </div>
+          <div id="kayitMsg"></div>
+          <button class="btn btn-gold full" type="submit" id="gonderBtn" style="min-width:240px">Başvurumu Gönder</button>
+
+          <p class="sonra-notu">
+            Boy, kilo, ölçüler, imza ve belgeler gibi bilgileri <strong>kaydınız oluştuktan sonra</strong> panelinizden doldurursunuz.<br>
+            Zaten üye misiniz? <a href="uye" class="gold">Giriş yapın →</a>
+          </p>
+        </form>
       </div>
+
+      <!-- BAŞARI -->
+      <div class="form-card" id="basariKart" style="display:none;text-align:center">
+        <div style="font-size:3rem;color:var(--gold);line-height:1">✓</div>
+        <h3 style="margin:10px 0 12px">Başvurunuz Alındı</h3>
+        <p class="muted" style="max-width:52ch;margin-inline:auto">Hesabınız oluşturuldu ve fotoğraflarınız yüklendi. Casting ekibimiz başvurunuzu inceleyecek. Şimdi panelinize yönlendiriliyorsunuz — profilinizi tamamladıkça değerlendirme şansınız artar.</p>
+        <div class="mt-3"><a class="btn btn-gold" href="panel">Panelime Git →</a></div>
+      </div>
+
     </div>
   </section>
 
@@ -256,13 +238,204 @@
   <div id="site-footer"></div>
 
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=06bd3a5"></script>
-  <script src="assets/js/main.js?v=06bd3a5"></script>
-  <script src="assets/js/analytics.js?v=06bd3a5"></script>
-  <script src="assets/js/forms.js?v=06bd3a5"></script>
+  <script src="assets/js/data.js?v=93131dc"></script>
+  <script src="assets/js/main.js?v=93131dc"></script>
+  <script src="assets/js/analytics.js?v=93131dc"></script>
   <script>
     document.getElementById("faqCandidates").innerHTML = window.VERA.FAQ_CANDIDATES.map(f => `
       <details class="acc-item"><summary>${f.q}</summary><div class="acc-body">${f.a}</div></details>`).join("");
+
+    (function () {
+      const { CATEGORIES, DILLER, ILLER, ILLER_POPULER, makeMsel, fotoHazirla } = window.VERA;
+      const $ = id => document.getElementById(id);
+      const field = n => document.querySelector(`#kayitForm [name="${n}"]`);
+      const val = n => (field(n)?.value || "").trim();
+      const MAKS_FOTO = 4;
+
+      /* Girişliyse doğrudan panele */
+      fetch("/api/me").then(r => { if (r.ok) location.href = "panel"; }).catch(() => {});
+
+      /* ---------- Alanları doldur ---------- */
+      const catSel = makeMsel($("catSel"),
+        Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
+        "Kategori seçiniz…", () => veliKontrol());
+      const langSel = makeMsel($("langSel"),
+        DILLER.filter(d => d !== "Türkçe").map(d => ({ value: d, label: d })),
+        "Dil seçiniz… (opsiyonel)");
+
+      field("age").innerHTML = '<option value="">Seçiniz…</option>' +
+        Array.from({ length: 50 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
+      field("city").innerHTML = '<option value="">Seçiniz…</option>' +
+        `<optgroup label="Büyük Şehirler">${ILLER_POPULER.map(i => `<option value="${i}">${i}</option>`).join("")}</optgroup>` +
+        `<optgroup label="Tüm İller">${ILLER.map(i => `<option value="${i}">${i}</option>`).join("")}</optgroup>`;
+
+      /* ---------- 18 yaş altı ---------- */
+      const rasitDegil = () => catSel.get().includes("cocuk") || (+val("age") > 0 && +val("age") < 18);
+      function veliKontrol() { $("veliWrap").style.display = rasitDegil() ? "" : "none"; }
+      field("age").addEventListener("change", veliKontrol);
+      veliKontrol();
+
+      /* ---------- Fotoğraflar ---------- */
+      const FOTOLAR = [];   /* { blob, ad, url } */
+      function fotoCiz() {
+        $("fotoGrid").innerHTML =
+          FOTOLAR.map((f, i) => `
+            <div class="foto-kutu">
+              <img src="${f.url}" alt="Fotoğraf ${i + 1}">
+              <button type="button" class="foto-sil" data-sil="${i}" aria-label="Kaldır">✕</button>
+            </div>`).join("") +
+          (FOTOLAR.length < MAKS_FOTO
+            ? `<button type="button" class="foto-ekle" id="fotoEkle"><span>＋</span><span>Fotoğraf Ekle</span></button>`
+            : "");
+        if (FOTOLAR.length) { $("fotoUyari").style.display = "none"; $("blok2").classList.remove("hatali"); }
+      }
+      $("fotoGrid").addEventListener("click", e => {
+        if (e.target.closest("#fotoEkle")) { $("fotoInput").click(); return; }
+        const sil = e.target.closest("[data-sil]");
+        if (sil) {
+          const [f] = FOTOLAR.splice(+sil.dataset.sil, 1);
+          URL.revokeObjectURL(f.url);
+          fotoCiz();
+        }
+      });
+      $("fotoInput").addEventListener("change", async e => {
+        const dosyalar = [...e.target.files].slice(0, MAKS_FOTO - FOTOLAR.length);
+        e.target.value = "";
+        for (const d of dosyalar) {
+          if (d.size > 12 * 1024 * 1024) { mesaj("hata", `“${d.name}” 12 MB'tan büyük — daha küçük bir fotoğraf seçin.`); continue; }
+          mesaj("bilgi", "Fotoğraf hazırlanıyor… (sıkıştırma + filigran)");
+          const out = await fotoHazirla(d);
+          FOTOLAR.push({ blob: out.blob, ad: out.ad, url: URL.createObjectURL(out.blob) });
+          fotoCiz();
+        }
+        mesaj("", "");
+      });
+      fotoCiz();
+
+      /* ---------- Mesaj ---------- */
+      function mesaj(tur, metin) {
+        const el = $("kayitMsg");
+        el.className = metin ? tur : "";
+        el.innerHTML = metin || "";
+      }
+
+      /* ---------- Doğrulama ---------- */
+      function hatali(sel, durum) {
+        const f = typeof sel === "string" ? field(sel)?.closest(".field") : sel;
+        f?.classList.toggle("invalid", !!durum);
+      }
+      function dogrula() {
+        let ilk = null;
+        const isaretle = (ad, kotu) => { hatali(ad, kotu); if (kotu && !ilk) ilk = field(ad)?.closest(".field"); };
+
+        const catBos = !catSel.get().length;
+        $("fCat").classList.toggle("invalid", catBos);
+        if (catBos) ilk = $("fCat");
+
+        isaretle("gender", !val("gender"));
+        isaretle("age", !val("age"));
+        isaretle("city", !val("city"));
+        if (rasitDegil()) {
+          isaretle("parent_name", val("parent_name").length < 5);
+          isaretle("parent_phone", val("parent_phone").replace(/\D/g, "").length < 10);
+        }
+        isaretle("fullname", val("fullname").split(" ").filter(Boolean).length < 2);
+        isaretle("phone", val("phone").replace(/\D/g, "").length < 10);
+        isaretle("email", !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val("email")));
+        isaretle("password", val("password").length < 6);
+
+        const kvkkKotu = !$("kvkk").checked;
+        $("kvkk").closest(".field").classList.toggle("invalid", kvkkKotu);
+        if (kvkkKotu && !ilk) ilk = $("kvkk").closest(".field");
+
+        /* Fotoğraf zorunlu */
+        const fotoYok = !FOTOLAR.length;
+        $("fotoUyari").style.display = fotoYok ? "" : "none";
+        $("blok2").classList.toggle("hatali", fotoYok);
+        if (fotoYok && !ilk) ilk = $("blok2");
+
+        if (ilk) {
+          mesaj("hata", fotoYok && !document.querySelector("#kayitForm .field.invalid")
+            ? "Başvurunuzu gönderebilmek için en az 1 fotoğraf ekleyin."
+            : "Lütfen kırmızıyla işaretlenen zorunlu alanları kontrol edin.");
+          ilk.scrollIntoView({ behavior: "smooth", block: "center" });
+          return false;
+        }
+        mesaj("", "");
+        return true;
+      }
+      /* Kullanıcı düzeltirken kırmızı işareti kaldır */
+      $("kayitForm").addEventListener("input", e => {
+        e.target.closest(".field")?.classList.remove("invalid");
+      });
+      $("kvkk").addEventListener("change", () => $("kvkk").closest(".field").classList.remove("invalid"));
+
+      /* ---------- Gönder ---------- */
+      const btn = $("gonderBtn");
+      async function yukle(f) {
+        const fd = new FormData();
+        fd.append("kind", "photo");
+        fd.append("album", "genel");
+        fd.append("file", f.blob, f.ad);
+        const r = await fetch("/api/upload", { method: "POST", body: fd }).catch(() => null);
+        if (!r || !r.ok) throw new Error("yukleme");
+      }
+      $("kayitForm").addEventListener("submit", async e => {
+        e.preventDefault();
+        if (!dogrula()) return;
+
+        btn.disabled = true;
+        btn.textContent = "Hesabınız oluşturuluyor…";
+        const govde = {
+          fullname: val("fullname"), email: val("email").toLowerCase(),
+          phone: val("phone"), password: val("password"),
+          category: catSel.get().join(","), gender: val("gender"),
+          age: val("age"), city: val("city"),
+          languages: ["Türkçe", ...langSel.get()].join(", "),
+          instagram: val("instagram"), about: val("about"),
+          consent_kvkk: "1",
+        };
+        if (rasitDegil()) { govde.parent_name = val("parent_name"); govde.parent_phone = val("parent_phone"); }
+
+        let r;
+        try {
+          r = await fetch("/api/register", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(govde),
+          });
+        } catch {
+          mesaj("hata", "Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.");
+          btn.disabled = false; btn.textContent = "Başvurumu Gönder"; return;
+        }
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          mesaj("hata", r.status === 409
+            ? 'Bu e-posta adresi zaten kayıtlı. <a href="uye" class="gold">Giriş yapın →</a>'
+            : (d.error || "Kayıt tamamlanamadı, bilgilerinizi kontrol edin."));
+          hatali("email", r.status === 409);
+          btn.disabled = false; btn.textContent = "Başvurumu Gönder";
+          $("kayitMsg").scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+
+        /* Hesap açıldı — oturum çerezi hazır, fotoğraflar yükleniyor */
+        let basarisiz = 0;
+        for (let i = 0; i < FOTOLAR.length; i++) {
+          btn.textContent = `Fotoğraf yükleniyor ${i + 1}/${FOTOLAR.length}…`;
+          try { await yukle(FOTOLAR[i]); } catch { basarisiz++; }
+        }
+        if (basarisiz === FOTOLAR.length) {
+          /* Hesap var ama foto yüklenemedi — panelde tekrar denesin */
+          mesaj("hata", "Hesabınız oluşturuldu ancak fotoğraflarınız yüklenemedi. Panelinizde <strong>Fotoğraf &amp; Video</strong> bölümünden tekrar yükleyebilirsiniz. Yönlendiriliyorsunuz…");
+          setTimeout(() => location.href = "panel", 3500);
+          return;
+        }
+        $("kayitKart").style.display = "none";
+        $("basariKart").style.display = "";
+        $("basariKart").scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => location.href = "panel", 2200);
+      });
+    })();
   </script>
 </body>
 </html>

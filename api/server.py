@@ -31,6 +31,8 @@ UPLOAD_RULES = {
     "adli":   ({".pdf", ".jpg", ".jpeg", ".png"}, 8 * 1024 * 1024, 2),
 }
 ALBUMS = {"studio", "podium", "polaroid", "sanatsal", "genel"}
+# Geçerli başvuru kategorileri — assets/js/data.js içindeki CATEGORIES ile aynı kalmalı
+CATEGORY_KEYS = {"model", "hostes", "yuz", "cocuk", "nu", "fitness", "plus", "oyuncu", "dans", "promo"}
 MAX_BODY = 85 * 1024 * 1024
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -614,25 +616,66 @@ class Handler(BaseHTTPRequestHandler):
             except Exception: return {}
 
         if p == "/api/register":
+            # Kısa başvuru formu (basvuru.html): hesap + temel profil tek istekte açılır.
+            # Ölçüler, imza, belgeler ve diğer alanlar panelden tamamlanır.
             d = jbody()
             email = (d.get("email") or "").strip().lower()
             pw = d.get("password") or ""
+            adsoyad = (d.get("fullname") or "").strip()
+            telefon = (d.get("phone") or "").strip()
             if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
                 return self._json(400, {"error": "Geçerli bir e-posta girin"})
             if len(pw) < 6:
                 return self._json(400, {"error": "Şifre en az 6 karakter olmalı"})
+            if len(adsoyad.split()) < 2:
+                return self._json(400, {"error": "Ad ve soyadınızı birlikte girin"})
+            if len(re.sub(r"\D", "", telefon)) < 10:
+                return self._json(400, {"error": "Geçerli bir telefon numarası girin"})
+
+            # --- Başvuru profili ---
+            kats = [c for c in str(d.get("category") or "").split(",") if c in CATEGORY_KEYS]
+            if not kats:
+                return self._json(400, {"error": "En az bir kategori seçin"})
+            cinsiyet = str(d.get("gender") or "")
+            if cinsiyet not in ("kadin", "erkek"):
+                return self._json(400, {"error": "Cinsiyet seçin"})
+            try:
+                yas = int(str(d.get("age") or "0"))
+            except ValueError:
+                yas = 0
+            if not 1 <= yas <= 50:
+                return self._json(400, {"error": "Yaşınızı seçin"})
+            sehir = str(d.get("city") or "").strip()[:40]
+            if not sehir:
+                return self._json(400, {"error": "Şehir seçin"})
+
+            resit_degil = yas < 18 or "cocuk" in kats
+            if "nu" in kats and resit_degil:
+                return self._json(400, {"error": "Nü / sanatsal kategori yalnızca 18 yaş ve üzeri adaylar içindir"})
+            veli_ad = str(d.get("parent_name") or "").strip()[:80]
+            veli_tel = str(d.get("parent_phone") or "").strip()[:30]
+            if resit_degil and (len(veli_ad.split()) < 2 or len(re.sub(r"\D", "", veli_tel)) < 10):
+                return self._json(400, {"error": "18 yaş altı başvurularda veli ad soyad ve telefon zorunludur"})
+
             if db().execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone():
                 return self._json(409, {"error": "Bu e-posta zaten kayıtlı — giriş yapın"})
             salt = secrets.token_hex(16)
             cur = db().execute(
                 "INSERT INTO users(email,pass_hash,salt,fullname,phone,created) VALUES(?,?,?,?,?,?)",
-                (email, hash_pw(pw, salt), salt, (d.get("fullname") or "").strip(),
-                 (d.get("phone") or "").strip(), now()))
-            db().execute("INSERT INTO profiles(user_id, status, privacy) VALUES(?, 'inceleniyor', 'private')",
-                         (cur.lastrowid,))
-            audit("uye", "kayit", cur.lastrowid, email)
+                (email, hash_pw(pw, salt), salt, adsoyad, telefon, now()))
+            uid = cur.lastrowid
+            db().execute(
+                "INSERT INTO profiles(user_id, status, privacy, category, gender, age, city, "
+                "languages, instagram, about, parent_name, parent_phone, consent_kvkk) "
+                "VALUES(?, 'inceleniyor', 'private', ?,?,?,?,?,?,?,?,?,?)",
+                (uid, ",".join(kats), cinsiyet, str(yas), sehir,
+                 str(d.get("languages") or "")[:200], str(d.get("instagram") or "").strip()[:60],
+                 str(d.get("about") or "")[:1500],
+                 veli_ad if resit_degil else "", veli_tel if resit_degil else "",
+                 "1" if str(d.get("consent_kvkk") or "") == "1" else "0"))
+            audit("uye", "kayit", uid, "%s · %s · %s yaş · %s" % (email, ",".join(kats), yas, sehir))
             db().commit()
-            return self._json(200, {"ok": True}, cookie=self._make_session(cur.lastrowid))
+            return self._json(200, {"ok": True}, cookie=self._make_session(uid))
 
         if p == "/api/login":
             d = jbody()
@@ -1146,5 +1189,7 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(200, {"ok": True})
 
 if __name__ == "__main__":
-    print(f"MOW API v3 127.0.0.1:8010 — veri: {DATA_DIR}")
-    ThreadingHTTPServer(("127.0.0.1", 8010), Handler).serve_forever()
+    # Canlıda 8010; testlerde MOW_PORT ile başka bir port verilebilir
+    PORT = int(os.environ.get("MOW_PORT", "8010"))
+    print(f"MOW API v3 127.0.0.1:{PORT} — veri: {DATA_DIR}")
+    ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()

@@ -11,7 +11,7 @@
     { href: "katalog",    label: "Cast / Katalog", key: "katalog" },
     { href: "hizmetler",  label: "Hizmetlerimiz",  key: "hizmetler" },
     { href: "produksiyon",label: "Prodüksiyon",    key: "produksiyon" },
-    { href: "basvuru.html",    label: "Başvuru Yap",    key: "basvuru" },
+    { href: "basvuru",     label: "Başvuru Yap",    key: "basvuru", cta: true },
     { href: "hakkimizda", label: "Hakkımızda",     key: "hakkimizda" },
     { href: "iletisim",   label: "İletişim",       key: "iletisim" },
   ];
@@ -62,7 +62,7 @@
       <div class="container header-inner">
         ${LOGO}
         <nav class="main-nav" id="mainNav" aria-label="Ana menü">
-          ${NAV.map(n => `<a href="${n.href}" class="${n.key === active ? "active" : ""}">${n.label}</a>`).join("")}
+          ${NAV.map(n => `<a href="${n.href}" class="${n.cta ? "nav-cta " : ""}${n.key === active ? "active" : ""}">${n.label}</a>`).join("")}
           <a href="uye" class="nav-mob">Üye Girişi</a>
           <a href="teklif" class="nav-mob">Teklif Al</a>
           <button type="button" class="nav-mob" id="themeBtnMob">Koyu / Açık Tema</button>
@@ -82,7 +82,7 @@
             <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
             <svg class="ic-sun hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
           </button>
-          <a class="btn btn-gold btn-sm header-cta" href="teklif">Teklif Al</a>
+          <a class="btn btn-ghost btn-sm header-cta hide-mob" href="teklif">Teklif Al</a>
           <button class="icon-btn nav-toggle" id="navToggle" aria-label="Menü">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
           </button>
@@ -237,7 +237,7 @@
       href: `hizmetler#${s.id}`,
       text: `${s.title} ${s.short}`.toLowerCase(),
     })),
-    { label: "Başvuru Formu", sub: "Model / Hostes olun", href: "basvuru.html", text: "başvuru basvuru model hostes kayıt" },
+    { label: "Başvuru Formu", sub: "Model / Hostes olun", href: "basvuru", text: "başvuru basvuru model hostes kayıt" },
     { label: "Teklif İste", sub: "Kurumsal müşteriler", href: "teklif", text: "teklif fiyat proje müşteri" },
   ];
 
@@ -346,5 +346,67 @@
 
   window.VERA.observeNew = function (scope) {
     (scope || document).querySelectorAll(".reveal:not(.in)").forEach(el => io.observe(el));
+  };
+
+  /* =========================================================
+     Çoklu seçim açılır menü (panel + başvuru formu ortak kullanır)
+     options: [{value,label}] · api: get/set/disable/hide
+     ========================================================= */
+  window.VERA.makeMsel = function (el, options, placeholder, onChange) {
+    el.classList.add("msel");
+    el.innerHTML = `<button type="button" class="msel-btn"><span class="msel-txt bos">${placeholder}</span><span style="color:var(--gold)">▾</span></button>
+      <div class="msel-panel">${options.map(o =>
+        `<label class="msel-opt"><input type="checkbox" value="${o.value}"><span>${o.label}</span></label>`).join("")}</div>`;
+    const txt = el.querySelector(".msel-txt");
+    el.querySelector(".msel-btn").addEventListener("click", () => el.classList.toggle("open"));
+    document.addEventListener("click", e => { if (!el.contains(e.target)) el.classList.remove("open"); });
+    let bildiriliyor = false;
+    function sync(bildir = true) {
+      const vals = api.get();
+      const labels = options.filter(o => vals.includes(o.value)).map(o => o.label);
+      txt.textContent = labels.length
+        ? (labels.length > 3 ? labels.slice(0, 3).join(", ") + " +" + (labels.length - 3) : labels.join(", "))
+        : placeholder;
+      txt.classList.toggle("bos", !labels.length);
+      /* Geri bildirim döngüsünü engelle (disable → sync → onChange → disable …) */
+      if (bildir && onChange && !bildiriliyor) {
+        bildiriliyor = true;
+        try { onChange(vals); } finally { bildiriliyor = false; }
+      }
+    }
+    el.querySelector(".msel-panel").addEventListener("change", sync);
+    const api = {
+      get: () => [...el.querySelectorAll("input:checked")].map(i => i.value),
+      set: vals => { el.querySelectorAll("input").forEach(i => i.checked = vals.includes(i.value)); sync(); },
+      disable: (v, d) => { const i = el.querySelector(`input[value="${v}"]`); if (i) { if (d) i.checked = false; i.disabled = d; sync(false); } },
+      hide: (v, h) => { const i = el.querySelector(`input[value="${v}"]`); if (i) { if (h) i.checked = false; i.closest(".msel-opt").style.display = h ? "none" : ""; sync(false); } },
+    };
+    return api;
+  };
+
+  /* Fotoğrafı küçült + WebP'ye çevir + filigran bas (başvuru formu) */
+  window.VERA.fotoHazirla = async function (file, maxKenar = 1600) {
+    let bmp = null;
+    try { bmp = await createImageBitmap(file); } catch { return { blob: file, ad: file.name }; }
+    const k = Math.min(1, maxKenar / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * k);
+    c.height = Math.round(bmp.height * k);
+    const x = c.getContext("2d");
+    x.drawImage(bmp, 0, 0, c.width, c.height);
+    /* filigran */
+    const fs = Math.max(14, Math.round(c.width * 0.032));
+    x.font = `600 ${fs}px "Cormorant Garamond", Georgia, serif`;
+    x.textAlign = "right";
+    x.textBaseline = "bottom";
+    x.shadowColor = "rgba(0,0,0,.65)";
+    x.shadowBlur = fs / 2;
+    x.fillStyle = "rgba(255,255,255,.86)";
+    x.fillText("MODEL OF WORLD ©", c.width - fs * 0.6, c.height - fs * 0.55);
+    const blob = await new Promise(res =>
+      c.toBlob(b => b ? res(b) : c.toBlob(j => res(j), "image/jpeg", 0.85), "image/webp", 0.85));
+    const temiz = (file.name || "foto").replace(/\.[^.]+$/, "").replace(/[^\w\-]+/g, "-").slice(0, 40) || "foto";
+    const uzanti = blob && String(blob.type).includes("webp") ? ".webp" : ".jpg";
+    return { blob: blob || file, ad: temiz + uzanti };
   };
 })();
