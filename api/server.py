@@ -1100,6 +1100,34 @@ class Handler(BaseHTTPRequestHandler):
             db().commit()
             return self._json(200, {"ok": True})
 
+        if p == "/api/admin/delete":
+            # Üyeyi kalıcı olarak siler: hesap, profil, fotoğraf/belge dosyaları, iş teklifleri, oturumlar.
+            # Yalnızca "users" yetkisi olan rol (admin) silebilir; denetim günlüğüne kim/ne bilgisi yazılır.
+            adm = self._admin(qs)
+            if not self._can(adm, "users"):
+                return self._json(403, {"error": "Üye silme yetkisi yalnızca yöneticide (admin) vardır"})
+            d = jbody()
+            uid = int(d.get("user_id") or 0)
+            row = db().execute("SELECT email, fullname FROM users WHERE id=?", (uid,)).fetchone()
+            if not row:
+                return self._json(404, {"error": "Üye bulunamadı"})
+            silinen_dosya = 0
+            for m in db().execute("SELECT filename FROM photos WHERE user_id=?", (uid,)).fetchall():
+                try:
+                    os.remove(os.path.join(UPLOAD_DIR, m["filename"]))
+                    silinen_dosya += 1
+                except OSError:
+                    pass   # dosya zaten yok — kaydı silmeye devam
+            db().execute("DELETE FROM photos WHERE user_id=?", (uid,))
+            db().execute("DELETE FROM job_offers WHERE user_id=?", (uid,))
+            db().execute("DELETE FROM sessions WHERE user_id=?", (uid,))
+            db().execute("DELETE FROM profiles WHERE user_id=?", (uid,))
+            db().execute("DELETE FROM users WHERE id=?", (uid,))
+            audit("admin:" + adm["username"], "uye-sil", uid,
+                  "%s <%s> · %d dosya silindi" % (row["fullname"] or "?", row["email"], silinen_dosya))
+            db().commit()
+            return self._json(200, {"ok": True, "dosya": silinen_dosya})
+
         if p == "/api/admin/job":
             adm = self._admin(qs)
             if not self._can(adm, "job"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})

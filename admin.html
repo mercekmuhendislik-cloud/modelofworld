@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=f9decae">
+  <link rel="stylesheet" href="assets/css/style.css?v=be8f71b">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -20,6 +20,25 @@
     .adm-badge.st-onaylandi { color:#20744c; border-color:#4da878; }
     .adm-badge.st-reddedildi { color:#a33; border-color:#d95a5a; }
     .adm-actions { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+
+    /* Duruma göre sekmeler */
+    .durum-sekme { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+    .durum-sekme button { font:inherit; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase;
+      padding:10px 16px; border-radius:999px; border:1px solid var(--line); background:var(--surface);
+      color:var(--text-2); cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:all .18s ease; }
+    .durum-sekme button:hover { border-color:var(--gold); color:var(--text); }
+    .durum-sekme button.on { background:var(--gold-grad); border-color:transparent; color:#fff;
+      box-shadow:0 6px 16px rgba(211,79,110,.26); }
+    .durum-sekme .sayi { font-size:.7rem; padding:1px 7px; border-radius:999px;
+      background:color-mix(in srgb, var(--gold) 16%, transparent); color:var(--gold); }
+    .durum-sekme button.on .sayi { background:rgba(255,255,255,.24); color:#fff; }
+
+    /* Tehlikeli işlem (kalıcı silme) */
+    .btn-tehlike { border:1px solid #d95a5a !important; color:#c33 !important; background:transparent !important; }
+    .btn-tehlike:hover { background:rgba(217,90,90,.1) !important; }
+    .adm-badge.eksik { color:#b1651f; border-color:#e0a86a; }
+    .bos-durum { text-align:center; padding:46px 20px; color:var(--text-2); }
+    .bos-durum .ikon { font-size:2.4rem; display:block; margin-bottom:10px; }
     .adm-actions .btn { padding:7px 13px; font-size:.62rem; }
     .adm-body { display:none; border-top:1px solid var(--line); padding:14px; font-size:.85rem; color:var(--text-2); line-height:1.9; }
     .adm-user.open .adm-body { display:block; }
@@ -250,15 +269,17 @@
           <button class="btn btn-ghost btn-sm" id="bulkClear">Seçimi Bırak</button>
         </div>
 
+        <div class="durum-sekme" id="durumSekme">
+          <button type="button" data-durum="inceleniyor" class="on">⏳ Onay Bekleyen <span class="sayi" data-s="inceleniyor">0</span></button>
+          <button type="button" data-durum="onaylandi">✓ Onaylı <span class="sayi" data-s="onaylandi">0</span></button>
+          <button type="button" data-durum="yayinda">🌐 Sitede Yayında <span class="sayi" data-s="yayinda">0</span></button>
+          <button type="button" data-durum="reddedildi">✕ Reddedilen <span class="sayi" data-s="reddedildi">0</span></button>
+          <button type="button" data-durum="">👥 Tümü <span class="sayi" data-s="">0</span></button>
+        </div>
+
         <div class="adm-row" id="filterRow2" style="margin-bottom:14px">
           <label class="mini" style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="selbox" id="selAll"> tümü</label>
           <input class="adm-input" id="fText" placeholder="İsim / etiket / şehir / dövme ara…" style="flex:1;min-width:170px">
-          <select class="adm-input" id="fStatus">
-            <option value="">Tüm durumlar</option>
-            <option value="inceleniyor">⏳ Bekleyenler</option>
-            <option value="onaylandi">✓ Onaylılar</option>
-            <option value="reddedildi">✕ Reddedilenler</option>
-          </select>
           <select class="adm-input" id="fCat"><option value="">Tüm kategoriler</option></select>
           <input class="adm-input" id="fFrom" type="date" title="Kayıt tarihi: başlangıç">
           <input class="adm-input" id="fTo" type="date" title="Kayıt tarihi: bitiş">
@@ -414,8 +435,29 @@
     });
     syncThemeBtn();
 
-    ["fText","fStatus","fCat","fFrom","fTo","fSort"].forEach(i =>
+    ["fText","fCat","fFrom","fTo","fSort"].forEach(i =>
       $(i).addEventListener(i === "fText" ? "input" : "change", renderUsers));
+
+    /* Duruma göre sekmeler: bekleyen / onaylı / sitede / reddedilen / tümü */
+    let DURUM = "inceleniyor";
+    $("durumSekme").addEventListener("click", e => {
+      const b = e.target.closest("[data-durum]");
+      if (!b) return;
+      DURUM = b.dataset.durum;
+      $("durumSekme").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+      renderUsers();
+    });
+    function sekmeSayaclari() {
+      const hepsi = DATA.users || [];
+      const say = {
+        "": hepsi.length,
+        inceleniyor: hepsi.filter(u => (u.profile?.status || "inceleniyor") === "inceleniyor").length,
+        onaylandi:   hepsi.filter(u => u.profile?.status === "onaylandi").length,
+        reddedildi:  hepsi.filter(u => u.profile?.status === "reddedildi").length,
+        yayinda:     hepsi.filter(u => u.profile?.published === "1").length,
+      };
+      $("durumSekme").querySelectorAll(".sayi").forEach(el => el.textContent = say[el.dataset.s] ?? 0);
+    }
 
     async function load() {
       const r = await fetch("/api/admin/list").catch(() => null);
@@ -621,7 +663,10 @@
       palClose();
       if (it.tip === "üye") {
         showAtab("uyeler");
-        $("fText").value = ""; $("fStatus").value = ""; $("fCat").value = ""; renderUsers();
+        $("fText").value = ""; $("fCat").value = "";
+        DURUM = "";
+        $("durumSekme").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.durum === ""));
+        renderUsers();
         const card = document.querySelector(`.adm-user[data-uid="${it.uid}"]`);
         if (card) { card.classList.add("open"); card.scrollIntoView({ behavior: "smooth", block: "center" });
           card.style.borderColor = "var(--gold)"; setTimeout(() => card.style.borderColor = "", 2500); }
@@ -650,7 +695,7 @@
     /* ---------- Sekmeli Panel: bölümler sekmelere taşınır ---------- */
     const ATABS = [
       ["genel",   "📊", "Genel Bakış",        ["sosBand","dashRoot","logTitle","logs"]],
-      ["uyeler",  "👥", "Üyeler & Onaylar",   ["toolsRow","tplCard","bulkBar","filterRow2","results"]],
+      ["uyeler",  "👥", "Üyeler & Onaylar",   ["toolsRow","tplCard","bulkBar","durumSekme","filterRow2","results"]],
       ["isler",   "💼", "İşler & Paylaşım",   ["jobH2","jobCard","jobsList","shareH2","shareCard"]],
       ["finance", "💰", "Finansal Takip",      ["financeH2","financeTab"]],
       ["formlar", "✉️", "Gelen Formlar",      ["subTitle","subs"]],
@@ -872,11 +917,13 @@
 
     function renderUsers() {
       const q = ($("fText").value || "").toLowerCase();
-      const stF = $("fStatus").value, catF = $("fCat").value;
+      const catF = $("fCat").value;
       const from = $("fFrom").value, to = $("fTo").value;
+      sekmeSayaclari();
       let users = DATA.users.filter(u => {
         const p = u.profile || {};
-        if (stF && (p.status || "inceleniyor") !== stF) return false;
+        if (DURUM === "yayinda") { if (p.published !== "1") return false; }
+        else if (DURUM && (p.status || "inceleniyor") !== DURUM) return false;
         if (catF && !(p.category || "").split(",").includes(catF)) return false;
         const d = (u.created || "").slice(0, 10);
         if (from && d < from) return false;
@@ -897,7 +944,10 @@
         const aktif = (u.media || []).filter(m => !m.deleted);
         const arsiv = (u.media || []).filter(m => m.deleted);
         const fotolar = aktif.filter(m => m.kind === "photo");
-        const thumb = fotolar[0] ? `<img class="adm-thumb" src="/api/photo/${fotolar[0].id}" loading="lazy">` : `<div class="adm-thumb"></div>`;
+        const thumb = fotolar[0]
+          ? `<img class="adm-thumb" src="/api/photo/${fotolar[0].id}" loading="lazy" alt=""
+                  onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'adm-thumb',title:'Fotoğraf açılamadı'}))">`
+          : `<div class="adm-thumb" title="Fotoğraf yok"></div>`;
         const videolar = aktif.filter(m => m.kind === "video");
         const belgeler = aktif.filter(m => m.kind === "belge");
         const imzalar = aktif.filter(m => m.kind === "imza");
@@ -912,7 +962,7 @@
             ${thumb}
             <div class="adm-id">
               <strong>${esc(u.fullname) || "(isimsiz)"} <span class="adm-stars">${stars}</span></strong>
-              <small>#${u.id} · ${esc(p.city) || "?"} · ${catAd(p.category)} · ${u.created?.slice(0,10) || ""}</small>
+              <small>#${u.id} · ${esc(p.city) || "?"} · ${catAd(p.category)} · ${trTarih(u.created)}</small>
             </div>
             <span class="adm-badge st-${st}">${st === "onaylandi" ? "✓ onaylı" : st === "reddedildi" ? "✕ red" : "⏳ bekliyor"}</span>
             ${p.published === "1"
@@ -923,13 +973,22 @@
               ? '<span class="adm-badge" title="Üye profilinin herkese açık olmasını seçti">🌍 açık</span>'
               : '<span class="adm-badge" title="Üye profilini özel seçti — yayınlansa bile katalogda görünmez, yalnızca VIP paylaşımlarda çıkar">🔒 özel</span>'}
             ${p.admin_tags ? `<span class="adm-badge">🏷 ${esc(p.admin_tags)}</span>` : ""}
+            ${yeniMi(u.created) ? '<span class="adm-badge" style="color:#20744c;border-color:#4da878">🆕 yeni</span>' : ""}
+            ${fotolar.length ? `<span class="adm-badge">📷 ${fotolar.length}</span>`
+                             : '<span class="adm-badge eksik" title="Fotoğrafı olmayan üye katalogda boş görünür">📷 fotoğraf yok</span>'}
+            ${(p.height && p.weight) ? "" : '<span class="adm-badge eksik" title="Boy/kilo girilmemiş">📏 ölçü yok</span>'}
+            ${(p.consent_kvkk === "1" && p.consent_contract === "1") ? "" : '<span class="adm-badge eksik" title="Sözleşme onayı / imza tamamlanmamış">✍️ imza yok</span>'}
             <div class="adm-actions">
-              <button class="btn btn-gold" data-act="onaylandi">✓ Onayla</button>
-              <button class="btn btn-ghost" data-act="reddet-menu">✕ Reddet</button>
-              <button class="btn ${p.published === "1" ? "btn-ghost" : "btn-gold"}" data-act="yayin">${p.published === "1" ? "⛔ Yayından Al" : "🌐 Siteye Çıkar"}</button>
-              <button class="btn btn-ghost" data-act="one">${p.featured === "1" ? "☆ Öne Çıkarma" : "⭐ Öne Çıkar"}</button>
+              ${st !== "onaylandi"
+                ? `<button class="btn btn-gold" data-act="onaylandi">✓ ${st === "reddedildi" ? "Yeniden Onayla" : "Onayla"}</button>` : ""}
+              ${st !== "reddedildi"
+                ? `<button class="btn btn-ghost" data-act="reddet-menu">✕ Reddet</button>` : ""}
+              ${st === "onaylandi"
+                ? `<button class="btn ${p.published === "1" ? "btn-ghost" : "btn-gold"}" data-act="yayin">${p.published === "1" ? "⛔ Yayından Al" : "🌐 Siteye Çıkar"}</button>
+                   <button class="btn btn-ghost" data-act="one">${p.featured === "1" ? "☆ Öne Çıkarma" : "⭐ Öne Çıkar"}</button>` : ""}
               <button class="btn btn-ghost" data-act="edit">✏️ Düzenle</button>
               <a class="btn btn-ghost" href="sedcard?id=${u.id}" target="_blank">🪪 Sedcard</a>
+              <button class="btn btn-tehlike" data-act="sil" title="Üyeyi ve tüm dosyalarını kalıcı olarak siler">🗑 Sil</button>
             </div>
           </div>
           <div class="adm-body">
@@ -1006,7 +1065,31 @@
             </div>
           </div>
         </div>`;
-      }).join("") : '<p class="muted mt-2">Filtreye uyan üye yok.</p>';
+      }).join("") : bosDurum();
+    }
+
+    /* Okunur tarih + yeni kayıt + sekmeye özel boş ekran */
+    function trTarih(iso) {
+      if (!iso) return "";
+      const g = String(iso).slice(0, 10).split("-");
+      return g.length === 3 ? `${g[2]}.${g[1]}.${g[0]}` : String(iso).slice(0, 10);
+    }
+    function yeniMi(iso) {
+      if (!iso) return false;
+      const t = Date.parse(String(iso).replace(" ", "T"));
+      return !isNaN(t) && (Date.now() - t) < 48 * 3600 * 1000;
+    }
+    function bosDurum() {
+      const suzgecVar = $("fText").value || $("fCat").value || $("fFrom").value || $("fTo").value;
+      if (suzgecVar) return '<div class="bos-durum"><span class="ikon">🔍</span>Aramanıza uyan üye bulunamadı. Arama kutusunu temizleyip tekrar deneyin.</div>';
+      const metin = {
+        inceleniyor: ["🎉", "Onay bekleyen başvuru yok — hepsi değerlendirilmiş."],
+        onaylandi:   ["📋", "Henüz onaylanmış üye yok. Bekleyen başvuruları inceleyip onaylayın."],
+        yayinda:     ["🌐", "Sitede yayında üye yok. Onaylı üyelerde <strong>Siteye Çıkar</strong> düğmesini kullanın."],
+        reddedildi:  ["✓", "Reddedilen başvuru yok."],
+        "":          ["👥", "Henüz üye kaydı yok."],
+      }[DURUM] || ["👥", "Kayıt yok."];
+      return `<div class="bos-durum"><span class="ikon">${metin[0]}</span>${metin[1]}</div>`;
     }
 
     $("results").addEventListener("click", async e => {
@@ -1022,6 +1105,28 @@
       }
       if (!b) return;
       const act = b.dataset.act;
+
+      /* --- Üyeyi kalıcı sil --- */
+      if (act === "sil") {
+        const uye = (DATA.users || []).find(x => x.id === uid) || {};
+        const ad = uye.fullname || uye.email || ("#" + uid);
+        const fotoSayi = (uye.media || []).filter(m => m.kind === "photo").length;
+        if (!confirm(
+          "KALICI SİLME\n\n" + ad + " (" + (uye.email || "") + ")\n\n" +
+          "Silinecekler:\n" +
+          "· Üyelik hesabı ve giriş bilgileri\n" +
+          "· Profil ve ölçü bilgileri\n" +
+          "· " + fotoSayi + " fotoğraf/belge dosyası (sunucudan da silinir)\n" +
+          "· İş teklifi kayıtları\n\n" +
+          "Bu işlem GERİ ALINAMAZ. Üyeyi silmek yerine 'Reddet' de kullanabilirsiniz.\n\nDevam etmek istiyor musunuz?")) return;
+        const teyit = prompt("Onaylamak için büyük harflerle SIL yazın:");
+        if ((teyit || "").trim().toUpperCase() !== "SIL") { toast("Silme iptal edildi.", "hata"); return; }
+        const sonuc = await api("/api/admin/delete", { user_id: uid });
+        if (!sonuc.ok) { toast(sonuc.err || "Silinemedi", "hata"); return; }
+        toast("🗑 " + ad + " kalıcı olarak silindi" +
+              (sonuc.data?.dosya ? " (" + sonuc.data.dosya + " dosya)" : ""));
+        load(); return;
+      }
 
       /* --- Siteye çıkarma / öne çıkarma --- */
       if (act === "yayin" || act === "one") {
