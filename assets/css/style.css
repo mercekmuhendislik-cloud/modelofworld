@@ -997,6 +997,102 @@ body { animation: pageIn 0.6s ease both; }
 .project-card:hover .project-visual .cover,
 .blog-card:hover .blog-visual .cover { transform: scale(1.05); }
 
+/* =========================================================
+   MOBİL İNCE AYARLAR
+   ========================================================= */
+.nav-mob { display: none; }
+.hide-mob { display: inline-flex; }
+
+@media (max-width: 960px) {
+  /* Mobil menüye taşınan ek bağlantılar */
+  .main-nav .nav-mob {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    font-size: 1.05rem; padding: 18px 0; border-bottom: 1px solid var(--line);
+    color: var(--gold); text-transform: uppercase; letter-spacing: 0.2em;
+    background: none; font-family: inherit;
+  }
+}
+
+@media (max-width: 700px) {
+  /* Satır içi iki kolona sabitlenmiş bölümler tek kolona iner */
+  .container[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+
+  section { padding: clamp(44px, 8vw, 72px) 0; }
+  h1 { font-size: clamp(1.95rem, 8.5vw, 2.8rem); }
+  h2 { font-size: clamp(1.45rem, 6vw, 2rem); }
+  .eyebrow { letter-spacing: 0.2em; font-size: 0.64rem; }
+  .page-head { padding: calc(var(--header-h) + 30px) 0 26px; }
+
+  /* Hero */
+  .hero { min-height: auto; padding: calc(var(--header-h) + 26px) 0 52px; }
+  .hero p.lead { font-size: 0.97rem; margin: 18px 0 26px; }
+  .hero-ctas { gap: 10px; }
+  .hero-ctas .btn { flex: 1 1 100%; }
+  .quick-cast { padding: 16px 14px; }
+  .qc-row select, .qc-row .btn { flex: 1 1 100%; min-width: 0; }
+  .scroll-hint { display: none; }
+
+  /* Grid'ler */
+  .talent-grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 14px; }
+  .services-grid, .projects-grid, .blog-grid, .testimonials-grid,
+  .locations-grid, .crew-grid, .steps { grid-template-columns: 1fr; }
+  .counters { grid-template-columns: 1fr 1fr; gap: 22px; }
+  .counter strong { font-size: clamp(1.9rem, 9vw, 2.5rem); }
+  .talent-info h3 { font-size: 1.05rem; }
+
+  /* Formlar & sihirbaz */
+  .form-card { padding: 18px 15px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .wizard-steps { flex-wrap: wrap; gap: 10px; }
+  .wizard-steps .wline { display: none; }
+  .wstep { font-size: 0.68rem; letter-spacing: 0.06em; }
+  .wizard-nav { flex-direction: column-reverse; align-items: stretch; gap: 10px; }
+  .wizard-nav .btn { width: 100%; }
+  .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  .tab-btn { white-space: nowrap; }
+
+  /* Katalog */
+  .catalog-toolbar { gap: 10px; }
+  .sort-select, .result-count { width: 100%; }
+
+  /* Model detay */
+  .detail-media { position: static; }
+  .sedcard { grid-template-columns: repeat(auto-fit, minmax(102px, 1fr)); }
+  .detail-actions { flex-direction: column; }
+  .detail-actions .btn { width: 100%; }
+  .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; }
+
+  /* Footer */
+  .footer-bottom { flex-direction: column; gap: 10px; font-size: 0.73rem; text-align: center; }
+  .newsletter { max-width: 100%; }
+  .trust-row { gap: 8px; }
+  .trust-badge { font-size: 0.7rem; padding: 7px 12px; }
+
+  /* Yüzen butonlar içeriği kapatmasın */
+  .wa-float { width: 48px; height: 48px; right: 14px; bottom: 14px; }
+  .wa-float svg { width: 23px; height: 23px; }
+
+  /* Uzun e-posta/etiketler taşmasın */
+  .adm-meta, .adm-sub, .mini, .offer-meta { overflow-wrap: anywhere; }
+}
+
+@media (max-width: 520px) {
+  :root { --header-h: 64px; }
+  /* Başlık çubuğu taşmasın: logo küçülür, üye+tema menüye taşınır */
+  .logo { gap: 8px; }
+  .logo-mark { width: 31px; height: 31px; }
+  .lw-top { font-size: 0.9rem; letter-spacing: 0.08em; }
+  .logo-word small { font-size: 0.4rem; letter-spacing: 0.3em; margin-top: 3px; }
+  .header-actions { gap: 5px; }
+  .header-actions .hide-mob { display: none; }
+  .icon-btn { width: 36px; height: 36px; }
+  .icon-btn svg { width: 15px; height: 15px; }
+  .btn { padding: 13px 20px; letter-spacing: 0.14em; }
+  .btn-sm { padding: 10px 16px; }
+  .counters { grid-template-columns: 1fr; gap: 18px; }
+  .talent-grid { grid-template-columns: 1fr 1fr; }
+}
+
 /* ---------- Yardımcılar ---------- */
 .muted { color: var(--text-2); }
 .gold { color: var(--gold); }

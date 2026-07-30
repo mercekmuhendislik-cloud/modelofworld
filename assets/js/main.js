@@ -63,9 +63,12 @@
         ${LOGO}
         <nav class="main-nav" id="mainNav" aria-label="Ana menü">
           ${NAV.map(n => `<a href="${n.href}" class="${n.key === active ? "active" : ""}">${n.label}</a>`).join("")}
+          <a href="uye" class="nav-mob">Üye Girişi</a>
+          <a href="teklif" class="nav-mob">Teklif Al</a>
+          <button type="button" class="nav-mob" id="themeBtnMob">Koyu / Açık Tema</button>
         </nav>
         <div class="header-actions">
-          <a class="icon-btn" href="uye" aria-label="Üye Girişi" title="Üye Girişi / Aday Paneli">
+          <a class="icon-btn hide-mob" href="uye" aria-label="Üye Girişi" title="Üye Girişi / Aday Paneli">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
           </a>
           <a class="icon-btn" id="favHeaderBtn" href="cast-listem" aria-label="Cast Listem" title="Cast Listem">
@@ -75,7 +78,7 @@
           <button class="icon-btn" id="searchBtn" aria-label="Ara (Ctrl+K)" title="Ara (Ctrl+K)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           </button>
-          <button class="icon-btn" id="themeBtn" aria-label="Tema değiştir" title="Koyu / Açık tema">
+          <button class="icon-btn hide-mob" id="themeBtn" aria-label="Tema değiştir" title="Koyu / Açık tema">
             <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
             <svg class="ic-sun hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
           </button>
@@ -191,12 +194,14 @@
     themeBtn?.querySelector(".ic-moon")?.classList.toggle("hidden", dark);
     themeBtn?.querySelector(".ic-sun")?.classList.toggle("hidden", !dark);
   }
-  themeBtn?.addEventListener("click", () => {
+  function temaDegistir() {
     const next = root.dataset.theme === "dark" ? "light" : "dark";
     root.dataset.theme = next;
     localStorage.setItem("vera-theme", next);
     syncThemeIcon();
-  });
+  }
+  themeBtn?.addEventListener("click", temaDegistir);
+  document.getElementById("themeBtnMob")?.addEventListener("click", temaDegistir);
   syncThemeIcon();
 
   /* ---------- Sticky header ---------- */
