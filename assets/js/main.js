@@ -128,14 +128,8 @@
             <div class="newsletter-msg" id="newsletterMsg">Teşekkürler! Bültenimize kaydoldunuz.</div>
           </div>
         </div>
-        <div class="trust-row" style="margin-bottom:28px">
-          <span class="trust-badge">Tüm personel SGK'lı ve sözleşmeli</span>
-          <span class="trust-badge">${AGENCY.legal.iskur}</span>
-          <span class="trust-badge">KVKK uyumlu veri işleme</span>
-          <span class="trust-badge">256-bit SSL güvenli bağlantı</span>
-        </div>
         <div class="footer-bottom">
-          <span>© ${year} ${AGENCY.legal.title} — ${AGENCY.legal.taxOffice} · VN: ${AGENCY.legal.taxNo} · MERSİS: ${AGENCY.legal.mersis} · ${AGENCY.address}</span>
+          <span>© ${year} ${AGENCY.legal.title} · ${AGENCY.address}</span>
           <span><a href="kvkk">KVKK & Gizlilik</a> · <a href="kvkk#cerez">Çerez Politikası</a> · <a href="sozlesme">Sözleşme & Şartlar</a></span>
         </div>
       </div>
