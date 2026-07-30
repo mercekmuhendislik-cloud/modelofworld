@@ -69,6 +69,25 @@
     .adm-photos { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0; }
     .adm-photos img { width:74px; height:98px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
     .adm-photos img.arsiv { opacity:.35; filter:grayscale(.6); }
+    /* Fotoğraf yönetimi: her karenin köşesinde sil / geri al düğmesi */
+    .foto-kutu { position:relative; display:inline-flex; }
+    .foto-kutu .foto-sil {
+      position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center; font-size:.72rem; line-height:1;
+      background:var(--surface); border:1px solid #d95a5a; color:#c33; cursor:pointer; padding:0;
+      box-shadow:0 2px 6px rgba(0,0,0,.15);
+    }
+    .foto-kutu .foto-sil:hover { background:#d95a5a; color:#fff; }
+    .foto-kutu .foto-sil.geri { border-color:var(--gold); color:var(--gold); }
+    .foto-kutu .foto-sil.geri:hover { background:var(--gold); color:#fff; }
+    .foto-kutu .foto-alb {
+      position:absolute; left:2px; bottom:2px; right:2px; font-size:.58rem; letter-spacing:.06em;
+      text-align:center; text-transform:uppercase; color:#fff; background:rgba(20,8,14,.6);
+      border-radius:0 0 7px 7px; padding:2px 0;
+    }
+    .foto-ekle { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px;
+      padding:10px 12px; border:1px dashed var(--line); border-radius:10px; background:var(--bg-2); }
+    .foto-ekle input[type=file] { font-size:.78rem; max-width:230px; }
     .adm-sub { font-size:.82rem; border-bottom:1px solid var(--line); padding:9px 0; color:var(--text-2); word-break:break-word; }
     .adm-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
     .adm-input { padding:8px 11px; border-radius:8px; background:var(--bg-2); border:1px solid var(--line); color:var(--text); font:inherit; font-size:.84rem; }
@@ -1275,10 +1294,26 @@
             ${rateLine(p)}
             ${p.review_note ? `<br>📮 Üyeye iletilen not: "${esc(p.review_note)}"` : ""}
             <div class="adm-photos">
-              ${fotolar.map(m => m.album === "sanatsal"
+              ${fotolar.map(m => `<span class="foto-kutu">${m.album === "sanatsal"
                 ? `<img class="nsfw" src="/api/photo/${m.id}?k=1" loading="lazy" title="Sanatsal — netleştirmek için tıklayın" onclick="this.classList.toggle('show')">`
-                : `<a href="/api/photo/${m.id}" target="_blank" title="${m.album} — tam boy açmak için tıklayın"><img src="/api/photo/${m.id}?k=1" loading="lazy"></a>`).join("")}
-              ${videolar.map(m => `<a class="btn btn-ghost btn-sm" href="/api/photo/${m.id}" target="_blank">🎬 ${esc(m.orig)}</a>`).join("")}
+                : `<a href="/api/photo/${m.id}" target="_blank" title="${m.album} — tam boy açmak için tıklayın"><img src="/api/photo/${m.id}?k=1" loading="lazy"></a>`}
+                <span class="foto-alb">${m.album || "genel"}</span>
+                <button class="foto-sil" data-foto="${m.id}" data-fact="arsivle" title="Fotoğrafı kaldır (arşive taşınır, geri alınabilir)">✕</button>
+              </span>`).join("")}
+              ${videolar.map(m => `<span class="foto-kutu"><a class="btn btn-ghost btn-sm" href="/api/photo/${m.id}" target="_blank">🎬 ${esc(m.orig)}</a>
+                <button class="foto-sil" data-foto="${m.id}" data-fact="arsivle" title="Videoyu kaldır (arşive taşınır)">✕</button></span>`).join("")}
+            </div>
+            <div class="foto-ekle">
+              <strong class="mini">📷 Fotoğraf ekle:</strong>
+              <select class="adm-input" data-yeni-album title="Yeni fotoğrafın albümü">
+                <option value="studio">Stüdyo</option>
+                <option value="podium">Podyum</option>
+                <option value="polaroid">Polaroid</option>
+                <option value="genel">Genel</option>
+                ${(p.age && +p.age >= 18) ? '<option value="sanatsal">Sanatsal</option>' : ""}
+              </select>
+              <input type="file" accept="image/*" multiple data-foto-input>
+              <span class="mini" data-foto-msg></span>
             </div>
             <div class="adm-row">
               <select class="adm-input" data-redsel style="max-width:300px">
@@ -1305,10 +1340,13 @@
               · 📄 ${belgeler.map(m => `<a class="gold" href="/api/photo/${m.id}" target="_blank">${esc(m.orig)}</a>`).join(", ") || "belge yok"}
               · ✍️ ${imzalar.length ? `<a class="gold" href="/api/photo/${imzalar[imzalar.length-1].id}" target="_blank">imza</a>` : "imza yok"}
             </div>
-            ${arsiv.length ? `<div class="mini" style="margin-top:6px">🗄 Arşiv (${arsiv.length}):</div><div class="adm-photos">${
-              arsiv.map(m => m.kind === "photo"
+            ${arsiv.length ? `<div class="mini" style="margin-top:6px">🗄 Arşiv (${arsiv.length}) — ↩ ile geri alın, ✕ ile sunucudan tamamen silin:</div>
+              <div class="adm-photos">${arsiv.map(m => `<span class="foto-kutu">${m.kind === "photo"
                 ? `<a href="/api/photo/${m.id}" target="_blank"><img class="arsiv" src="/api/photo/${m.id}?k=1" loading="lazy" title="${m.created?.slice(0,10)}"></a>`
-                : `<a class="gold mini" href="/api/photo/${m.id}" target="_blank">${m.kind}: ${esc(m.orig)}</a>`).join("")}</div>` : ""}
+                : `<a class="gold mini" href="/api/photo/${m.id}" target="_blank">${m.kind}: ${esc(m.orig)}</a>`}
+                <button class="foto-sil geri" data-foto="${m.id}" data-fact="geri-al" title="Arşivden geri al">↩</button>
+                <button class="foto-sil" data-foto="${m.id}" data-fact="kalici" style="top:20px" title="Sunucudan tamamen sil — geri alınamaz">✕</button>
+              </span>`).join("")}</div>` : ""}
 
             <!-- DÜZENLEME FORMU -->
             <div class="edit-wrap" data-editwrap>
@@ -1366,6 +1404,74 @@
         "":          ["👥", "Henüz üye kaydı yok."],
       }[DURUM] || ["👥", "Kayıt yok."];
       return `<div class="bos-durum"><span class="ikon">${metin[0]}</span>${metin[1]}</div>`;
+    }
+
+    /* ---------- Üye fotoğrafları: kaldır / geri al / kalıcı sil ---------- */
+    $("results").addEventListener("click", async e => {
+      const fb = e.target.closest("[data-fact]");
+      if (!fb) return;
+      e.preventDefault(); e.stopPropagation();
+      const pid = +fb.dataset.foto, fact = fb.dataset.fact;
+      if (fact === "kalici") {
+        if (!(await silOnayi("Bu dosya sunucudan tamamen silinecek.",
+              "Bu işlem geri alınamaz. Dosyayı saklamak için arşivde bırakabilirsiniz."))) return;
+      } else if (fact === "arsivle") {
+        if (!(await onayIste("Bu dosya üyenin profilinden kaldırılacak. Arşive taşınır, istediğinizde geri alabilirsiniz.",
+              "🗄 Kaldır", "Fotoğrafı Kaldır", "", true))) return;
+      }
+      const r = await api("/api/admin/media", { photo_id: pid, action: fact });
+      if (!r.ok) { toast(r.err || "İşlem yapılamadı", "hata"); return; }
+      toast(fact === "geri-al" ? "↩ Dosya geri alındı"
+          : fact === "kalici" ? "🗑 Dosya sunucudan silindi" : "🗄 Dosya arşive taşındı");
+      load();
+    });
+
+    /* ---------- Üyeye fotoğraf ekleme ---------- */
+    $("results").addEventListener("change", async e => {
+      const inp = e.target.closest("[data-foto-input]");
+      if (!inp || !inp.files?.length) return;
+      const card = inp.closest(".adm-user");
+      const uid = +card.dataset.uid;
+      const album = card.querySelector("[data-yeni-album]").value;
+      const msg = card.querySelector("[data-foto-msg]");
+      const dosyalar = [...inp.files];
+      let ok = 0, son = "";
+      for (let i = 0; i < dosyalar.length; i++) {
+        msg.textContent = `Yükleniyor… (${i + 1}/${dosyalar.length})`;
+        const fd = new FormData();
+        fd.append("user_id", uid);
+        fd.append("kind", "photo");
+        fd.append("album", album);
+        fd.append("file", dosyalar[i]);
+        const kucuk = await kucukKopya(dosyalar[i]);
+        if (kucuk) fd.append("thumb", kucuk, "thumb.webp");
+        const r = await fetch("/api/admin/upload", { method: "POST", body: fd }).catch(() => null);
+        const d = r ? await r.json().catch(() => ({})) : {};
+        if (r && r.ok) ok++; else son = d.error || "Yüklenemedi";
+      }
+      inp.value = "";
+      msg.textContent = "";
+      if (ok) toast("📷 " + ok + " fotoğraf eklendi" + (son ? " · " + son : ""), son ? "hata" : "");
+      else toast(son || "Fotoğraf eklenemedi", "hata");
+      load();
+    });
+
+    /* Tarayıcıda küçük kopya üret — liste ve katalog bunu kullanır (üye tarafıyla aynı mantık) */
+    function kucukKopya(file) {
+      return new Promise(res => {
+        if (!/^image\//.test(file.type)) return res(null);
+        const img = new Image();
+        img.onload = () => {
+          const oran = Math.min(1, 640 / Math.max(img.width, img.height));
+          const c = document.createElement("canvas");
+          c.width = Math.round(img.width * oran); c.height = Math.round(img.height * oran);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          c.toBlob(b => res(b), "image/webp", 0.82);
+          URL.revokeObjectURL(img.src);
+        };
+        img.onerror = () => res(null);
+        img.src = URL.createObjectURL(file);
+      });
     }
 
     $("results").addEventListener("click", async e => {

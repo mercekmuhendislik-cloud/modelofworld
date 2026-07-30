@@ -846,6 +846,84 @@ class Handler(BaseHTTPRequestHandler):
             db().commit()
             return self._json(200, {"ok": True, "id": cur.lastrowid, "kind": kind, "album": album})
 
+        if p == "/api/admin/upload":
+            # Yönetici, üye adına fotoğraf/belge yükler (üyenin kendi yüklemesiyle aynı kurallar).
+            adm = self._admin(qs)
+            if not self._can(adm, "update"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            fields, files = parse_multipart(body, ctype)
+            if not files: return self._json(400, {"error": "Dosya bulunamadı"})
+            uid = int(fields.get("user_id") or 0)
+            if not db().execute("SELECT 1 FROM users WHERE id=? AND COALESCE(deleted,'')=''", (uid,)).fetchone():
+                return self._json(404, {"error": "Üye bulunamadı"})
+            kind = fields.get("kind", "photo")
+            if kind not in UPLOAD_RULES: kind = "photo"
+            album = fields.get("album", "genel")
+            if album not in ALBUMS: album = "genel"
+            if album == "sanatsal" and is_minor(uid):
+                return self._json(403, {"error": "Sanatsal albüm 18 yaş altı üyelere kapalıdır"})
+            exts, max_size, max_count = UPLOAD_RULES[kind]
+            count = db().execute("SELECT COUNT(*) c FROM photos WHERE user_id=? AND kind=? AND deleted=0",
+                                 (uid, kind)).fetchone()["c"]
+            if count >= max_count:
+                return self._json(400, {"error": f"Bu üyede en fazla {max_count} adet olabilir"})
+            _, orig, data = files[0]
+            ext = os.path.splitext(orig)[1].lower()
+            if ext not in exts:
+                return self._json(400, {"error": "İzin verilen türler: " + ", ".join(sorted(exts))})
+            if len(data) > max_size:
+                return self._json(400, {"error": f"Dosya çok büyük (maks. {max_size // 1024 // 1024} MB)"})
+            if len(data) < 100: return self._json(400, {"error": "Dosya boş görünüyor"})
+            fn = f"u{uid}_{kind}_{secrets.token_hex(8)}{ext}"
+            with open(os.path.join(UPLOAD_DIR, fn), "wb") as f:
+                f.write(data)
+            kucuk_fn = None
+            for ad, kad, kdata in files[1:]:
+                if ad == "thumb" and 100 < len(kdata) <= 900 * 1024 and webp_mi(kdata):
+                    kucuk_fn = os.path.splitext(fn)[0] + "_k.webp"
+                    with open(os.path.join(UPLOAD_DIR, kucuk_fn), "wb") as f:
+                        f.write(kdata)
+                    break
+            cur = db().execute(
+                "INSERT INTO photos(user_id,filename,orig,created,kind,album,deleted,thumb) VALUES(?,?,?,?,?,?,0,?)",
+                (uid, fn, orig[:200], now(), kind, album, kucuk_fn))
+            audit("admin:" + adm["username"], "medya-yukleme", uid, f"{kind}/{album}: {orig[:60]}")
+            db().commit()
+            return self._json(200, {"ok": True, "id": cur.lastrowid, "kind": kind, "album": album})
+
+        if p == "/api/admin/media":
+            # Üye fotoğrafını arşivle / arşivden çıkar / kalıcı sil, albümünü değiştir.
+            adm = self._admin(qs)
+            if not self._can(adm, "update"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            d = jbody()
+            pid = int(d.get("photo_id") or 0)
+            row = db().execute("SELECT * FROM photos WHERE id=?", (pid,)).fetchone()
+            if not row: return self._json(404, {"error": "Dosya bulunamadı"})
+            act = str(d.get("action") or "")
+            if act == "arsivle":
+                db().execute("UPDATE photos SET deleted=1 WHERE id=?", (pid,))
+                audit("admin:" + adm["username"], "medya-arsiv", row["user_id"], (row["orig"] or "")[:60])
+            elif act == "geri-al":
+                db().execute("UPDATE photos SET deleted=0 WHERE id=?", (pid,))
+                audit("admin:" + adm["username"], "medya-geri-al", row["user_id"], (row["orig"] or "")[:60])
+            elif act == "kalici":
+                for fn in (row["filename"], row["thumb"]):
+                    if not fn: continue
+                    try: os.remove(os.path.join(UPLOAD_DIR, fn))
+                    except OSError: pass
+                db().execute("DELETE FROM photos WHERE id=?", (pid,))
+                audit("admin:" + adm["username"], "medya-kalici-sil", row["user_id"], (row["orig"] or "")[:60])
+            elif act == "album":
+                yeni = str(d.get("album") or "genel")
+                if yeni not in ALBUMS: return self._json(400, {"error": "Geçersiz albüm"})
+                if yeni == "sanatsal" and is_minor(row["user_id"]):
+                    return self._json(403, {"error": "Sanatsal albüm 18 yaş altı üyelere kapalıdır"})
+                db().execute("UPDATE photos SET album=? WHERE id=?", (yeni, pid))
+                audit("admin:" + adm["username"], "medya-album", row["user_id"], f"{row['orig'] or ''}: {yeni}")
+            else:
+                return self._json(400, {"error": "Geçersiz işlem"})
+            db().commit()
+            return self._json(200, {"ok": True})
+
         if p == "/api/admin/thumb":
             # Eski fotoğraflar için küçük kopya ekleme (yönetici panelinden toplu çalıştırılır)
             adm = self._admin(qs)
