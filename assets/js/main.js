@@ -14,6 +14,8 @@
     { href: "basvuru",     label: "Başvuru Yap",    key: "basvuru", cta: true },
     { href: "hakkimizda", label: "Hakkımızda",     key: "hakkimizda" },
     { href: "iletisim",   label: "İletişim",       key: "iletisim" },
+    /* mobOnly: masaüstü menüsü dolu olduğu için yalnızca mobil menüde ve footer'da görünür */
+    { href: "nasil-calisir", label: "Nasıl Çalışır?", key: "nasil-calisir", mobOnly: true },
   ];
 
   /* ---------- Favoriler (Cast Listem) ---------- */
@@ -62,7 +64,7 @@
       <div class="container header-inner">
         ${LOGO}
         <nav class="main-nav" id="mainNav" aria-label="Ana menü">
-          ${NAV.map(n => `<a href="${n.href}" class="${n.cta ? "nav-cta " : ""}${n.key === active ? "active" : ""}">${n.label}</a>`).join("")}
+          ${NAV.map(n => `<a href="${n.href}" class="${n.cta ? "nav-cta " : ""}${n.mobOnly ? "nav-mob " : ""}${n.key === active ? "active" : ""}">${n.label}</a>`).join("")}
           <a href="uye" class="nav-mob">Üye Girişi</a>
           <a href="teklif" class="nav-mob">Teklif Al</a>
           <button type="button" class="nav-mob" id="themeBtnMob">Koyu / Açık Tema</button>

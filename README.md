@@ -24,6 +24,7 @@ npx serve .
 | `basvuru.html` | 2 aşamalı başvuru sihirbazı + foto kılavuzu + video yükleme + aday SSS |
 | `teklif.html` | Teklif modülü + saat aralığı + tahmini bütçe hesaplayıcı + müşteri SSS |
 | `hizmetler.html` | 10 hizmet, paket karşılaştırma, üniforma, lokasyon ağı |
+| `nasil-calisir.html` | Süreç rehberi: markalar için 6 adım (#markalar), adaylar için 6 adım (#yetenekler), taahhütler, ajans↔platform karşılaştırması, SSS sekmeleri (`?sss=aday` ile aday SSS açık gelir) |
 | `produksiyon.html` | Çekim türleri, önce/sonra slider, ekip, stüdyo, mekân kataloğu, moodboard, telif |
 | `blog.html` | İçerik pazarlaması placeholder'ları + sosyal medya |
 | `hakkimizda.html` | Ajans, yasal belgeler, basında biz, sosyal sorumluluk |

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nasıl Çalışır? — Model of World</title>
+  <meta name="description" content="Markalar için brief'ten saha teslimine, adaylar için başvurudan ilk işe: Model of World'de süreç adım adım nasıl işler?">
+  <!-- Open Graph & Twitter Cards -->
+  <link rel="canonical" href="https://www.modelofworld.com/nasil-calisir">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Model of World">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="Nasıl Çalışır? — Model of World">
+  <meta property="og:description" content="Markalar için brief'ten saha teslimine, adaylar için başvurudan ilk işe: süreç adım adım.">
+  <meta property="og:url" content="https://www.modelofworld.com/nasil-calisir">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Nasıl Çalışır? — Model of World">
+  <meta name="twitter:description" content="Markalar için brief'ten saha teslimine, adaylar için başvurudan ilk işe: süreç adım adım.">
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css?v=c8978cd">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
+  <style>
+    /* Kime göre süreç? — iki yol kartı */
+    .aud-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 760px) { .aud-grid { grid-template-columns: 1fr; } }
+    .aud-card {
+      border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+      padding: clamp(22px, 3vw, 32px); display: flex; flex-direction: column; gap: 12px;
+      transition: border-color .25s ease, transform .25s ease;
+    }
+    .aud-card:hover { border-color: var(--gold); transform: translateY(-3px); }
+    .aud-card h3 { font-size: 1.3rem; }
+    .aud-card p { color: var(--text-2); font-size: .93rem; }
+    .aud-card .aud-go { color: var(--gold); font-size: .74rem; text-transform: uppercase; letter-spacing: .2em; margin-top: auto; padding-top: 12px; }
+
+    /* Süreç bölümleri — 6 adım 3+3 olarak otursun (auto-fit 5+1 kırıyordu) */
+    .flow { scroll-margin-top: calc(var(--header-h) + 20px); }
+    .flow .steps { grid-template-columns: repeat(3, 1fr); column-gap: clamp(26px, 4vw, 48px); row-gap: 40px; }
+    @media (max-width: 900px) { .flow .steps { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 700px) { .flow .steps { grid-template-columns: 1fr; } }
+
+    /* Zaman çizelgesi şeridi */
+    .timeline {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 34px;
+      border: 1px dashed var(--line); border-radius: 12px; padding: 18px 20px; background: var(--bg-2);
+    }
+    .timeline span { font-size: .84rem; color: var(--text-2); display: flex; align-items: center; gap: 10px; }
+    .timeline span + span::before { content: "→"; color: var(--gold); }
+    .timeline b { color: var(--text); font-weight: 500; }
+
+    .flow-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+  </style>
+</head>
+<body data-page="nasil-calisir">
+  <div id="site-header"></div>
+
+  <div class="page-head">
+    <div class="container">
+      <span class="eyebrow">Nasıl Çalışır?</span>
+      <h1>Sürprizsiz süreç,<br><em class="script">tek muhatap.</em></h1>
+      <p class="muted mt-2" style="max-width:62ch">Model of World bir ilan panosu değil, uçtan uca çalışan bir ajanstır. Markalar için casting'den saha teslimine, adaylar için başvurudan ilk işe kadar her adımı ajans ekibimiz yürütür. Aşağıda süreci iki taraf için ayrı ayrı yazdık.</p>
+    </div>
+  </div>
+
+  <!-- HANGİ TARAFTASINIZ? -->
+  <section style="padding-top:0">
+    <div class="container">
+      <div class="aud-grid">
+        <a class="aud-card reveal" href="#markalar">
+          <span class="eyebrow">Marka / Kurumsal</span>
+          <h3>Model veya hostes arıyorum</h3>
+          <p>Fuar, defile, çekim, lansman ya da etkinlik için kadro ve operasyon desteği. Brief'i siz verin, cast seçkisini ve saha yönetimini biz üstlenelim.</p>
+          <span class="aud-go">Marka süreci — 6 adım ↓</span>
+        </a>
+        <a class="aud-card reveal" data-delay="1" href="#yetenekler">
+          <span class="eyebrow">Model / Hostes Adayı</span>
+          <h3>Ajansa katılmak istiyorum</h3>
+          <p>Manken, model, hostes veya oyuncu adayı olarak kadromuza başvuru. Kayıt ve değerlendirme tamamen ücretsizdir; hiçbir aşamada sizden para istenmez.</p>
+          <span class="aud-go">Aday süreci — 6 adım ↓</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MARKALAR İÇİN ============ -->
+  <section class="flow" id="markalar" style="border-block:1px solid var(--line)">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Markalar için</span>
+        <h2>Brief'ten teslime altı adım</h2>
+        <p class="muted" style="max-width:60ch">Kayıt olmanız, ilan yayınlamanız veya kadroyu tek tek aramanız gerekmez. Tek bir brief yeterli; gerisini ajans ekibi yürütür.</p>
+      </div>
+
+      <div class="steps">
+        <div class="step reveal">
+          <h3>Ücretsiz Brief</h3>
+          <p>Teklif formunu doldurun ya da WhatsApp'tan yazın. Kapsam netleşmemişse de olur — tarih, şehir, kişi sayısı ve işin türünü konuşarak netleştiririz. Brief görüşmesi ücretsizdir.</p>
+        </div>
+        <div class="step reveal" data-delay="1">
+          <h3>Aynı Gün Cast Seçkisi</h3>
+          <p>Kriterlerinize uygun profilleri sedcard'larıyla birlikte, aynı iş günü içinde size özel bir seçki olarak sunarız. Yanında net fiyat çalışması gelir; gizli maliyet çıkmaz.</p>
+        </div>
+        <div class="step reveal" data-delay="2">
+          <h3>Onay &amp; Sözleşme</h3>
+          <p>Seçtiğiniz cast'i onaylarsınız; tek sözleşmeyle görevlendirme, sigorta, gizlilik ve görsel kullanım hakları netleşir. Tek muhatap, tek fatura.</p>
+        </div>
+        <div class="step reveal" data-delay="3">
+          <h3>Hazırlık &amp; Lojistik</h3>
+          <p>Üniforma veya konsept kıyafet, styling, ulaşım–konaklama ve ekip brief'i ajans tarafından planlanır. Her operasyon için yedek profil planı hazır tutulur.</p>
+        </div>
+        <div class="step reveal" data-delay="4">
+          <h3>Saha Günü</h3>
+          <p>4+ kişilik her operasyonda ajans süpervizörü sahada bulunur; devam çizelgesi, mola düzeni ve son dakika değişiklikleri süpervizör üzerinden yürür. Siz tek kişiyle konuşursunuz.</p>
+        </div>
+        <div class="step reveal" data-delay="5">
+          <h3>Teslim &amp; Değerlendirme</h3>
+          <p>İş sonunda saha raporu, çekim yapıldıysa seçilmiş kareler ve fatura iletilir. Kısa bir değerlendirme görüşmesiyle bir sonraki projenin kadrosunu şimdiden not ederiz.</p>
+        </div>
+      </div>
+
+      <div class="timeline reveal">
+        <span><b>0. gün</b> brief</span>
+        <span><b>Aynı gün</b> cast seçkisi + fiyat</span>
+        <span><b>1–2 gün</b> onay &amp; sözleşme</span>
+        <span><b>Etkinlik günü</b> süpervizörlü saha</span>
+        <span><b>+2 gün</b> rapor &amp; fatura</span>
+      </div>
+
+      <div class="flow-cta reveal">
+        <a class="btn btn-gold" href="teklif">Teklif İsteyin</a>
+        <a class="btn btn-ghost" href="katalog">Kadroyu İnceleyin</a>
+        <a class="btn btn-ghost" href="hizmetler">Hizmetlerimiz</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ YETENEKLER İÇİN ============ -->
+  <section class="flow" id="yetenekler" style="background:var(--bg-2);border-bottom:1px solid var(--line)">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Adaylar için</span>
+        <h2>Başvurudan ilk işe altı adım</h2>
+        <p class="muted" style="max-width:60ch">Kayıt, değerlendirme, sedcard çekimi ve iş yönlendirmesi dahil sürecin tamamı ücretsizdir. Sizden kayıt, dosya veya çekim ücreti isteyen kişilere itibar etmeyin.</p>
+      </div>
+
+      <div class="steps">
+        <div class="step reveal">
+          <h3>Ücretsiz Kayıt</h3>
+          <p>Başvuru sayfasındaki tek formu doldurun: temel bilgiler, ölçüler ve fotoğraflarınız. 5 dakika sürer, kredi kartı veya ödeme adımı yoktur.</p>
+        </div>
+        <div class="step reveal" data-delay="1">
+          <h3>Profilinizi Tamamlayın</h3>
+          <p>Üye panelinizden ölçülerinizi, dillerinizi, deneyiminizi ve fotoğraf albümlerinizi güncelleyebilirsiniz. Profil ne kadar eksiksizse casting'de o kadar öne çıkarsınız.</p>
+        </div>
+        <div class="step reveal" data-delay="2">
+          <h3>Casting Değerlendirmesi</h3>
+          <p>Her başvuru casting ekibimizce en geç 5 iş günü içinde incelenir. Deneyim şart değildir; değerlendirmede potansiyel esas alınır. Uygun profiller görüşmeye davet edilir.</p>
+        </div>
+        <div class="step reveal" data-delay="3">
+          <h3>Sözleşme &amp; Sedcard</h3>
+          <p>Kabul edilirseniz sözleşme ve gizlilik şartları panelinizden dijital olarak imzalanır; sedcard çekiminiz ajans tarafından yapılır. Sitede yalnızca adınız ve soyadınızın baş harfi yayınlanır.</p>
+        </div>
+        <div class="step reveal" data-delay="4">
+          <h3>İş Teklifleri</h3>
+          <p>Profilinize uygun görevler panelinize düşer. Tarih, lokasyon, kıyafet ve ücret baştan yazılıdır; kabul etmek size bağlıdır. Onayladığınız işin brief'i önceden paylaşılır.</p>
+        </div>
+        <div class="step reveal" data-delay="5">
+          <h3>Saha, Ödeme, Gelişim</h3>
+          <p>Sahaya SGK'lı ve sözleşmeli çıkarsınız; ödeme takibini ajans yapar. Görgü, dil ve protokol eğitimlerimizle portföyünüz her işte biraz daha güçlenir.</p>
+        </div>
+      </div>
+
+      <div class="timeline reveal">
+        <span><b>5 dk</b> ücretsiz kayıt</span>
+        <span><b>5 iş günü</b> casting incelemesi</span>
+        <span><b>Görüşme</b> yüz yüze tanışma</span>
+        <span><b>Sözleşme</b> + ajans sedcard çekimi</span>
+        <span><b>İlk iş</b> panelden görevlendirme</span>
+      </div>
+
+      <div class="flow-cta reveal">
+        <a class="btn btn-gold" href="basvuru">Hemen Başvurun</a>
+        <a class="btn btn-ghost" href="uye">Üye Girişi</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAAHHÜTLER ============ -->
+  <section>
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Taahhütlerimiz</span>
+        <h2>İki taraf için de değişmeyen dört kural</h2>
+      </div>
+      <div class="locations-grid">
+        <div class="location-card reveal">
+          <h3>Adaydan Sıfır Ücret</h3>
+          <p class="muted" style="font-size:.9rem">Kayıt, dosya, portföy veya sedcard çekimi için adaylardan hiçbir aşamada ücret alınmaz. Ajans gelirini yalnızca markadan alır.</p>
+        </div>
+        <div class="location-card reveal" data-delay="1">
+          <h3>Şeffaf Fiyat</h3>
+          <p class="muted" style="font-size:.9rem">Teklifte gördüğünüz rakam nettir. Ulaşım, üniforma, süpervizör gibi kalemler baştan yazılır; iş sonunda sürpriz fatura çıkmaz.</p>
+        </div>
+        <div class="location-card reveal" data-delay="2">
+          <h3>Sigortalı &amp; Sözleşmeli</h3>
+          <p class="muted" style="font-size:.9rem">Sahaya çıkan tüm personel SGK'lı ve sözleşmelidir; talep halinde belgeler paylaşılır. Her operasyonda yedek profil planı hazırdır.</p>
+        </div>
+        <div class="location-card reveal" data-delay="3">
+          <h3>KVKK &amp; Gizlilik</h3>
+          <p class="muted" style="font-size:.9rem">Aday verileri yalnızca değerlendirme amacıyla işlenir, üçüncü kişilerle paylaşılmaz. Soyad, telefon ve kişisel sosyal medya hesapları sitede yayınlanmaz.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ AJANS mı PLATFORM mu ============ -->
+  <section style="background:var(--bg-2);border-block:1px solid var(--line)">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Fark nedir?</span>
+        <h2>Ajans modeli ile ilan platformu</h2>
+        <p class="muted" style="max-width:60ch">İlan sitelerinde kadroyu kendiniz arar, kendiniz sözleşirsiniz. Ajans modelinde arama, sözleşme, saha ve kriz yönetimi bizim işimiz.</p>
+      </div>
+      <div class="compare-wrap reveal">
+        <table class="compare">
+          <thead>
+            <tr><th>Kriter</th><th>Model of World (ajans)</th><th>İlan / platform modeli</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Cast bulma</td><td>Kürasyonlu seçki, aynı gün sunulur</td><td>Aday havuzunu kendiniz tararsınız</td></tr>
+            <tr><td>Sözleşme &amp; sigorta</td><td class="yes">Tek sözleşme, SGK'lı personel</td><td class="no">Her kişiyle ayrı anlaşma</td></tr>
+            <tr><td>Saha süpervizörü</td><td class="yes">4+ kişilik ekipte dahil</td><td class="no">Yok</td></tr>
+            <tr><td>Son dakika yedek plan</td><td class="yes">Eşdeğer profil ücretsiz</td><td class="no">Sizin sorumluluğunuzda</td></tr>
+            <tr><td>Adaydan alınan ücret</td><td class="yes">Yok</td><td>Üyelik / öne çıkarma paketleri olabilir</td></tr>
+            <tr><td>Muhatap &amp; fatura</td><td class="yes">Tek muhatap, tek fatura</td><td class="no">Kişi başı takip</td></tr>
+            <tr><td>Eğitim &amp; protokol</td><td class="yes">Görgü, dil ve protokol eğitimi</td><td class="no">Profil beyanına bağlı</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SSS ============ -->
+  <section>
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Sık Sorulanlar</span>
+        <h2>Aklınızda kalan sorular</h2>
+      </div>
+      <div class="tabs reveal" id="faqTabs">
+        <button type="button" class="tab-btn active" data-tab="clients">Markalar</button>
+        <button type="button" class="tab-btn" data-tab="candidates">Adaylar</button>
+      </div>
+      <div id="faqPanes">
+        <div class="tab-pane active" id="pane-clients"><div class="accordion" id="faqClients"></div></div>
+        <div class="tab-pane" id="pane-candidates"><div class="accordion" id="faqCandidates"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container">
+      <span class="eyebrow" style="justify-content:center">Sıra sizde</span>
+      <h2>Süreci başlatmak için tek adım yeter.</h2>
+      <p>Marka tarafındaysanız brief'inizi bırakın; aday tarafındaysanız başvurunuzu oluşturun.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+        <a class="btn btn-gold" href="teklif">Teklif İsteyin</a>
+        <a class="btn btn-ghost" href="basvuru">Başvuru Yapın</a>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="/api/cast.js"></script>
+  <script src="assets/js/data.js?v=c8978cd"></script>
+  <script src="assets/js/main.js?v=c8978cd"></script>
+  <script src="assets/js/analytics.js?v=c8978cd"></script>
+  <script>
+    (function () {
+      const { FAQ_CLIENTS, FAQ_CANDIDATES } = window.VERA;
+      const render = faqs => faqs.map(f =>
+        `<details class="acc-item"><summary>${f.q}</summary><div class="acc-body">${f.a}</div></details>`).join("");
+
+      document.getElementById("faqClients").innerHTML = render(FAQ_CLIENTS);
+      document.getElementById("faqCandidates").innerHTML = render(FAQ_CANDIDATES);
+
+      /* SSS sekmeleri */
+      document.getElementById("faqTabs").addEventListener("click", e => {
+        const btn = e.target.closest(".tab-btn");
+        if (!btn) return;
+        document.querySelectorAll("#faqTabs .tab-btn").forEach(b => b.classList.toggle("active", b === btn));
+        document.querySelectorAll("#faqPanes .tab-pane").forEach(p => p.classList.toggle("active", p.id === "pane-" + btn.dataset.tab));
+      });
+
+      /* Aday tarafından gelindiyse ilgili sekme açık başlasın: /nasil-calisir?sss=aday */
+      if (new URLSearchParams(location.search).get("sss") === "aday") {
+        document.querySelector('#faqTabs .tab-btn[data-tab="candidates"]').click();
+      }
+
+      window.VERA.observeNew();
+
+      if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+    })();
+  </script>
+</body>
+</html>
