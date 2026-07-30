@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=957fd8c">
+  <link rel="stylesheet" href="assets/css/style.css?v=1078aca">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -20,6 +20,30 @@
     .adm-badge.st-onaylandi { color:#20744c; border-color:#4da878; }
     .adm-badge.st-reddedildi { color:#a33; border-color:#d95a5a; }
     .adm-actions { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+
+    /* Gelen form kartları */
+    .frm { border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:14px; background:var(--surface); }
+    .frm.sos { border-color:#d95a5a; background:color-mix(in srgb,#d95a5a 7%,var(--surface)); }
+    .frm.islendi { opacity:.72; }
+    .frm-ust { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+    .frm-ust strong { font-size:1.02rem; }
+    .frm-tur { font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; padding:4px 10px;
+      border-radius:999px; background:var(--gold-grad); color:#fff; }
+    .frm.sos .frm-tur { background:#d95a5a; }
+    .frm-tarih { font-size:.78rem; color:var(--text-2); margin-left:auto; }
+    .frm-satir { font-size:.86rem; color:var(--text-2); line-height:2; overflow-wrap:anywhere; }
+    .frm-satir b { color:var(--text); font-weight:500; }
+    .frm-eylem { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .frm-eylem .btn { padding:8px 14px; font-size:.64rem; }
+    .frm-duzen { display:none; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line); }
+    .frm-duzen.open { display:block; }
+    .frm-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
+    .frm-grid label { display:block; font-size:.62rem; letter-spacing:.14em; text-transform:uppercase;
+      color:var(--text-2); margin-bottom:4px; }
+    .frm-sifre { margin-top:12px; padding:12px 14px; border:1px solid var(--gold); border-radius:10px;
+      background:color-mix(in srgb,var(--gold) 8%,transparent); font-size:.86rem; }
+    .frm-sifre code { font-family:ui-monospace,monospace; font-size:1rem; color:var(--gold);
+      background:var(--bg-2); padding:2px 8px; border-radius:6px; }
 
     /* Duruma göre sekmeler */
     .durum-sekme { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
@@ -266,6 +290,7 @@
           <select class="adm-input" id="bulkRed" style="max-width:240px"><option value="">Red gerekçesi…</option></select>
           <button class="btn btn-ghost btn-sm" data-bulk="reddedildi">✕ Toplu Reddet</button>
           <button class="btn btn-ghost btn-sm" data-bulk="inceleniyor">↺ Beklet</button>
+          <button class="btn btn-tehlike btn-sm" id="bulkDel" title="Seçili üyeleri ve tüm dosyalarını kalıcı olarak siler">🗑 Toplu Sil</button>
           <button class="btn btn-ghost btn-sm" id="bulkClear">Seçimi Bırak</button>
         </div>
 
@@ -278,7 +303,7 @@
         </div>
 
         <div class="adm-row" id="filterRow2" style="margin-bottom:14px">
-          <label class="mini" style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="selbox" id="selAll"> tümü</label>
+          <label class="mini" style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="selbox" id="selAll" title="Listedeki tüm üyeleri seç (toplu onay / red / silme için)"> tümünü seç</label>
           <input class="adm-input" id="fText" placeholder="İsim / etiket / şehir / dövme ara…" style="flex:1;min-width:170px">
           <select class="adm-input" id="fCat"><option value="">Tüm kategoriler</option></select>
           <input class="adm-input" id="fFrom" type="date" title="Kayıt tarihi: başlangıç">
@@ -347,7 +372,19 @@
           <div class="mini mt-2" id="shActive"></div>
         </div>
 
-        <h2 class="adm-section-title" id="subTitle" hidden>✉️ Form Gönderimleri</h2>
+        <h2 class="adm-section-title" id="subTitle" hidden>✉️ Gelen Formlar</h2>
+        <div id="subInfo" class="mini" hidden style="margin:-6px 0 16px;line-height:1.9">
+          Siteden gelen <strong>form kayıtları</strong> — henüz üyelik hesabı oluşmamış başvurular ve üyelerden gelen
+          <strong>SOS</strong> bildirimleri. Bir başvuruyu <strong>Üyeye Dönüştür</strong> ile üyelik hesabına çevirdiğinizde
+          <em>Üyeler &amp; Onaylar</em> sekmesinde onay bekleyenler arasında görünür; size verilen geçici şifreyi adaya
+          iletirseniz panelinden fotoğraf ve ölçülerini tamamlayabilir.
+        </div>
+        <div class="adm-row" id="subFiltre" hidden style="margin-bottom:14px">
+          <label class="mini" style="display:flex;gap:6px;align-items:center">
+            <input type="checkbox" class="selbox" id="subIslenmemis" checked> yalnızca işlenmemiş kayıtlar
+          </label>
+          <span class="mini" id="subSayi"></span>
+        </div>
         <div id="subs"></div>
 
         <h2 class="adm-section-title" id="financeH2">💰 Finansal Takip &amp; Hakedişler</h2>
@@ -613,14 +650,53 @@
     function seciliIds() { return [...document.querySelectorAll(".uSel:checked")].map(c => +c.dataset.sel); }
     function syncBulk() {
       const n = seciliIds().length;
+      const hepsi = document.querySelectorAll(".uSel").length;
       $("bulkBar").classList.toggle("on", n > 0);
       $("bulkCount").textContent = n + " üye seçildi";
+      /* Liste yeniden çizildiğinde "tümü" kutusu gerçek duruma dönsün */
+      const all = $("selAll");
+      if (all) { all.checked = hepsi > 0 && n === hepsi; all.indeterminate = n > 0 && n < hepsi; }
+    }
+
+    /* Kalıcı silme teyidi — Türkçe klavyede büyük "İ" yazıldığı için
+       SIL / SİL / sil / sıl yazımlarının hepsi kabul edilir. */
+    function silTeyidi(adet) {
+      const c = prompt("Onaylamak için SİL yazın — " + adet + " üye kalıcı olarak silinecek:");
+      if (c === null) return false;
+      return c.trim().toUpperCase().replace(/İ/g, "I") === "SIL";
+    }
+    /* Silme çağrısı tek yerden yapılır: tek üye de toplu silme de aynı ucu kullanır */
+    async function uyeleriSil(ids) {
+      toast("⏳ " + ids.length + " üye siliniyor…");
+      const sonuc = await api("/api/admin/delete", { user_ids: ids });
+      if (!sonuc.ok) { toast(sonuc.err || "Silinemedi", "hata"); return false; }
+      const d = sonuc.data || {};
+      toast("🗑 " + (d.silinen || ids.length) + " üye kalıcı olarak silindi" +
+            (d.dosya ? " (" + d.dosya + " dosya)" : ""));
+      load();
+      return true;
     }
     document.addEventListener("change", e => { if (e.target.classList?.contains("uSel") || e.target.id === "selAll") {
       if (e.target.id === "selAll") document.querySelectorAll(".uSel").forEach(c => c.checked = e.target.checked);
       syncBulk();
     }});
     $("bulkClear").addEventListener("click", () => { document.querySelectorAll(".uSel,#selAll").forEach(c => c.checked = false); syncBulk(); });
+
+    /* --- Toplu kalıcı silme --- */
+    $("bulkDel").addEventListener("click", async () => {
+      const ids = seciliIds();
+      if (!ids.length) return toast("Önce silinecek üyeleri seçin", "hata");
+      const secili = (DATA.users || []).filter(u => ids.includes(u.id));
+      const adlar = secili.map(u => "· " + (u.fullname || u.email || "#" + u.id)).join("\n");
+      const fotoSayi = secili.reduce((t, u) => t + (u.media || []).filter(m => m.kind === "photo").length, 0);
+      if (!confirm(
+        "KALICI SİLME — " + ids.length + " ÜYE\n\n" + adlar + "\n\n" +
+        "Silinecekler: üyelik hesapları, profil ve ölçü bilgileri, " +
+        fotoSayi + " fotoğraf/belge dosyası (sunucudan da silinir) ve iş teklifi kayıtları.\n\n" +
+        "Bu işlem GERİ ALINAMAZ. Silmek yerine 'Toplu Reddet' de kullanabilirsiniz.\n\nDevam etmek istiyor musunuz?")) return;
+      if (!silTeyidi(ids.length)) { toast("Silme iptal edildi.", "hata"); return; }
+      await uyeleriSil(ids);
+    });
     document.querySelectorAll("[data-bulk]").forEach(b => b.addEventListener("click", async () => {
       const ids = seciliIds();
       if (!ids.length) return;
@@ -698,7 +774,7 @@
       ["uyeler",  "👥", "Üyeler & Onaylar",   ["toolsRow","tplCard","bulkBar","durumSekme","filterRow2","results"]],
       ["isler",   "💼", "İşler & Paylaşım",   ["jobH2","jobCard","jobsList","shareH2","shareCard"]],
       ["finance", "💰", "Finansal Takip",      ["financeH2","financeTab"]],
-      ["formlar", "✉️", "Gelen Formlar",      ["subTitle","subs"]],
+      ["formlar", "✉️", "Gelen Formlar",      ["subTitle","subInfo","subFiltre","subs"]],
       ["ekip",    "📌", "Ekip & Görevler",    ["tasksH2","tasksCard","usersCard"]],
       ["ayarlar", "⚙️", "Ayarlar & Güvenlik", ["pwCard","sessCard"]],
     ];
@@ -735,7 +811,7 @@
       setCnt("uyeler", bekleyen);
       setCnt("ekip", acikGorev);
       setCnt("genel", (DATA.sos || []).length);
-      setCnt("formlar", (DATA.submissions || []).length);
+      setCnt("formlar", (DATA.submissions || []).filter(s => s.processed !== "1").length);
     }
 
     /* ---------- Canlı nabız: 30 sn'de bir yeni kayıt / SOS bildirimi ---------- */
@@ -1125,13 +1201,9 @@
           "· " + fotoSayi + " fotoğraf/belge dosyası (sunucudan da silinir)\n" +
           "· İş teklifi kayıtları\n\n" +
           "Bu işlem GERİ ALINAMAZ. Üyeyi silmek yerine 'Reddet' de kullanabilirsiniz.\n\nDevam etmek istiyor musunuz?")) return;
-        const teyit = prompt("Onaylamak için büyük harflerle SIL yazın:");
-        if ((teyit || "").trim().toUpperCase() !== "SIL") { toast("Silme iptal edildi.", "hata"); return; }
-        const sonuc = await api("/api/admin/delete", { user_id: uid });
-        if (!sonuc.ok) { toast(sonuc.err || "Silinemedi", "hata"); return; }
-        toast("🗑 " + ad + " kalıcı olarak silindi" +
-              (sonuc.data?.dosya ? " (" + sonuc.data.dosya + " dosya)" : ""));
-        load(); return;
+        if (!silTeyidi(1)) { toast("Silme iptal edildi.", "hata"); return; }
+        await uyeleriSil([uid]);
+        return;
       }
 
       /* --- Yayında ama özel: gizliliği açıp katalogda göster --- */
@@ -1389,11 +1461,180 @@
           ).join(" · ") || "—"}
         </div></div>`).join("");
     }
+    /* Gelen formlarda düzenlenebilir alanlar (eski başvuru formunun alanları) */
+    const FRM_ALAN = [
+      ["fullname", "Ad Soyad"], ["email", "E-posta"], ["phone", "Telefon"],
+      ["birthdate", "Doğum Tarihi"], ["city", "Şehir"], ["category", "Kategori"],
+      ["gender", "Cinsiyet"], ["height", "Boy (cm)"], ["weight", "Kilo (kg)"],
+      ["size", "Beden"], ["shoe", "Ayakkabı"], ["languages", "Diller"],
+      ["skills", "Yetenekler"], ["experience", "Deneyim"], ["tattoo", "Dövme"],
+      ["instagram", "Instagram"], ["about", "Hakkında"],
+    ];
+    const frmVeri = s => { try { return JSON.parse(s.data || "{}"); } catch { return {}; } };
+
     function renderSubs() {
-      $("subTitle").hidden = !DATA.submissions.length;
-      $("subs").innerHTML = DATA.submissions.map(s =>
-        `<div class="adm-sub"><strong>[${s.kind}]</strong> ${s.created?.slice(0,16).replace("T"," ")} — ${esc(s.data)}</div>`).join("");
+      const hepsi = DATA.submissions || [];
+      $("subTitle").hidden = !hepsi.length;
+      $("subInfo").hidden = !hepsi.length;
+      $("subFiltre").hidden = !hepsi.length;
+      const sadeceYeni = $("subIslenmemis").checked;
+      const liste = sadeceYeni ? hepsi.filter(s => s.processed !== "1") : hepsi;
+      $("subSayi").textContent = `${liste.length} kayıt (toplam ${hepsi.length})`;
+
+      if (!liste.length) {
+        $("subs").innerHTML = '<div class="bos-durum"><span class="ikon">✅</span>İşlenmemiş form kaydı yok.</div>';
+        return;
+      }
+
+      $("subs").innerHTML = liste.map(s => {
+        const v = frmVeri(s);
+        const sos = String(s.kind).toUpperCase() === "SOS";
+        const islendi = s.processed === "1";
+        const ad = v.fullname || v.uye || "(isimsiz)";
+        const yas = v.birthdate && /^\d{4}-/.test(v.birthdate)
+          ? new Date().getFullYear() - +v.birthdate.slice(0, 4) : (v.age || "");
+        const bilinen = new Set(FRM_ALAN.map(a => a[0]).concat(["kvkk", "uye", "age"]));
+        const ekstra = Object.keys(v).filter(k => !bilinen.has(k) && v[k]);
+
+        const govde = sos
+          ? `<div class="frm-satir">
+               📞 <b>${esc(v.tel) || "—"}</b> · 📍 Konum: <b>${esc(v.konum) || "—"}</b>
+               ${v.harita ? ` · <a class="gold" href="${esc(v.harita)}" target="_blank">haritada aç</a>` : ""}
+               ${v.mesaj ? `<br>💬 ${esc(v.mesaj)}` : ""}
+             </div>`
+          : `<div class="frm-satir">
+               📧 <b>${esc(v.email) || "—"}</b> · 📞 <b>${esc(v.phone) || "—"}</b>
+               ${v.city ? ` · 📍 ${esc(v.city)}` : ""}${yas ? ` · 🎂 ${yas} yaş` : ""}
+               ${v.gender ? ` · ${v.gender === "kadin" ? "Kadın" : "Erkek"}` : ""}
+               <br>${catAd(v.category) ? "🏷 <b>" + catAd(v.category) + "</b>" : ""}
+               ${v.height ? ` · 📏 ${esc(v.height)} cm` : ""}${v.weight ? ` / ${esc(v.weight)} kg` : ""}
+               ${v.size ? ` · beden ${esc(v.size)}` : ""}${v.shoe ? ` · ayak ${esc(v.shoe)}` : ""}
+               ${v.languages ? `<br>🗣 ${esc(v.languages)}` : ""}
+               ${v.skills ? ` · 🎯 ${esc(v.skills)}` : ""}
+               ${v.experience ? ` · deneyim ${esc(v.experience)}` : ""}
+               ${v.tattoo ? ` · dövme: ${esc(v.tattoo)}` : ""}
+               ${v.instagram ? `<br>📸 ${esc(v.instagram)}` : ""}
+               ${v.about && v.about !== "." ? `<br>💬 ${esc(v.about)}` : ""}
+               ${ekstra.length ? `<br><span style="opacity:.7">${ekstra.map(k => esc(k) + ": " + esc(v[k])).join(" · ")}</span>` : ""}
+             </div>`;
+
+        return `
+        <div class="frm ${sos ? "sos" : ""} ${islendi ? "islendi" : ""}" data-sid="${s.id}">
+          <div class="frm-ust">
+            <span class="frm-tur">${sos ? "🆘 SOS" : "başvuru"}</span>
+            <strong>${esc(ad)}</strong>
+            ${islendi
+              ? `<span class="adm-badge" style="color:#20744c;border-color:#4da878">✓ üye #${s.user_id || "?"} oluşturuldu</span>`
+              : '<span class="adm-badge eksik">⏳ işlenmedi</span>'}
+            <span class="frm-tarih">${trTarih(s.created)} ${String(s.created || "").slice(11, 16)}</span>
+          </div>
+          ${govde}
+          <div class="frm-eylem">
+            ${(!sos && !islendi) ? '<button class="btn btn-gold" data-frm="donustur">✓ Üyeye Dönüştür</button>' : ""}
+            ${islendi ? `<a class="btn btn-ghost" href="#" data-frm="git">👤 Üye Kartına Git</a>` : ""}
+            ${!sos ? '<button class="btn btn-ghost" data-frm="duzenle">✏️ Düzenle</button>' : ""}
+            <button class="btn btn-tehlike" data-frm="sil">🗑 Sil</button>
+            <span class="mini" data-frmmsg></span>
+          </div>
+          ${!sos ? `
+          <div class="frm-duzen" data-frmduzen>
+            <div class="frm-grid">
+              ${FRM_ALAN.map(([k, et]) =>
+                `<div><label>${et}</label><input class="adm-input" data-fk="${k}" value="${esc(v[k] ?? "")}" style="width:100%"></div>`).join("")}
+            </div>
+            <div class="adm-row" style="margin-top:12px">
+              <button class="btn btn-gold btn-sm" data-frm="kaydet">💾 Değişiklikleri Kaydet</button>
+              <span class="mini">Yanlış/eksik girilen bilgileri düzeltip kaydedin, sonra üyeye dönüştürün.</span>
+            </div>
+          </div>` : ""}
+        </div>`;
+      }).join("");
     }
+
+    $("subIslenmemis").addEventListener("change", renderSubs);
+
+    /* --- Gelen form eylemleri --- */
+    $("subs").addEventListener("click", async e => {
+      const b = e.target.closest("[data-frm]");
+      if (!b) return;
+      const kart = b.closest(".frm");
+      const sid = +kart.dataset.sid;
+      const kayit = (DATA.submissions || []).find(x => x.id === sid) || {};
+      const msg = kart.querySelector("[data-frmmsg]");
+      const act = b.dataset.frm;
+
+      if (act === "duzenle") { kart.querySelector("[data-frmduzen]").classList.toggle("open"); return; }
+
+      if (act === "git") {
+        e.preventDefault();
+        showAtab("uyeler");
+        DURUM = "";
+        $("durumSekme").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.durum === ""));
+        $("fText").value = "";
+        renderUsers();
+        const card = document.querySelector(`.adm-user[data-uid="${kayit.user_id}"]`);
+        if (card) {
+          card.classList.add("open");
+          card.scrollIntoView({ behavior: "smooth", block: "center" });
+          card.style.borderColor = "var(--gold)";
+          setTimeout(() => card.style.borderColor = "", 2500);
+        }
+        return;
+      }
+
+      if (act === "kaydet") {
+        const veri = { ...frmVeri(kayit) };
+        kart.querySelectorAll("[data-fk]").forEach(i => veri[i.dataset.fk] = i.value.trim());
+        msg.textContent = "Kaydediliyor…";
+        const sonuc = await api("/api/admin/submission", { id: sid, action: "update", data: veri });
+        if (!sonuc.ok) { msg.textContent = sonuc.err || "Hata"; return; }
+        toast("✓ Form kaydı güncellendi");
+        load(); return;
+      }
+
+      if (act === "sil") {
+        const v = frmVeri(kayit);
+        if (!confirm("Bu form kaydı kalıcı olarak silinecek:\n\n" +
+                     (v.fullname || v.uye || "(isimsiz)") + " — " + kayit.kind + "\n\n" +
+                     "Üyeliğe dönüştürdüyseniz üye kaydı silinmez, yalnızca bu form satırı silinir.\n\nOnaylıyor musunuz?")) return;
+        const sonuc = await api("/api/admin/submission", { id: sid, action: "delete" });
+        if (!sonuc.ok) { toast(sonuc.err || "Silinemedi", "hata"); return; }
+        toast("🗑 Form kaydı silindi");
+        load(); return;
+      }
+
+      if (act === "donustur") {
+        const v = frmVeri(kayit);
+        if (!confirm((v.fullname || "Bu başvuru") + " için üyelik hesabı oluşturulacak.\n\n" +
+                     "· Üye, ONAY BEKLEYENLER listesine eklenir\n" +
+                     "· Geçici bir şifre üretilir; adaya ileterek panele girmesini sağlayabilirsiniz\n" +
+                     "· Fotoğraf ve ölçülerini adayın kendisi panelden tamamlar\n\nDevam edilsin mi?")) return;
+        msg.textContent = "Oluşturuluyor…";
+        const sonuc = await api("/api/admin/submission", { id: sid, action: "convert" });
+        if (!sonuc.ok) { msg.textContent = ""; toast(sonuc.err || "Dönüştürülemedi", "hata"); return; }
+        const sifre = sonuc.data?.gecici_sifre || "";
+        toast("✓ Üye #" + sonuc.data.user_id + " oluşturuldu — onay bekleyenlerde");
+        if (sonuc.data?.uyari) toast(sonuc.data.uyari, "hata");
+        kart.insertAdjacentHTML("beforeend",
+          `<div class="frm-sifre">
+             <strong>Üyelik oluşturuldu.</strong> Adaya iletmeniz gereken giriş bilgileri:<br>
+             E-posta: <code>${esc(v.email)}</code> · Geçici şifre: <code>${esc(sifre)}</code>
+             <div style="margin-top:8px"><button class="btn btn-ghost btn-sm" data-frm="kopyala"
+               data-mesaj="Merhaba ${esc(v.fullname)}, Model of World aday panelinize giriş bilgileriniz: https://www.modelofworld.com/uye — E-posta: ${esc(v.email)} · Geçici şifre: ${esc(sifre)} — Giriş yaptıktan sonra Gizlilik sekmesinden şifrenizi değiştirebilir, fotoğraf ve ölçülerinizi tamamlayabilirsiniz.">📋 Adaya gönderilecek mesajı kopyala</button></div>
+             <span class="mini" style="display:block;margin-top:6px">Bu şifre bir daha gösterilmez — şimdi kopyalayın.</span>
+           </div>`);
+        return;
+      }
+
+      if (act === "kopyala") {
+        try {
+          await navigator.clipboard.writeText(b.dataset.mesaj || "");
+          toast("📋 Mesaj kopyalandı — WhatsApp'tan gönderebilirsiniz");
+        } catch {
+          prompt("Kopyalayın:", b.dataset.mesaj || "");
+        }
+      }
+    });
     function renderLogs() {
       $("logTitle").hidden = !(DATA.audit || []).length;
       $("logs").innerHTML = (DATA.audit || []).map(l =>

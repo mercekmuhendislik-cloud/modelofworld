@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=957fd8c">
+  <link rel="stylesheet" href="assets/css/style.css?v=1078aca">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -52,7 +52,7 @@
     /* İmza */
     #sigCanvas { border:1px dashed var(--gold); border-radius:10px; background:#fff; touch-action:none; cursor:crosshair; width:100%; max-width:480px; height:150px; }
 
-    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=957fd8c */
+    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=1078aca */
 
     /* Profil tamamlanma ölçeri */
     .tamam-kart { border:1px solid var(--gold); border-radius:14px; padding:18px 20px; margin-bottom:24px;
@@ -475,6 +475,29 @@
           <span class="muted" id="msg-gizlilik" style="font-size:.85rem"></span>
           <button class="btn btn-gold" data-save="gizlilik">Kaydet</button>
         </div>
+
+        <div style="border-top:1px solid var(--line);margin-top:28px;padding-top:22px">
+          <h3 style="margin-bottom:6px">Şifre Değiştir</h3>
+          <p class="muted" style="font-size:.86rem;margin-bottom:16px">Ajanstan geçici şifre aldıysanız buradan kendi şifrenizi belirleyin. Şifrenizi değiştirdiğinizde diğer cihazlardaki oturumlar kapanır.</p>
+          <div class="form-grid">
+            <div class="field">
+              <label>Mevcut Şifreniz</label>
+              <input type="password" name="sifre_eski" autocomplete="current-password" placeholder="••••••••">
+            </div>
+            <div class="field">
+              <label>Yeni Şifre (en az 6 karakter)</label>
+              <input type="password" name="sifre_yeni" autocomplete="new-password" placeholder="••••••••">
+            </div>
+            <div class="field">
+              <label>Yeni Şifre (Tekrar)</label>
+              <input type="password" name="sifre_yeni2" autocomplete="new-password" placeholder="••••••••">
+            </div>
+          </div>
+          <div class="wizard-nav">
+            <span class="muted" id="msg-sifre" style="font-size:.85rem"></span>
+            <button class="btn btn-ghost" type="button" id="sifreKaydet">Şifremi Değiştir</button>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -505,8 +528,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=957fd8c"></script>
-  <script src="assets/js/main.js?v=957fd8c"></script>
+  <script src="assets/js/data.js?v=1078aca"></script>
+  <script src="assets/js/main.js?v=1078aca"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -516,7 +539,7 @@
       const val = n => { const el = field(n); return el ? (el.type === "checkbox" ? (el.checked ? "1" : "") : el.value) : ""; };
 
       const yasHesap = b => { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); };
-      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=957fd8c) */
+      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=1078aca) */
       const makeMsel = window.VERA.makeMsel;
       const catSel = makeMsel($("catSel"),
         Object.entries(window.VERA.CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
@@ -1098,6 +1121,29 @@
         const open = refreshSteps();
         if (navigate) showTab(open ? TAB_ORDER[open - 1] : ((ME.offers || []).some(o => o.status === "beklemede") ? "teklifler" : "genel"));
       }
+
+      /* ============ Şifre değiştirme ============ */
+      $("sifreKaydet").addEventListener("click", async () => {
+        const el = $("msg-sifre");
+        const yaz = (metin, iyi) => {
+          el.textContent = metin;
+          el.style.color = !metin ? "" : iyi ? "var(--ok)" : "var(--danger)";
+          el.style.fontWeight = iyi || !metin ? "400" : "600";
+        };
+        const eski = val("sifre_eski"), yeni = val("sifre_yeni"), yeni2 = val("sifre_yeni2");
+        if (!eski) return yaz("Mevcut şifrenizi girin.", false);
+        if (yeni.length < 6) return yaz("Yeni şifre en az 6 karakter olmalı.", false);
+        if (yeni !== yeni2) return yaz("Girdiğiniz iki yeni şifre birbirinden farklı.", false);
+        yaz("Kaydediliyor…", true);
+        const r = await fetch("/api/password", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ old: eski, new: yeni }),
+        }).catch(() => null);
+        const d = r ? await r.json().catch(() => ({})) : {};
+        if (!r || !r.ok) return yaz(d.error || "Şifre değiştirilemedi.", false);
+        ["sifre_eski", "sifre_yeni", "sifre_yeni2"].forEach(n => { const f = field(n); if (f) f.value = ""; });
+        yaz("✓ Şifreniz değiştirildi.", true);
+      });
 
       $("logoutBtn").addEventListener("click", async () => {
         await fetch("/api/logout", { method: "POST" });

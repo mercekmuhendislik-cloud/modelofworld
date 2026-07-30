@@ -126,6 +126,10 @@ def init_db():
         except sqlite3.OperationalError: pass
     try: c.execute("ALTER TABLE shares ADD COLUMN client_likes TEXT DEFAULT '[]'")
     except sqlite3.OperationalError: pass
+    # Gelen formlar: üyeye dönüştürülünce hangi üyeye bağlandığı işaretlenir
+    for col, ddl in [("user_id", "INTEGER"), ("processed", "TEXT DEFAULT '0'")]:
+        try: c.execute(f"ALTER TABLE submissions ADD COLUMN {col} {ddl}")
+        except sqlite3.OperationalError: pass
     try: c.execute("ALTER TABLE job_offers ADD COLUMN payment_status TEXT DEFAULT 'odenecek'")
     except sqlite3.OperationalError: pass
     # Yönetici şifresi ilk kurulumda mevcut anahtara eşitlenir (sonra panelden değiştirilir)
@@ -693,6 +697,24 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"ok": True},
                 cookie="mow=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0")
 
+        if p == "/api/password":
+            # Üye kendi şifresini değiştirir (yöneticiden gelen geçici şifreyi de böyle değiştirir)
+            uid = self._session_user()
+            if not uid: return self._json(401, {"error": "Oturum yok"})
+            d = jbody()
+            yeni = d.get("new") or ""
+            if len(yeni) < 6:
+                return self._json(400, {"error": "Yeni şifre en az 6 karakter olmalı"})
+            row = db().execute("SELECT salt, pass_hash FROM users WHERE id=?", (uid,)).fetchone()
+            if not row or hash_pw(d.get("old") or "", row["salt"]) != row["pass_hash"]:
+                return self._json(401, {"error": "Mevcut şifreniz hatalı"})
+            salt = secrets.token_hex(16)
+            db().execute("UPDATE users SET pass_hash=?, salt=? WHERE id=?", (hash_pw(yeni, salt), salt, uid))
+            db().execute("DELETE FROM sessions WHERE user_id=?", (uid,))   # diğer cihazlar çıkış yapar
+            audit("uye", "sifre-degistirildi", uid, "")
+            db().commit()
+            return self._json(200, {"ok": True}, cookie=self._make_session(uid))
+
         if p == "/api/profile":
             uid = self._session_user()
             if not uid: return self._json(401, {"error": "Oturum yok"})
@@ -1107,33 +1129,134 @@ class Handler(BaseHTTPRequestHandler):
             db().commit()
             return self._json(200, {"ok": True})
 
+        if p == "/api/admin/submission":
+            # Gelen form kayıtları: düzenle / sil / üyeliğe dönüştür
+            adm = self._admin(qs)
+            if not self._can(adm, "review"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            d = jbody()
+            sid = int(d.get("id") or 0)
+            act = d.get("action")
+            row = db().execute("SELECT * FROM submissions WHERE id=?", (sid,)).fetchone()
+            if not row: return self._json(404, {"error": "Kayıt bulunamadı"})
+            try: veri = json.loads(row["data"] or "{}")
+            except Exception: veri = {}
+
+            if act == "delete":
+                db().execute("DELETE FROM submissions WHERE id=?", (sid,))
+                audit("admin:" + adm["username"], "form-silindi", None,
+                      "%s · %s" % (row["kind"], str(veri.get("fullname") or veri.get("uye") or "")[:60]))
+                db().commit()
+                return self._json(200, {"ok": True})
+
+            if act == "update":
+                yeni = d.get("data")
+                if not isinstance(yeni, dict): return self._json(400, {"error": "Geçersiz veri"})
+                db().execute("UPDATE submissions SET data=? WHERE id=?",
+                             (json.dumps(yeni, ensure_ascii=False)[:8000], sid))
+                audit("admin:" + adm["username"], "form-duzenlendi", None, "%s #%d" % (row["kind"], sid))
+                db().commit()
+                return self._json(200, {"ok": True})
+
+            if act == "convert":
+                if (row["processed"] or "0") == "1" and row["user_id"]:
+                    return self._json(409, {"error": "Bu form zaten üye #%d olarak oluşturuldu" % row["user_id"]})
+                email = str(veri.get("email") or "").strip().lower()
+                adsoyad = str(veri.get("fullname") or "").strip()
+                if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+                    return self._json(400, {"error": "Formda geçerli bir e-posta yok — önce Düzenle ile ekleyin"})
+                if len(adsoyad.split()) < 2:
+                    return self._json(400, {"error": "Formda ad soyad eksik — önce Düzenle ile tamamlayın"})
+                if db().execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone():
+                    return self._json(409, {"error": "Bu e-posta zaten üye — mükerrer kayıt oluşturulmadı"})
+
+                dogum = str(veri.get("birthdate") or "").strip()
+                yas = _sayi(veri.get("age"))
+                if not yas and re.match(r"^\d{4}-\d{2}-\d{2}$", dogum):
+                    bugun = datetime.now(timezone.utc).date()
+                    d0 = datetime.strptime(dogum, "%Y-%m-%d").date()
+                    yas = bugun.year - d0.year - ((bugun.month, bugun.day) < (d0.month, d0.day))
+                kats = [c for c in str(veri.get("category") or "").split(",") if c.strip() in CATEGORY_KEYS] or ["model"]
+                resit_degil = bool(yas) and yas < 18
+                if resit_degil:
+                    kats = [c for c in kats if c != "nu"] or ["model"]
+
+                gecici = secrets.token_urlsafe(9)
+                salt = secrets.token_hex(16)
+                cur = db().execute(
+                    "INSERT INTO users(email,pass_hash,salt,fullname,phone,created) VALUES(?,?,?,?,?,?)",
+                    (email, hash_pw(gecici, salt), salt, adsoyad[:120],
+                     str(veri.get("phone") or "").strip()[:30], now()))
+                uid = cur.lastrowid
+                notlar = " · ".join(x for x in [
+                    "Gelen formdan aktarıldı (#%d)" % sid,
+                    "Deneyim: %s" % veri.get("experience") if veri.get("experience") else "",
+                    "18 yaş altı — veli bilgisi ve muvafakatname gerekli" if resit_degil else "",
+                ] if x)
+                db().execute(
+                    "INSERT INTO profiles(user_id, status, privacy, published, category, gender, birthdate, age, city,"
+                    " height, weight, size, shoe, languages, instagram, about, tattoo_info, skills,"
+                    " consent_kvkk, admin_note) "
+                    "VALUES(?, 'inceleniyor', 'public', '0', ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (uid, ",".join(kats), str(veri.get("gender") or ""), dogum, str(yas or ""),
+                     str(veri.get("city") or "")[:40], str(_sayi(veri.get("height")) or ""),
+                     str(_sayi(veri.get("weight")) or ""), str(veri.get("size") or "")[:20],
+                     str(_sayi(veri.get("shoe")) or ""), str(veri.get("languages") or "")[:200],
+                     str(veri.get("instagram") or "")[:60], str(veri.get("about") or "")[:1500],
+                     str(veri.get("tattoo") or "")[:200],
+                     json.dumps({"list": [], "text": str(veri.get("skills") or "")[:300]}, ensure_ascii=False),
+                     "1" if str(veri.get("kvkk") or "") in ("on", "1", "true") else "0", notlar[:2000]))
+                db().execute("UPDATE submissions SET user_id=?, processed='1' WHERE id=?", (uid, sid))
+                audit("admin:" + adm["username"], "form-uyeye-donusturuldu", uid, "%s <%s>" % (adsoyad, email))
+                db().commit()
+                return self._json(200, {"ok": True, "user_id": uid, "gecici_sifre": gecici,
+                                        "uyari": "18 yaş altı — veli bilgisi gerekli" if resit_degil else ""})
+
+            return self._json(400, {"error": "Geçersiz işlem"})
+
         if p == "/api/admin/delete":
             # Üyeyi kalıcı olarak siler: hesap, profil, fotoğraf/belge dosyaları, iş teklifleri, oturumlar.
+            # Tek üye için user_id, toplu silme için user_ids listesi gönderilir.
             # Yalnızca "users" yetkisi olan rol (admin) silebilir; denetim günlüğüne kim/ne bilgisi yazılır.
             adm = self._admin(qs)
             if not self._can(adm, "users"):
                 return self._json(403, {"error": "Üye silme yetkisi yalnızca yöneticide (admin) vardır"})
             d = jbody()
-            uid = int(d.get("user_id") or 0)
-            row = db().execute("SELECT email, fullname FROM users WHERE id=?", (uid,)).fetchone()
-            if not row:
-                return self._json(404, {"error": "Üye bulunamadı"})
-            silinen_dosya = 0
-            for m in db().execute("SELECT filename FROM photos WHERE user_id=?", (uid,)).fetchall():
-                try:
-                    os.remove(os.path.join(UPLOAD_DIR, m["filename"]))
-                    silinen_dosya += 1
-                except OSError:
-                    pass   # dosya zaten yok — kaydı silmeye devam
-            db().execute("DELETE FROM photos WHERE user_id=?", (uid,))
-            db().execute("DELETE FROM job_offers WHERE user_id=?", (uid,))
-            db().execute("DELETE FROM sessions WHERE user_id=?", (uid,))
-            db().execute("DELETE FROM profiles WHERE user_id=?", (uid,))
-            db().execute("DELETE FROM users WHERE id=?", (uid,))
-            audit("admin:" + adm["username"], "uye-sil", uid,
-                  "%s <%s> · %d dosya silindi" % (row["fullname"] or "?", row["email"], silinen_dosya))
+            hedefler = [int(x) for x in (d.get("user_ids") or []) if str(x).strip().isdigit()]
+            if not hedefler and d.get("user_id"):
+                hedefler = [int(d["user_id"])]
+            if not hedefler:
+                return self._json(400, {"error": "Silinecek üye seçilmedi"})
+            if len(hedefler) > 200:
+                return self._json(400, {"error": "Tek seferde en fazla 200 üye silinebilir"})
+
+            silinen_dosya, silinenler, bulunamayan = 0, [], []
+            for uid in hedefler:
+                row = db().execute("SELECT email, fullname FROM users WHERE id=?", (uid,)).fetchone()
+                if not row:
+                    bulunamayan.append(uid)
+                    continue
+                for m in db().execute("SELECT filename FROM photos WHERE user_id=?", (uid,)).fetchall():
+                    try:
+                        os.remove(os.path.join(UPLOAD_DIR, m["filename"]))
+                        silinen_dosya += 1
+                    except OSError:
+                        pass   # dosya zaten yok — kaydı silmeye devam
+                db().execute("DELETE FROM photos WHERE user_id=?", (uid,))
+                db().execute("DELETE FROM job_offers WHERE user_id=?", (uid,))
+                db().execute("DELETE FROM sessions WHERE user_id=?", (uid,))
+                db().execute("DELETE FROM profiles WHERE user_id=?", (uid,))
+                db().execute("DELETE FROM users WHERE id=?", (uid,))
+                silinenler.append("%s <%s>" % (row["fullname"] or "?", row["email"]))
+                audit("admin:" + adm["username"], "uye-sil", uid,
+                      "%s <%s>" % (row["fullname"] or "?", row["email"]))
+            if len(silinenler) > 1:
+                audit("admin:" + adm["username"], "uye-sil-toplu", None,
+                      "%d üye: %s · %d dosya silindi" % (len(silinenler), "; ".join(silinenler)[:400], silinen_dosya))
             db().commit()
-            return self._json(200, {"ok": True, "dosya": silinen_dosya})
+            if not silinenler:
+                return self._json(404, {"error": "Üye bulunamadı (zaten silinmiş olabilir)"})
+            return self._json(200, {"ok": True, "dosya": silinen_dosya,
+                                    "silinen": len(silinenler), "bulunamayan": bulunamayan})
 
         if p == "/api/admin/job":
             adm = self._admin(qs)
