@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=1078aca">
+  <link rel="stylesheet" href="assets/css/style.css?v=6ce37b6">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -160,6 +160,7 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
+  <meta name="mow-surum" content="6ce37b6">
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -1511,6 +1512,10 @@
           ? new Date().getFullYear() - +v.birthdate.slice(0, 4) : (v.age || "");
         const bilinen = new Set(FRM_ALAN.map(a => a[0]).concat(["kvkk", "uye", "age"]));
         const ekstra = Object.keys(v).filter(k => !bilinen.has(k) && v[k]);
+        /* Aynı e-posta ile üyelik var mı? (dönüştürmeye çalışmadan önce belli olsun) */
+        const mevcutUye = (!sos && v.email)
+          ? (DATA.users || []).find(u => (u.email || "").toLowerCase() === String(v.email).toLowerCase())
+          : null;
 
         const govde = sos
           ? `<div class="frm-satir">
@@ -1541,13 +1546,16 @@
             <strong>${esc(ad)}</strong>
             ${islendi
               ? `<span class="adm-badge" style="color:#20744c;border-color:#4da878">✓ üye #${s.user_id || "?"} oluşturuldu</span>`
-              : '<span class="adm-badge eksik">⏳ işlenmedi</span>'}
+              : mevcutUye
+                ? `<span class="adm-badge eksik" title="Bu e-posta ile zaten bir üyelik var; mükerrer kayıt açılmaz">⚠️ bu e-posta zaten üye #${mevcutUye.id}</span>`
+                : '<span class="adm-badge eksik">⏳ işlenmedi</span>'}
             <span class="frm-tarih">${trTarih(s.created)} ${String(s.created || "").slice(11, 16)}</span>
           </div>
           ${govde}
           <div class="frm-eylem">
-            ${(!sos && !islendi) ? '<button class="btn btn-gold" data-frm="donustur">✓ Üyeye Dönüştür</button>' : ""}
-            ${islendi ? `<a class="btn btn-ghost" href="#" data-frm="git">👤 Üye Kartına Git</a>` : ""}
+            ${(!sos && !islendi && !mevcutUye) ? '<button class="btn btn-gold" data-frm="donustur">✓ Üyeye Dönüştür</button>' : ""}
+            ${(islendi || mevcutUye)
+              ? `<a class="btn btn-ghost" href="#" data-frm="git" data-uid="${islendi ? (s.user_id || "") : mevcutUye.id}">👤 Üye Kartına Git</a>` : ""}
             ${!sos ? '<button class="btn btn-ghost" data-frm="duzenle">✏️ Düzenle</button>' : ""}
             <button class="btn btn-tehlike" data-frm="sil">🗑 Sil</button>
             <span class="mini" data-frmmsg></span>
@@ -1578,17 +1586,24 @@
       const kayit = (DATA.submissions || []).find(x => x.id === sid) || {};
       const msg = kart.querySelector("[data-frmmsg]");
       const act = b.dataset.frm;
+      /* Hata bildirimi kartta kalıcı görünsün — toast kaçırılabiliyor */
+      const yaz = (metin, kotu) => {
+        msg.innerHTML = metin;
+        msg.style.color = !metin ? "" : kotu ? "var(--danger)" : "var(--text-2)";
+        msg.style.fontWeight = kotu ? "600" : "400";
+      };
 
       if (act === "duzenle") { kart.querySelector("[data-frmduzen]").classList.toggle("open"); return; }
 
       if (act === "git") {
         e.preventDefault();
+        const hedef = +b.dataset.uid || kayit.user_id;
         showAtab("uyeler");
         DURUM = "";
         $("durumSekme").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.durum === ""));
         $("fText").value = "";
         renderUsers();
-        const card = document.querySelector(`.adm-user[data-uid="${kayit.user_id}"]`);
+        const card = document.querySelector(`.adm-user[data-uid="${hedef}"]`);
         if (card) {
           card.classList.add("open");
           card.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1601,9 +1616,9 @@
       if (act === "kaydet") {
         const veri = { ...frmVeri(kayit) };
         kart.querySelectorAll("[data-fk]").forEach(i => veri[i.dataset.fk] = i.value.trim());
-        msg.textContent = "Kaydediliyor…";
+        yaz("Kaydediliyor…", false);
         const sonuc = await api("/api/admin/submission", { id: sid, action: "update", data: veri });
-        if (!sonuc.ok) { msg.textContent = sonuc.err || "Hata"; return; }
+        if (!sonuc.ok) { yaz("⚠️ " + (sonuc.err || "Kaydedilemedi"), true); return; }
         toast("✓ Form kaydı güncellendi");
         load(); return;
       }
@@ -1614,7 +1629,7 @@
                      (v.fullname || v.uye || "(isimsiz)") + " — " + kayit.kind + "\n\n" +
                      "Üyeliğe dönüştürdüyseniz üye kaydı silinmez, yalnızca bu form satırı silinir.\n\nOnaylıyor musunuz?")) return;
         const sonuc = await api("/api/admin/submission", { id: sid, action: "delete" });
-        if (!sonuc.ok) { toast(sonuc.err || "Silinemedi", "hata"); return; }
+        if (!sonuc.ok) { yaz("⚠️ " + (sonuc.err || "Silinemedi"), true); toast(sonuc.err || "Silinemedi", "hata"); return; }
         toast("🗑 Form kaydı silindi");
         load(); return;
       }
@@ -1625,9 +1640,16 @@
                      "· Üye, ONAY BEKLEYENLER listesine eklenir\n" +
                      "· Geçici bir şifre üretilir; adaya ileterek panele girmesini sağlayabilirsiniz\n" +
                      "· Fotoğraf ve ölçülerini adayın kendisi panelden tamamlar\n\nDevam edilsin mi?")) return;
-        msg.textContent = "Oluşturuluyor…";
+        yaz("Oluşturuluyor…", false);
         const sonuc = await api("/api/admin/submission", { id: sid, action: "convert" });
-        if (!sonuc.ok) { msg.textContent = ""; toast(sonuc.err || "Dönüştürülemedi", "hata"); return; }
+        if (!sonuc.ok) {
+          yaz("⚠️ " + (sonuc.err || "Dönüştürülemedi") +
+              (String(sonuc.err || "").includes("zaten üye")
+                ? " — bu kişi kadroda mevcut, mükerrer kayıt açılmadı. Formu silebilirsiniz."
+                : ""), true);
+          toast(sonuc.err || "Dönüştürülemedi", "hata");
+          return;
+        }
         const sifre = sonuc.data?.gecici_sifre || "";
         toast("✓ Üye #" + sonuc.data.user_id + " oluşturuldu — onay bekleyenlerde");
         if (sonuc.data?.uyari) toast(sonuc.data.uyari, "hata");
@@ -1657,5 +1679,6 @@
         `<div class="adm-log">${l.created?.slice(0,16).replace("T"," ")} · <strong>${l.who}</strong>${l.ip ? ' <span style="opacity:.6">[' + l.ip + ']</span>' : ""} → ${l.action}${l.user_id ? " (üye #" + l.user_id + ")" : ""}${l.detail ? " — " + esc(l.detail) : ""}</div>`).join("");
     }
   </script>
+  <script src="assets/js/surum-kontrol.js?v=6ce37b6"></script>
 </body>
 </html>
