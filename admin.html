@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=17875dd">
+  <link rel="stylesheet" href="assets/css/style.css?v=2b6ae14">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -924,7 +924,7 @@
             </div>
           </div>
           <div class="adm-body">
-            📧 ${esc(u.email)} · 📞 ${esc(u.phone) || "—"} · 🎂 ${p.birthdate || "—"} ${p.gender || ""}<br>
+            📧 ${esc(u.email)} · 📞 ${esc(u.phone) || "—"} · 🎂 ${p.age ? p.age + " yaş" : (p.birthdate || "—")} ${p.gender || ""}<br>
             📏 ${olcu || "ölçü yok"}<br>
             🗣 ${esc(p.languages) || "—"} · 📸 ${esc(p.instagram) || "—"} · 🎬 ${p.video_link ? `<a class="gold" href="${esc(p.video_link)}" target="_blank">video linki</a>` : "—"}
             ${p.about ? "<br>💬 " + esc(p.about) : ""}
@@ -974,7 +974,7 @@
                 <div><label>Ad Soyad</label><input class="adm-input" data-e="fullname" value="${esc(u.fullname)}"></div>
                 <div><label>Telefon</label><input class="adm-input" data-e="phone" value="${esc(u.phone)}"></div>
                 <div><label>Şehir</label><input class="adm-input" data-e="city" value="${esc(p.city)}"></div>
-                <div><label>Doğum</label><input class="adm-input" type="date" data-e="birthdate" value="${esc(p.birthdate)}"></div>
+                <div><label>Yaş</label><input class="adm-input" type="number" min="1" max="99" data-e="age" value="${esc(p.age)}"></div>
                 <div><label>Kategori(ler) — virgülle: model,hostes,nu…</label><input class="adm-input" data-e="category" value="${esc(p.category)}" placeholder="model,fitness"></div>
                 <div><label>Cinsiyet</label><select class="adm-input" data-e="gender"><option value="">—</option><option value="kadin" ${p.gender === "kadin" ? "selected" : ""}>Kadın</option><option value="erkek" ${p.gender === "erkek" ? "selected" : ""}>Erkek</option></select></div>
                 <div><label>Boy</label><input class="adm-input" data-e="height" value="${esc(p.height)}"></div>

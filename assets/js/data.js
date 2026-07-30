@@ -241,7 +241,9 @@ const TALENTS = [
   },
 ];
 
-/* Türkiye illeri (paneldeki şehir seçimi için) */
+/* Türkiye illeri — panelde önce büyükşehirler, sonra alfabetik tümü */
+const ILLER_POPULER = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya", "Adana", "Konya", "Gaziantep", "Kocaeli", "Mersin", "Kayseri", "Eskişehir", "Muğla", "Samsun", "Denizli"];
+
 const ILLER = ["Adana","Adıyaman","Afyonkarahisar","Ağrı","Aksaray","Amasya","Ankara","Antalya","Ardahan","Artvin","Aydın","Balıkesir","Bartın","Batman","Bayburt","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Bursa","Çanakkale","Çankırı","Çorum","Denizli","Diyarbakır","Düzce","Edirne","Elazığ","Erzincan","Erzurum","Eskişehir","Gaziantep","Giresun","Gümüşhane","Hakkari","Hatay","Iğdır","Isparta","İstanbul","İzmir","Kahramanmaraş","Karabük","Karaman","Kars","Kastamonu","Kayseri","Kırıkkale","Kırklareli","Kırşehir","Kilis","Kocaeli","Konya","Kütahya","Malatya","Manisa","Mardin","Mersin","Muğla","Muş","Nevşehir","Niğde","Ordu","Osmaniye","Rize","Sakarya","Samsun","Siirt","Sinop","Sivas","Şanlıurfa","Şırnak","Tekirdağ","Tokat","Trabzon","Tunceli","Uşak","Van","Yalova","Yozgat","Zonguldak"];
 
 /* Dil listesi (paneldeki çoklu dil seçimi için) */
@@ -484,7 +486,7 @@ function formatLanguages(t) {
 
 /* Diğer scriptlerin erişimi için global */
 window.VERA = {
-  AGENCY, CATEGORIES, TALENTS, LABELS, SERVICES, ILLER, DILLER,
+  AGENCY, CATEGORIES, TALENTS, LABELS, SERVICES, ILLER, ILLER_POPULER, DILLER,
   RATES, HEADCOUNT_MID, DURATION_DAYS, FAQ_CANDIDATES, FAQ_CLIENTS,
   PROJECTS, COUNTERS, BRANDS, TESTIMONIALS, BLOG_POSTS,
   talentPlaceholder, formatLanguages,

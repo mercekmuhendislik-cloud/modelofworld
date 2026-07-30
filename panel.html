@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=17875dd">
+  <link rel="stylesheet" href="assets/css/style.css?v=2b6ae14">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -135,14 +135,15 @@
               <option value="erkek">Erkek</option>
             </select>
           </div>
-          <div class="field"><label>Doğum Tarihi <span class="req">*</span></label><input type="date" name="birthdate"></div>
+          <div class="field"><label>Yaş <span class="req">*</span></label>
+            <select name="age"><option value="">Seçiniz…</option></select>
+          </div>
           <div class="field"><label>Şehir <span class="req">*</span></label>
             <select name="city"><option value="">Seçiniz…</option></select>
           </div>
           <div class="field">
             <label>Yabancı Diller <span class="muted" style="text-transform:none;letter-spacing:0">— birden fazla seçebilirsiniz</span></label>
             <div id="langSel"></div>
-            <input type="text" id="langExtra" class="search-input mt-2" placeholder="Seviye / başka dil (örn. İngilizce C1, Gürcüce)…">
           </div>
           <div class="field"><label>Instagram</label><input type="text" name="instagram" placeholder="@kullaniciadi"></div>
           <div class="field full"><label>Hakkımda / Deneyimler</label><textarea name="about" placeholder="Deneyimleriniz, çalıştığınız markalar…"></textarea></div>
@@ -498,8 +499,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=17875dd"></script>
-  <script src="assets/js/main.js?v=17875dd"></script>
+  <script src="assets/js/data.js?v=2b6ae14"></script>
+  <script src="assets/js/main.js?v=2b6ae14"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -508,7 +509,7 @@
       const field = n => document.querySelector(`[name="${n}"]`);
       const val = n => { const el = field(n); return el ? (el.type === "checkbox" ? (el.checked ? "1" : "") : el.value) : ""; };
 
-      function age(b) { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); }
+      const yasHesap = b => { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); };
       /* --- Çoklu seçim açılır menü bileşeni --- */
       function makeMsel(el, options, placeholder, onChange) {
         el.classList.add("msel");
@@ -549,18 +550,26 @@
         window.VERA.DILLER.map(d => ({ value: d, label: d })), "Dil seçin…");
 
       const getCats = () => catSel.get();
-      function isMinor() { const a = age(val("birthdate")); return getCats().includes("cocuk") || (a !== null && a < 18); }
+      /* 18 yaş altı mı? — veli bölümü ve sanatsal kısıtlar buna bağlı */
+      function isMinor() { const y = +val("age"); return getCats().includes("cocuk") || (y > 0 && y < 18); }
       function syncMinorNu() { catSel.disable("nu", isMinor()); }
 
-      /* Şehir listesini doldur */
+      /* Yaş listesi: 1–50 */
+      field("age").innerHTML = '<option value="">Seçiniz…</option>' +
+        Array.from({ length: 50 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
+
+      /* Şehir listesi: büyükşehirler üstte, ardından alfabetik tüm iller */
+      const POP_IL = window.VERA.ILLER_POPULER || [];
       field("city").innerHTML = '<option value="">Seçiniz…</option>' +
-        window.VERA.ILLER.map(i => `<option>${i}</option>`).join("");
+        '<optgroup label="Büyükşehirler">' + POP_IL.map(i => `<option>${i}</option>`).join("") + '</optgroup>' +
+        '<optgroup label="Tüm İller (A–Z)">' +
+        window.VERA.ILLER.filter(i => !POP_IL.includes(i)).map(i => `<option>${i}</option>`).join("") + '</optgroup>';
       function syncParentFields() {
         const show = isMinor();
         $("parentTitle").style.display = show ? "" : "none";
         document.querySelectorAll(".parent-field").forEach(el => el.style.display = show ? "" : "none");
       }
-      field("birthdate").addEventListener("change", () => { syncParentFields(); syncMinorNu(); });
+      field("age").addEventListener("change", () => { syncParentFields(); syncMinorNu(); syncPrefUI(); });
 
       /* ============ GÖRSEL İŞLEME: sıkıştır + filigran + kırp ============ */
       function watermark(ctx, w, h) {
@@ -746,7 +755,7 @@
         if (sw) sw.style.display = sanatsal ? "" : "none";        /* sanatsal albüm */
       }
       document.querySelectorAll(".prf").forEach(c => c.addEventListener("change", syncPrefUI));
-      field("birthdate").addEventListener("change", syncPrefUI);
+      /* yaş değişimi zaten yukarıda syncPrefUI çağırıyor */
 
       /* ============ İmza ============ */
       const sc = $("sigCanvas"), sx2 = sc.getContext("2d");
@@ -760,7 +769,7 @@
 
       /* ============ Adım / sekme yönetimi ============ */
       function stepDone(n, p, media) {
-        if (n === 1) return (p.category || "").length > 0 && p.gender && p.birthdate && p.city;
+        if (n === 1) return (p.category || "").length > 0 && p.gender && (p.age || p.birthdate) && p.city;
         if (n === 2) return p.height && p.weight;
         if (n === 3) return media.some(m => m.kind === "photo");
         if (n === 4) return p.consent_kvkk === "1" && p.consent_contract === "1";
@@ -788,7 +797,7 @@
 
       /* ============ Kaydetme ============ */
       const SAVE_FIELDS = {
-        genel: ["gender","birthdate","city","instagram","about","parent_name","parent_tc","parent_phone"],
+        genel: ["gender","age","city","instagram","about","parent_name","parent_tc","parent_phone"],
         olculer: ["height","weight","bust","waist","hip","shoe","size","hair","eye","skin","tattoo_info","scar_info","aesthetic_info"],
         tercihler: ["chaperone","rate_catalog","rate_runway","rate_artistic"],
         medya: ["video_link"],
@@ -819,9 +828,7 @@
 
         if (key === "genel") {
           payload.category = getCats().join(",");
-          const langs = langSel.get();
-          const ekstra = $("langExtra").value.trim();
-          payload.languages = langs.join(", ") + (ekstra ? (langs.length ? " · " : "") + ekstra : "");
+          payload.languages = langSel.get().join(", ");
         }
         if (key === "olculer") {
           payload.skills = JSON.stringify({
@@ -839,8 +846,8 @@
 
         if (key === "genel") {
           if (!payload.category) { msg.textContent = "En az bir kategori seçin."; return; }
-          if (!payload.gender || !payload.birthdate || !payload.city) {
-            msg.textContent = "Cinsiyet, doğum tarihi ve şehir zorunludur."; return;
+          if (!payload.gender || !payload.age || !payload.city) {
+            msg.textContent = "Cinsiyet, yaş ve şehir zorunludur."; return;
           }
           if (isMinor() && (!payload.parent_name || !/^\d{11}$/.test(payload.parent_tc) || !payload.parent_phone)) {
             msg.textContent = "18 yaş altı için veli bilgileri (ad, 11 haneli TC, telefon) zorunludur."; return;
@@ -1045,11 +1052,11 @@
         const rawLang = ME.profile?.languages || "";
         langSel.set(window.VERA.DILLER.filter(d => rawLang.includes(d)));
         syncMinorNu();
-        const bilinen = window.VERA.DILLER.filter(d => rawLang.includes(d));
-        let kalan = rawLang;
-        bilinen.forEach(d => kalan = kalan.replace(d, ""));
-        kalan = kalan.replace(/[,·\s]+/g, " ").trim();
-        $("langExtra").value = kalan;
+        /* Eski kayıtlarda yaş yoksa doğum tarihinden türet */
+        if (!ME.profile?.age && ME.profile?.birthdate) {
+          const y = yasHesap(ME.profile.birthdate);
+          if (y && y >= 1 && y <= 50) field("age").value = String(y);
+        }
         const pr = document.querySelector(`[name="privacy"][value="${ME.profile?.privacy || "private"}"]`);
         if (pr) pr.checked = true;
 

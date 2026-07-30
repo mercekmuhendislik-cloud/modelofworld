@@ -49,7 +49,7 @@ def db():
 
 # Üyenin kendisinin güncelleyebildiği alanlar
 PROFILE_COLS = [
-    "category", "gender", "birthdate", "city",
+    "category", "gender", "birthdate", "age", "city",
     "height", "weight", "bust", "waist", "hip", "shoe", "size",
     "hair", "eye", "skin", "languages", "instagram", "about",
     "availability", "privacy", "video_link",
@@ -226,9 +226,14 @@ def parse_multipart(body, ctype):
 
 def is_minor(uid):
     """18 yas alti veya cocuk kategorisi - sanatsal/nu icerik sistemsel olarak kapali."""
-    row = db().execute("SELECT birthdate, category FROM profiles WHERE user_id=?", (uid,)).fetchone()
+    row = db().execute("SELECT birthdate, category, age FROM profiles WHERE user_id=?", (uid,)).fetchone()
     if not row: return False
     if "cocuk" in (row["category"] or ""): return True
+    try:
+        y = int(str(row["age"] or "0") or 0)
+        if y > 0: return y < 18
+    except Exception:
+        pass
     b = row["birthdate"] or ""
     try:
         bd = datetime.fromisoformat(b)
@@ -421,7 +426,7 @@ class Handler(BaseHTTPRequestHandler):
                 prof = db().execute("SELECT * FROM profiles WHERE user_id=?", (uid,)).fetchone()
                 if not user or not prof: continue
                 pr = dict(prof)
-                pub = {k: pr.get(k) for k in ["category", "city", "height", "weight", "bust", "waist",
+                pub = {k: pr.get(k) for k in ["category", "city", "age", "height", "weight", "bust", "waist",
                        "hip", "shoe", "size", "hair", "eye", "skin", "languages"]}
                 q = "SELECT id FROM photos WHERE user_id=? AND kind='photo' AND deleted=0"
                 if not sh["allow_sensitive"]:
@@ -573,6 +578,15 @@ class Handler(BaseHTTPRequestHandler):
                 vals = [str(d.get(c) or "")[:LONG_COLS.get(c, 500)] for c in sent] + [uid]
                 db().execute(f"UPDATE profiles SET {sets} WHERE user_id=?", vals)
                 audit("uye", "profil-guncelleme", uid, ", ".join(sent))
+            # Yaş seçildiyse doğum tarihini de eşitle (sedcard/eski kayıt uyumu)
+            if "age" in d:
+                try:
+                    y = int(str(d.get("age") or "0") or 0)
+                    if 1 <= y <= 120:
+                        dogum = (datetime.now(timezone.utc) - timedelta(days=int(y * 365.25))).strftime("%Y-%m-%d")
+                        db().execute("UPDATE profiles SET birthdate=? WHERE user_id=?", (dogum, uid))
+                except Exception:
+                    pass
             if is_minor(uid):
                 db().execute("UPDATE profiles SET shoot_prefs='standart' WHERE user_id=?", (uid,))
                 row2 = db().execute("SELECT category FROM profiles WHERE user_id=?", (uid,)).fetchone()
