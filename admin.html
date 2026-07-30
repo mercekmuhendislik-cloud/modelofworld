@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=57545fc">
+  <link rel="stylesheet" href="assets/css/style.css?v=c00e598">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -178,8 +178,8 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
-  <meta name="mow-surum" content="57545fc">
-  <script src="assets/js/surum-kontrol.js?v=57545fc"></script>
+  <meta name="mow-surum" content="c00e598">
+  <script src="assets/js/surum-kontrol.js?v=c00e598"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -320,6 +320,11 @@
           <button type="button" data-durum="yayinda">🌐 Sitede Yayında <span class="sayi" data-s="yayinda">0</span></button>
           <button type="button" data-durum="reddedildi">✕ Reddedilen <span class="sayi" data-s="reddedildi">0</span></button>
           <button type="button" data-durum="">👥 Tümü <span class="sayi" data-s="">0</span></button>
+        </div>
+
+        <div class="adm-row" id="hizlandirRow" style="margin-bottom:14px">
+          <button class="btn btn-ghost btn-sm" id="hizlandirBtn">🖼 Fotoğrafları Hızlandır</button>
+          <span class="mini" id="hizlandirMsg">Eski yüklemeler için küçük kopya üretir — paneli ve katalogu belirgin hızlandırır. Orijinal fotoğraflara dokunulmaz.</span>
         </div>
 
         <div class="adm-row" id="filterRow2" style="margin-bottom:14px">
@@ -895,7 +900,7 @@
     /* ---------- Sekmeli Panel: bölümler sekmelere taşınır ---------- */
     const ATABS = [
       ["genel",   "📊", "Genel Bakış",        ["sosBand","dashRoot","logTitle","logs"]],
-      ["uyeler",  "👥", "Üyeler & Onaylar",   ["toolsRow","tplCard","bulkBar","durumSekme","filterRow2","results"]],
+      ["uyeler",  "👥", "Üyeler & Onaylar",   ["toolsRow","tplCard","bulkBar","durumSekme","hizlandirRow","filterRow2","results"]],
       ["isler",   "💼", "İşler & Paylaşım",   ["jobH2","jobCard","jobsList","shareH2","shareCard"]],
       ["finance", "💰", "Finansal Takip",      ["financeH2","financeTab"]],
       ["formlar", "✉️", "Gelen Formlar",      ["subTitle","subInfo","subFiltre","subs"]],
@@ -1155,7 +1160,7 @@
         const arsiv = (u.media || []).filter(m => m.deleted);
         const fotolar = aktif.filter(m => m.kind === "photo");
         const thumb = fotolar[0]
-          ? `<img class="adm-thumb" src="/api/photo/${fotolar[0].id}" loading="lazy" alt=""
+          ? `<img class="adm-thumb" src="/api/photo/${fotolar[0].id}?k=1" loading="lazy" alt=""
                   onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'adm-thumb',title:'Fotoğraf açılamadı'}))">`
           : `<div class="adm-thumb" title="Fotoğraf yok"></div>`;
         const videolar = aktif.filter(m => m.kind === "video");
@@ -1217,8 +1222,8 @@
             ${p.review_note ? `<br>📮 Üyeye iletilen not: "${esc(p.review_note)}"` : ""}
             <div class="adm-photos">
               ${fotolar.map(m => m.album === "sanatsal"
-                ? `<img class="nsfw" src="/api/photo/${m.id}" loading="lazy" title="Sanatsal — netleştirmek için tıklayın" onclick="this.classList.toggle('show')">`
-                : `<a href="/api/photo/${m.id}" target="_blank" title="${m.album}"><img src="/api/photo/${m.id}" loading="lazy"></a>`).join("")}
+                ? `<img class="nsfw" src="/api/photo/${m.id}?k=1" loading="lazy" title="Sanatsal — netleştirmek için tıklayın" onclick="this.classList.toggle('show')">`
+                : `<a href="/api/photo/${m.id}" target="_blank" title="${m.album} — tam boy açmak için tıklayın"><img src="/api/photo/${m.id}?k=1" loading="lazy"></a>`).join("")}
               ${videolar.map(m => `<a class="btn btn-ghost btn-sm" href="/api/photo/${m.id}" target="_blank">🎬 ${esc(m.orig)}</a>`).join("")}
             </div>
             <div class="adm-row">
@@ -1248,7 +1253,7 @@
             </div>
             ${arsiv.length ? `<div class="mini" style="margin-top:6px">🗄 Arşiv (${arsiv.length}):</div><div class="adm-photos">${
               arsiv.map(m => m.kind === "photo"
-                ? `<a href="/api/photo/${m.id}" target="_blank"><img class="arsiv" src="/api/photo/${m.id}" loading="lazy" title="${m.created?.slice(0,10)}"></a>`
+                ? `<a href="/api/photo/${m.id}" target="_blank"><img class="arsiv" src="/api/photo/${m.id}?k=1" loading="lazy" title="${m.created?.slice(0,10)}"></a>`
                 : `<a class="gold mini" href="/api/photo/${m.id}" target="_blank">${m.kind}: ${esc(m.orig)}</a>`).join("")}</div>` : ""}
 
             <!-- DÜZENLEME FORMU -->
@@ -1608,6 +1613,42 @@
       ["instagram", "Instagram"], ["about", "Hakkında"],
     ];
     const frmVeri = s => { try { return JSON.parse(s.data || "{}"); } catch { return {}; } };
+
+    /* ---------- Eski fotoğraflara küçük kopya üretme ----------
+       Sunucu tarafında görüntü kütüphanesi yok; küçültme tarayıcıda yapılır,
+       küçük kopya /api/admin/thumb ile fotoğrafa bağlanır. Orijinal değişmez. */
+    $("hizlandirBtn").addEventListener("click", async () => {
+      const btn = $("hizlandirBtn"), msg = $("hizlandirMsg");
+      const eksik = [];
+      (DATA.users || []).forEach(u => (u.media || []).forEach(m => {
+        if (m.kind === "photo" && !m.deleted && !m.kucuk) eksik.push(m.id);
+      }));
+      if (!eksik.length) { msg.textContent = "✓ Tüm fotoğrafların küçük kopyası zaten var."; return; }
+      if (!(await onayIste(eksik.length + " fotoğraf için küçük kopya üretilecek. Orijinal dosyalara " +
+                           "dokunulmaz; yalnızca liste görünümü hızlanır. İşlem tarayıcınızda yapılır, " +
+                           "sayfayı kapatmayın.", "Başlat", "Fotoğrafları Hızlandır"))) return;
+      btn.disabled = true;
+      let ok = 0, hata = 0;
+      for (let i = 0; i < eksik.length; i++) {
+        msg.textContent = `İşleniyor ${i + 1}/${eksik.length}…`;
+        try {
+          const r = await fetch("/api/photo/" + eksik[i]);
+          if (!r.ok) throw new Error("indirilemedi");
+          const kucuk = await window.VERA.kucukKopya(await r.blob());
+          if (!kucuk) throw new Error("küçültülemedi");
+          const fd = new FormData();
+          fd.append("photo_id", eksik[i]);
+          fd.append("file", kucuk, "k.webp");
+          const y = await fetch("/api/admin/thumb", { method: "POST", body: fd });
+          if (!y.ok) throw new Error("kaydedilemedi");
+          ok++;
+        } catch { hata++; }
+      }
+      btn.disabled = false;
+      msg.textContent = `✓ ${ok} fotoğraf hızlandırıldı${hata ? ` · ${hata} atlandı` : ""}.`;
+      toast(`🖼 ${ok} fotoğrafın küçük kopyası üretildi`);
+      load();
+    });
 
     function renderSubs() {
       const hepsi = DATA.submissions || [];

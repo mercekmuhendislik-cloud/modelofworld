@@ -14,8 +14,8 @@ const pic = (url, w, extra = "") => `${url}?q=80&auto=format&fit=crop&w=${w}${ex
 
 const AGENCY = {
   name: "Model of World",
-  phone: "+90 (212) 000 00 00",
-  whatsapp: "+90 (532) 000 00 00",
+  phone: "+90 541 153 34 10",
+  whatsapp: "+90 541 153 34 10",
   email: "info@modelofworld.com",
   address: "Nişantaşı, İstanbul",
   instagram: "https://instagram.com/",
@@ -28,6 +28,12 @@ const AGENCY = {
   },
   domain: "https://www.modelofworld.com",
 };
+
+/* WhatsApp yazışma bağlantısı — numara tek kaynaktan (AGENCY.whatsapp) gelir.
+   Kullanım: AGENCY.waLink()  ·  AGENCY.waLink("Teklif almak istiyorum") */
+AGENCY.waNumara = AGENCY.whatsapp.replace(/\D/g, "");
+AGENCY.waLink = (metin = "Merhaba, Model of World ile iletişime geçmek istiyorum.") =>
+  `https://wa.me/${AGENCY.waNumara}?text=${encodeURIComponent(metin)}`;
 
 /* Kategori tanımları */
 const CATEGORIES = {

@@ -240,7 +240,9 @@
     pane.innerHTML = imgs.length
       ? imgs.map(src => {
           const sira = tumFotolar.indexOf(src);
-          return `<div class="g-item" data-cursor="Büyüt" data-buyut="${sira}"><img src="${src}" alt="${esc(t.name)} ${SEKME_ADI[key]} fotoğrafı" loading="lazy" style="width:100%;height:100%;object-fit:cover;aspect-ratio:3/4"></div>`;
+          /* Izgarada küçük kopya, ışık kutusunda orijinal */
+          const kucukSrc = t.real ? src + "?k=1" : src;
+          return `<div class="g-item" data-cursor="Büyüt" data-buyut="${sira}"><img src="${kucukSrc}" alt="${esc(t.name)} ${SEKME_ADI[key]} fotoğrafı" loading="lazy" style="width:100%;height:100%;object-fit:cover;aspect-ratio:3/4"></div>`;
         }).join("")
       : Array.from({ length: 3 }, (_, i) =>
           `<div class="g-item">${talentPlaceholder({ ...t, gradient: i % 2 ? [t.gradient[1], t.gradient[0]] : t.gradient })}</div>`).join("");
@@ -313,7 +315,7 @@
   const yer = ayniKat.findIndex(x => x.id === t.id);
   const komsu = (x, yon) => x
     ? `<a href="model-detay?id=${x.id}">${yon === "geri" ? "←" : ""}
-         ${x.photo ? `<img src="${x.real ? x.photo : x.photo + "?q=70&auto=format&fit=crop&w=84&h=108&crop=faces"}" alt="" loading="lazy">` : ""}
+         ${x.photo ? `<img src="${x.real ? x.photo + "?k=1" : x.photo + "?q=70&auto=format&fit=crop&w=84&h=108&crop=faces"}" alt="" loading="lazy">` : ""}
          <span>${yon === "geri" ? "Önceki" : "Sonraki"} model<br><strong style="color:var(--text)">${esc(x.name)}</strong></span>
          ${yon === "ileri" ? "→" : ""}</a>`
     : "<span></span>";

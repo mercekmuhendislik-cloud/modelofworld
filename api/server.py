@@ -114,7 +114,7 @@ def init_db():
         try: c.execute(f"ALTER TABLE profiles ADD COLUMN {col} TEXT")
         except sqlite3.OperationalError: pass
     for col, ddl in [("kind", "TEXT DEFAULT 'photo'"), ("album", "TEXT DEFAULT 'genel'"),
-                     ("deleted", "INTEGER DEFAULT 0")]:
+                     ("deleted", "INTEGER DEFAULT 0"), ("thumb", "TEXT")]:
         try: c.execute(f"ALTER TABLE photos ADD COLUMN {col} {ddl}")
         except sqlite3.OperationalError: pass
     for col in ["sensitive", "usage"]:
@@ -131,6 +131,10 @@ def init_db():
         try: c.execute(f"ALTER TABLE submissions ADD COLUMN {col} {ddl}")
         except sqlite3.OperationalError: pass
     try: c.execute("ALTER TABLE job_offers ADD COLUMN payment_status TEXT DEFAULT 'odenecek'")
+    except sqlite3.OperationalError: pass
+    # v7: üye silme artık çöp kutusuna taşır — 'deleted' silinme zamanını tutar,
+    # boş/NULL ise üye etkin demektir. Kalıcı silme kaydı tamamen kaldırır.
+    try: c.execute("ALTER TABLE users ADD COLUMN deleted TEXT")
     except sqlite3.OperationalError: pass
     # Yönetici şifresi ilk kurulumda mevcut anahtara eşitlenir (sonra panelden değiştirilir)
     if not c.execute("SELECT 1 FROM settings WHERE k='admin_salt'").fetchone():
@@ -231,6 +235,20 @@ def parse_multipart(body, ctype):
         elif nm:
             fields[nm.group(1)] = data.decode("utf-8", "ignore")
     return fields, files
+
+def webp_mi(veri):
+    """Küçük kopya gerçekten WebP mi? (RIFF....WEBP imzası)"""
+    return len(veri) > 16 and veri[:4] == b"RIFF" and veri[8:12] == b"WEBP"
+
+
+def foto_yolu(row, kucuk):
+    """İstenen boyuttaki dosyanın tam yolu. Küçük kopya yoksa orijinale düşer."""
+    if kucuk and row["thumb"]:
+        yol = os.path.join(UPLOAD_DIR, row["thumb"])
+        if os.path.exists(yol):
+            return yol
+    return os.path.join(UPLOAD_DIR, row["filename"])
+
 
 def is_minor(uid):
     """18 yas alti veya cocuk kategorisi - sanatsal/nu icerik sistemsel olarak kapali."""
@@ -335,6 +353,9 @@ class Handler(BaseHTTPRequestHandler):
         if not m: return None
         row = db().execute("SELECT user_id, expires FROM sessions WHERE token=?", (m.group(1),)).fetchone()
         if not row or row["expires"] < now(): return None
+        # Çöp kutusundaki üye siteyi kullanamaz (oturumu açık kalmış olsa bile)
+        u = db().execute("SELECT COALESCE(deleted,'') d FROM users WHERE id=?", (row["user_id"],)).fetchone()
+        if not u or u["d"]: return None
         return row["user_id"]
 
     def _make_session(self, uid):
@@ -343,6 +364,30 @@ class Handler(BaseHTTPRequestHandler):
         db().execute("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,?)", (tok, uid, exp))
         db().commit()
         return f"mow={tok}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age={SESSION_DAYS*86400}"
+
+    def _dosya_gonder(self, fp, kapsam):
+        """Görsel gönder: ETag ile 304 döner, uzun süreli önbelleklenir.
+        Fotoğraf dosyaları hiç değişmez (yeni yükleme = yeni kayıt), bu yüzden
+        'immutable' güvenlidir — panel ikinci açılışta ağdan hiç indirmez."""
+        try:
+            st = os.stat(fp)
+        except OSError:
+            return self._json(404, {"error": "Dosya yok"})
+        etag = '"%x-%x"' % (int(st.st_mtime), st.st_size)
+        if (self.headers.get("If-None-Match") or "") == etag:
+            self.send_response(304)
+            self.send_header("ETag", etag)
+            self.send_header("Cache-Control", "%s, max-age=2592000, immutable" % kapsam)
+            self.end_headers()
+            return
+        data = open(fp, "rb").read()
+        self.send_response(200)
+        self.send_header("Content-Type", mimetypes.guess_type(fp)[0] or "image/jpeg")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("ETag", etag)
+        self.send_header("Cache-Control", "%s, max-age=2592000, immutable" % kapsam)
+        self.end_headers()
+        self.wfile.write(data)
 
     def _ip(self):
         xf = self.headers.get("X-Forwarded-For") or ""
@@ -425,23 +470,16 @@ class Handler(BaseHTTPRequestHandler):
 
         m = re.match(r"^/api/cast-photo/(\d+)$", p)
         if m:
-            row = db().execute("""SELECT ph.filename FROM photos ph JOIN profiles pr ON pr.user_id = ph.user_id
+            row = db().execute("""SELECT ph.filename, ph.thumb FROM photos ph JOIN profiles pr ON pr.user_id = ph.user_id
                 WHERE ph.id=? AND ph.deleted=0 AND ph.kind='photo'
                   AND COALESCE(ph.album,'genel') != 'sanatsal'
                   AND COALESCE(pr.published,'0') = '1'
                   AND COALESCE(pr.status,'') = 'onaylandi'
                   AND COALESCE(pr.privacy,'private') = 'public'""", (int(m.group(1)),)).fetchone()
             if not row: return self._json(404, {"error": "Yok"})
-            fp = os.path.join(UPLOAD_DIR, row["filename"])
+            fp = foto_yolu(row, qs.get("k", [""])[0] == "1")
             if not os.path.exists(fp): return self._json(404, {"error": "Dosya yok"})
-            data = open(fp, "rb").read()
-            self.send_response(200)
-            self.send_header("Content-Type", mimetypes.guess_type(fp)[0] or "image/jpeg")
-            self.send_header("Content-Length", str(len(data)))
-            self.send_header("Cache-Control", "public, max-age=86400")
-            self.end_headers()
-            self.wfile.write(data)
-            return
+            return self._dosya_gonder(fp, "public")
 
         if p == "/api/flags":
             row = db().execute("SELECT v FROM settings WHERE k='maintenance'").fetchone()
@@ -488,7 +526,8 @@ class Handler(BaseHTTPRequestHandler):
             prof = dict(prof) if prof else {}
             for c in ADMIN_COLS: prof.pop(c, None)   # iç notlar üyeye sızmaz
             media = db().execute(
-                "SELECT id,kind,album,orig,created FROM photos WHERE user_id=? AND deleted=0 ORDER BY id",
+                "SELECT id,kind,album,orig,created,(thumb IS NOT NULL) AS kucuk"
+                " FROM photos WHERE user_id=? AND deleted=0 ORDER BY id",
                 (uid,)).fetchall()
             return self._json(200, {
                 "user": dict(user) if user else None,
@@ -504,17 +543,10 @@ class Handler(BaseHTTPRequestHandler):
             uid = self._session_user()
             if row["user_id"] != uid and not self._is_admin(qs):
                 return self._json(403, {"error": "Yetki yok"})
-            fp = os.path.join(UPLOAD_DIR, row["filename"])
+            kucuk = qs.get("k", [""])[0] == "1"
+            fp = foto_yolu(row, kucuk)
             if not os.path.exists(fp): return self._json(404, {"error": "Dosya yok"})
-            ctype = mimetypes.guess_type(fp)[0] or "application/octet-stream"
-            data = open(fp, "rb").read()
-            self.send_response(200)
-            self.send_header("Content-Type", ctype)
-            self.send_header("Content-Length", str(len(data)))
-            self.send_header("Cache-Control", "private, max-age=3600")
-            self.end_headers()
-            self.wfile.write(data)
-            return
+            return self._dosya_gonder(fp, "private")
 
         m = re.match(r"^/api/share/([A-Za-z0-9_\-]+)$", p)
         if m:
@@ -552,16 +584,9 @@ class Handler(BaseHTTPRequestHandler):
                     or row["kind"] != "photo"
                     or (row["album"] == "sanatsal" and not sh["allow_sensitive"])):
                 return self._json(403, {"error": "Yetki yok"})
-            fp = os.path.join(UPLOAD_DIR, row["filename"])
+            fp = foto_yolu(row, qs.get("k", [""])[0] == "1")
             if not os.path.exists(fp): return self._json(404, {"error": "Dosya yok"})
-            data = open(fp, "rb").read()
-            self.send_response(200)
-            self.send_header("Content-Type", mimetypes.guess_type(fp)[0] or "image/jpeg")
-            self.send_header("Content-Length", str(len(data)))
-            self.send_header("Cache-Control", "private, max-age=600")
-            self.end_headers()
-            self.wfile.write(data)
-            return
+            return self._dosya_gonder(fp, "private")
 
         if p == "/api/admin/list":
             adm = self._admin(qs)
@@ -572,7 +597,8 @@ class Handler(BaseHTTPRequestHandler):
                 prof = db().execute("SELECT * FROM profiles WHERE user_id=?", (usr["id"],)).fetchone()
                 usr["profile"] = dict(prof) if prof else {}
                 usr["media"] = [dict(r) for r in db().execute(
-                    "SELECT id,kind,album,orig,deleted,created FROM photos WHERE user_id=? ORDER BY id",
+                    "SELECT id,kind,album,orig,deleted,created,(thumb IS NOT NULL) AS kucuk"
+                    " FROM photos WHERE user_id=? ORDER BY id",
                     (usr["id"],))]
                 usr["offers"] = offers_of(usr["id"])
             jobs = [dict(r) for r in db().execute("SELECT * FROM jobs ORDER BY id DESC LIMIT 50")]
@@ -695,6 +721,8 @@ class Handler(BaseHTTPRequestHandler):
             row = db().execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
             if not row or hash_pw(d.get("password") or "", row["salt"]) != row["pass_hash"]:
                 return self._json(401, {"error": "E-posta veya şifre hatalı"})
+            if (row["deleted"] or ""):
+                return self._json(403, {"error": "Bu üyelik kaldırılmış. Bilgi için ajansla iletişime geçin."})
             return self._json(200, {"ok": True}, cookie=self._make_session(row["id"]))
 
         if p == "/api/logout":
@@ -792,12 +820,39 @@ class Handler(BaseHTTPRequestHandler):
             fn = f"u{uid}_{kind}_{secrets.token_hex(8)}{ext}"
             with open(os.path.join(UPLOAD_DIR, fn), "wb") as f:
                 f.write(data)
+            # Tarayıcının ürettiği küçük kopya (varsa) ayrı dosyaya yazılır — listelerde bu kullanılır
+            kucuk_fn = None
+            for ad, kad, kdata in files[1:]:
+                if ad == "thumb" and 100 < len(kdata) <= 900 * 1024 and webp_mi(kdata):
+                    kucuk_fn = os.path.splitext(fn)[0] + "_k.webp"
+                    with open(os.path.join(UPLOAD_DIR, kucuk_fn), "wb") as f:
+                        f.write(kdata)
+                    break
             cur = db().execute(
-                "INSERT INTO photos(user_id,filename,orig,created,kind,album,deleted) VALUES(?,?,?,?,?,?,0)",
-                (uid, fn, orig[:200], now(), kind, album))
+                "INSERT INTO photos(user_id,filename,orig,created,kind,album,deleted,thumb) VALUES(?,?,?,?,?,?,0,?)",
+                (uid, fn, orig[:200], now(), kind, album, kucuk_fn))
             audit("uye", "medya-yukleme", uid, f"{kind}/{album}: {orig[:60]}")
             db().commit()
             return self._json(200, {"ok": True, "id": cur.lastrowid, "kind": kind, "album": album})
+
+        if p == "/api/admin/thumb":
+            # Eski fotoğraflar için küçük kopya ekleme (yönetici panelinden toplu çalıştırılır)
+            adm = self._admin(qs)
+            if not self._can(adm, "review"): return self._json(403, {"error": "Yetki yok"})
+            fields, files = parse_multipart(body, ctype)
+            if not files: return self._json(400, {"error": "Dosya bulunamadı"})
+            pid = int(fields.get("photo_id") or 0)
+            row = db().execute("SELECT * FROM photos WHERE id=?", (pid,)).fetchone()
+            if not row: return self._json(404, {"error": "Fotoğraf bulunamadı"})
+            _, _, kdata = files[0]
+            if not (100 < len(kdata) <= 900 * 1024) or not webp_mi(kdata):
+                return self._json(400, {"error": "Küçük kopya geçersiz (WebP bekleniyor)"})
+            kucuk_fn = os.path.splitext(row["filename"])[0] + "_k.webp"
+            with open(os.path.join(UPLOAD_DIR, kucuk_fn), "wb") as f:
+                f.write(kdata)
+            db().execute("UPDATE photos SET thumb=? WHERE id=?", (kucuk_fn, pid))
+            db().commit()
+            return self._json(200, {"ok": True, "boyut": len(kdata)})
 
         if p == "/api/offer":
             uid = self._session_user()

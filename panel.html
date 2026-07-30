@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=57545fc">
+  <link rel="stylesheet" href="assets/css/style.css?v=c00e598">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -52,7 +52,7 @@
     /* İmza */
     #sigCanvas { border:1px dashed var(--gold); border-radius:10px; background:#fff; touch-action:none; cursor:crosshair; width:100%; max-width:480px; height:150px; }
 
-    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=57545fc */
+    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=c00e598 */
 
     /* Profil tamamlanma ölçeri */
     .tamam-kart { border:1px solid var(--gold); border-radius:14px; padding:18px 20px; margin-bottom:24px;
@@ -75,8 +75,8 @@
     .offer-state.kabul { color:#20744c; border-color:#4da878; }
     .offer-state.red { color:#a33; border-color:#d95a5a; }
   </style>
-  <meta name="mow-surum" content="57545fc">
-  <script src="assets/js/surum-kontrol.js?v=57545fc"></script>
+  <meta name="mow-surum" content="c00e598">
+  <script src="assets/js/surum-kontrol.js?v=c00e598"></script>
 </head>
 <body data-page="panel">
   <div id="site-header"></div>
@@ -530,8 +530,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=57545fc"></script>
-  <script src="assets/js/main.js?v=57545fc"></script>
+  <script src="assets/js/data.js?v=c00e598"></script>
+  <script src="assets/js/main.js?v=c00e598"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -541,7 +541,7 @@
       const val = n => { const el = field(n); return el ? (el.type === "checkbox" ? (el.checked ? "1" : "") : el.value) : ""; };
 
       const yasHesap = b => { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); };
-      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=57545fc) */
+      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=c00e598) */
       const makeMsel = window.VERA.makeMsel;
       const catSel = makeMsel($("catSel"),
         Object.entries(window.VERA.CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
@@ -670,6 +670,11 @@
         fd.append("kind", kind);
         fd.append("album", album || "genel");
         fd.append("file", blob, name);
+        /* Fotoğraflarda liste görünümü için küçük kopya da gönderilir (orijinal korunur) */
+        if (kind === "photo") {
+          const kucuk = await window.VERA.kucukKopya(blob).catch(() => null);
+          if (kucuk) fd.append("thumb", kucuk, "k.webp");
+        }
         const r = await fetch("/api/upload", { method: "POST", body: fd }).catch(() => null);
         if (!r || !r.ok) {
           const d = r ? await r.json().catch(() => ({})) : {};
@@ -930,7 +935,7 @@
           const gridEl = document.querySelector(`[data-grid="${al}"]`);
           if (!gridEl) return;
           gridEl.innerHTML = items.length
-            ? items.map(m => `<div class="my-photo"><img src="/api/photo/${m.id}" loading="lazy"><button data-del="${m.id}">✕</button></div>`).join("")
+            ? items.map(m => `<div class="my-photo"><img src="/api/photo/${m.id}?k=1" loading="lazy"><button data-del="${m.id}">✕</button></div>`).join("")
             : `<p class="muted" style="grid-column:1/-1;font-size:.82rem">Bu albümde fotoğraf yok.</p>`;
         });
         /* kimlik & adli belge durumu */

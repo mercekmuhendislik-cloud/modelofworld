@@ -115,6 +115,7 @@
             <h4>İletişim</h4>
             <ul>
               <li><a href="tel:${AGENCY.phone.replace(/[^\d+]/g, "")}">${AGENCY.phone}</a></li>
+              <li><a href="${AGENCY.waLink()}" target="_blank" rel="noopener">WhatsApp: ${AGENCY.whatsapp}</a></li>
               <li><a href="mailto:${AGENCY.email}">${AGENCY.email}</a></li>
               <li><span class="muted">${AGENCY.address}</span></li>
               <li><a href="blog">Blog & Haberler</a></li>
@@ -135,7 +136,7 @@
       </div>
     </footer>
 
-    <a class="wa-float" href="https://wa.me/${AGENCY.whatsapp.replace(/[^\d]/g, "")}" target="_blank" rel="noopener" aria-label="WhatsApp ile yazın">
+    <a class="wa-float" href="${AGENCY.waLink()}" target="_blank" rel="noopener" aria-label="WhatsApp ile yazın" title="WhatsApp: ${AGENCY.whatsapp}">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2Zm5.4 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.4-.7-2.9-1.2-4.7-4.1-4.9-4.3-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.4l.9 2.1c.1.2.1.4 0 .6l-.4.6-.5.5c-.2.2-.3.4-.1.7.2.3.8 1.4 1.8 2.2 1.2 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l1-1.2c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.3Z"/></svg>
     </a>
 
@@ -315,7 +316,8 @@
     const cat = CATEGORIES[t.category] || { label: "Model", short: "Model", icon: "◆" };
     const city = window.VERA.LABELS.city[t.city] || t.city;
     /* Gerçek üye fotoğrafları sunucudan gelir (Unsplash parametresi eklenmez) */
-    const src = t.real ? t.photo : `${t.photo}?q=80&auto=format&fit=crop&w=640&h=854`;
+    /* Gerçek üyede liste kartı küçük kopyayı ister (?k=1) — sayfa hızlı açılır */
+    const src = t.real ? `${t.photo}?k=1` : `${t.photo}?q=80&auto=format&fit=crop&w=640&h=854`;
     const media = t.photo
       ? `<img src="${src}" alt="${t.name} — ${cat.label}" loading="lazy">`
       : window.VERA.talentPlaceholder(t);
@@ -419,6 +421,24 @@
     new MutationObserver(tara).observe(document.documentElement, { childList: true, subtree: true });
   })();
 
+  /* =========================================================
+     Küçük kopya (thumbnail) üretici
+     Listelerde/kartlarda bu kullanılır; orijinal dosyaya dokunulmaz.
+     640px uzun kenar · WebP q0.75 → tipik 40-80 KB (orijinalin ~1/8'i)
+     ========================================================= */
+  window.VERA.kucukKopya = async function (kaynak, kenar = 640) {
+    let bmp = null;
+    try {
+      bmp = kaynak instanceof ImageBitmap ? kaynak : await createImageBitmap(kaynak);
+    } catch { return null; }                       /* çözülemedi → küçük kopya yok */
+    const k = Math.min(1, kenar / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(bmp.width * k));
+    c.height = Math.max(1, Math.round(bmp.height * k));
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    return await new Promise(res => c.toBlob(b => res(b), "image/webp", 0.75));
+  };
+
   /* Fotoğrafı küçült + WebP'ye çevir + filigran bas (başvuru formu) */
   window.VERA.fotoHazirla = async function (file, maxKenar = 1600) {
     let bmp = null;
@@ -442,6 +462,7 @@
       c.toBlob(b => b ? res(b) : c.toBlob(j => res(j), "image/jpeg", 0.85), "image/webp", 0.85));
     const temiz = (file.name || "foto").replace(/\.[^.]+$/, "").replace(/[^\w\-]+/g, "-").slice(0, 40) || "foto";
     const uzanti = blob && String(blob.type).includes("webp") ? ".webp" : ".jpg";
-    return { blob: blob || file, ad: temiz + uzanti };
+    const kucuk = await window.VERA.kucukKopya(blob || file);
+    return { blob: blob || file, ad: temiz + uzanti, kucuk };
   };
 })();

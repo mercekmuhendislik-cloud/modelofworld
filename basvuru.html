@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=57545fc">
+  <link rel="stylesheet" href="assets/css/style.css?v=c00e598">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     /* --- Kayıt blokları --- */
@@ -60,8 +60,8 @@
       .foto-grid { grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:10px; }
     }
   </style>
-  <meta name="mow-surum" content="57545fc">
-  <script src="assets/js/surum-kontrol.js?v=57545fc"></script>
+  <meta name="mow-surum" content="c00e598">
+  <script src="assets/js/surum-kontrol.js?v=c00e598"></script>
 </head>
 <body data-page="basvuru">
   <div id="site-header"></div>
@@ -247,9 +247,9 @@
   <div id="site-footer"></div>
 
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=57545fc"></script>
-  <script src="assets/js/main.js?v=57545fc"></script>
-  <script src="assets/js/analytics.js?v=57545fc"></script>
+  <script src="assets/js/data.js?v=c00e598"></script>
+  <script src="assets/js/main.js?v=c00e598"></script>
+  <script src="assets/js/analytics.js?v=c00e598"></script>
   <script>
     document.getElementById("faqCandidates").innerHTML = window.VERA.FAQ_CANDIDATES.map(f => `
       <details class="acc-item"><summary>${f.q}</summary><div class="acc-body">${f.a}</div></details>`).join("");
@@ -316,7 +316,7 @@
           if (d.size > 12 * 1024 * 1024) { mesaj("hata", `“${d.name}” 12 MB'tan büyük — daha küçük bir fotoğraf seçin.`); continue; }
           mesaj("bilgi", "Fotoğraf hazırlanıyor… (sıkıştırma + filigran)");
           const out = await fotoHazirla(d);
-          FOTOLAR.push({ blob: out.blob, ad: out.ad, url: URL.createObjectURL(out.blob) });
+          FOTOLAR.push({ blob: out.blob, ad: out.ad, kucuk: out.kucuk, url: URL.createObjectURL(out.blob) });
           fotoCiz();
         }
         mesaj("", "");
@@ -324,7 +324,9 @@
       fotoCiz();
 
       /* ---------- Hata metinlerini insan diline çevir ---------- */
-      const DESTEK = 'Sorun sürerse <a href="iletisim" class="gold">iletişim sayfamızdan</a> bize ulaşın; başvurunuzu sizin adınıza biz oluşturalım.';
+      const DESTEK = 'Sorun sürerse <a href="' + window.VERA.AGENCY.waLink("Merhaba, başvuru formunda sorun yaşıyorum. Yardımcı olur musunuz?") +
+        '" target="_blank" rel="noopener" class="gold">WhatsApp\'tan yazın</a> (' + window.VERA.AGENCY.whatsapp +
+        ') veya <a href="iletisim" class="gold">iletişim sayfamızdan</a> bize ulaşın; başvurunuzu sizin adınıza biz oluşturalım.';
       function sunucuHatasi(kod, sunucuMesaji) {
         if (sunucuMesaji) return sunucuMesaji;   /* doğrulama hatası — alan bazlı açıklama */
         if (kod === 0) return "İnternet bağlantınıza ulaşamadık. Bağlantınızı kontrol edip <strong>Başvurumu Gönder</strong>'e tekrar basın. Formdaki bilgileriniz kaybolmaz.";
@@ -408,6 +410,7 @@
         fd.append("kind", "photo");
         fd.append("album", "genel");
         fd.append("file", f.blob, f.ad);
+        if (f.kucuk) fd.append("thumb", f.kucuk, "k.webp");   /* liste görünümü için küçük kopya */
         const r = await fetch("/api/upload", { method: "POST", body: fd }).catch(() => null);
         if (!r) throw new Error(sunucuHatasi(0, ""));
         if (!r.ok) {
