@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=3410e72">
+  <link rel="stylesheet" href="assets/css/style.css?v=957fd8c">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -52,7 +52,7 @@
     /* İmza */
     #sigCanvas { border:1px dashed var(--gold); border-radius:10px; background:#fff; touch-action:none; cursor:crosshair; width:100%; max-width:480px; height:150px; }
 
-    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=3410e72 */
+    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=957fd8c */
 
     /* Profil tamamlanma ölçeri */
     .tamam-kart { border:1px solid var(--gold); border-radius:14px; padding:18px 20px; margin-bottom:24px;
@@ -505,8 +505,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=3410e72"></script>
-  <script src="assets/js/main.js?v=3410e72"></script>
+  <script src="assets/js/data.js?v=957fd8c"></script>
+  <script src="assets/js/main.js?v=957fd8c"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -516,7 +516,7 @@
       const val = n => { const el = field(n); return el ? (el.type === "checkbox" ? (el.checked ? "1" : "") : el.value) : ""; };
 
       const yasHesap = b => { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); };
-      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=3410e72) */
+      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=957fd8c) */
       const makeMsel = window.VERA.makeMsel;
       const catSel = makeMsel($("catSel"),
         Object.entries(window.VERA.CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),

@@ -95,7 +95,8 @@
     });
 
     const sorters = {
-      featured: (a, b) => (b.featured - a.featured) || a.name.localeCompare(b.name, "tr"),
+      /* Gerçek (panelden yayınlanan) üyeler örnek profillerin önünde gelir */
+      featured: (a, b) => (!!b.real - !!a.real) || (b.featured - a.featured) || a.name.localeCompare(b.name, "tr"),
       name: (a, b) => a.name.localeCompare(b.name, "tr"),
       "height-desc": (a, b) => b.height - a.height,
       "height-asc": (a, b) => a.height - b.height,

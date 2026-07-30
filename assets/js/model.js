@@ -335,6 +335,7 @@
     if (x.gender === t.gender) p += 1;
     if (x.featured) p += 1;
     if (x.photo) p += 1;
+    if (x.real) p += 3;        /* gerçek kadro örnek profillerin önünde önerilir */
     return p;
   }
   const benzer = TALENTS

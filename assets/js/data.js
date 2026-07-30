@@ -486,15 +486,23 @@ function formatLanguages(t) {
 
 /* ---------------------------------------------------------
    Panelden yayınlanan gerçek kadro (/api/cast.js ile gelir).
-   Yayında üye varsa demo profiller devreden çıkar; hiç yoksa
-   site boş görünmesin diye örnek kadro gösterilir.
+
+   Geçiş dönemi: gerçek üye sayısı DEMO_ESIK'e ulaşana kadar
+   gerçek üyeler örnek profillerle birlikte gösterilir (site tek
+   kişiyle boş görünmesin). Eşiğe ulaşıldığında örnek profiller
+   kendiliğinden devreden çıkar — kod değişikliği gerekmez.
+   Örnek profilleri hemen kaldırmak için DEMO_ESIK = 1 yapın.
    --------------------------------------------------------- */
+const DEMO_ESIK = 10;
 const CAST_CANLI = Array.isArray(window.VERA_CAST) ? window.VERA_CAST : [];
-const KADRO = CAST_CANLI.length ? CAST_CANLI : TALENTS;
+const KADRO = CAST_CANLI.length >= DEMO_ESIK
+  ? CAST_CANLI                        /* yeterli gerçek üye var — örnekler kalksın */
+  : [...CAST_CANLI, ...TALENTS];      /* gerçek üyeler önce, örnekler arkada */
 
 /* Diğer scriptlerin erişimi için global */
 window.VERA = {
   TALENTS: KADRO, TALENTS_DEMO: TALENTS, CANLI_KADRO: CAST_CANLI.length > 0,
+  DEMO_ESIK, GERCEK_SAYI: CAST_CANLI.length,
   AGENCY, CATEGORIES, LABELS, SERVICES, ILLER, ILLER_POPULER, DILLER,
   RATES, HEADCOUNT_MID, DURATION_DAYS, FAQ_CANDIDATES, FAQ_CLIENTS,
   PROJECTS, COUNTERS, BRANDS, TESTIMONIALS, BLOG_POSTS,
