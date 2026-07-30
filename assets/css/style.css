@@ -170,21 +170,35 @@ section { padding: clamp(64px, 9vw, 120px) 0; }
 .nav-toggle { display: none; }
 .header-cta { margin-left: 6px; }
 
-/* Mobil menü */
+/* Mobil menü
+   ÖNEMLİ: .site-header'da backdrop-filter var; bu, içindeki position:fixed
+   ögeleri header'a göre hizalar ve menü kutusu yükseklik alamaz (arka plan
+   çizilmez, yazılar sayfa içeriğiyle karışır). Bu yüzden absolute kullanılır. */
 @media (max-width: 960px) {
   .main-nav {
-    position: fixed; inset: var(--header-h) 0 0 0;
+    position: absolute; top: 100%; left: 0; right: 0;
+    height: calc(100svh - var(--header-h));
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
     flex-direction: column; gap: 0;
     background: var(--bg);
-    padding: 24px 6vw;
-    transform: translateY(-12px); opacity: 0; pointer-events: none;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    border-top: 1px solid var(--line);
+    box-shadow: 0 26px 50px rgba(120, 30, 60, 0.22);
+    padding: 10px 6vw 40px;
+    transform: translateY(-10px); opacity: 0; pointer-events: none;
+    transition: opacity 0.28s ease, transform 0.28s ease;
     z-index: 80;
   }
   .main-nav.open { opacity: 1; transform: none; pointer-events: auto; }
-  .main-nav a { font-size: 1.05rem; padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .main-nav a, .main-nav .nav-mob {
+    font-size: 1.02rem; padding: 17px 4px;
+    border-bottom: 1px solid color-mix(in srgb, var(--gold) 28%, transparent);
+  }
+  .main-nav a { color: var(--text); }
+  .main-nav a.active { color: var(--gold); font-weight: 500; }
+  .main-nav a::after { display: none; }   /* masaüstü alt çizgi animasyonu mobilde gereksiz */
   .nav-toggle { display: inline-flex; }
   .header-cta { display: none; }
+  body.nav-open { overflow: hidden; }     /* menü açıkken arka plan kaymasın */
 }
 
 /* ---------- Hero ---------- */
@@ -1007,7 +1021,8 @@ body { animation: pageIn 0.6s ease both; }
   /* Mobil menüye taşınan ek bağlantılar */
   .main-nav .nav-mob {
     display: block; width: 100%; text-align: left; cursor: pointer;
-    font-size: 1.05rem; padding: 18px 0; border-bottom: 1px solid var(--line);
+    font-size: 1.02rem; padding: 17px 4px;
+    border-bottom: 1px solid color-mix(in srgb, var(--gold) 28%, transparent);
     color: var(--gold); text-transform: uppercase; letter-spacing: 0.2em;
     background: none; font-family: inherit;
   }

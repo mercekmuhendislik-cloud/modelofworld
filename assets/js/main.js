@@ -212,7 +212,14 @@
 
   /* ---------- Mobil menü ---------- */
   const nav = document.getElementById("mainNav");
-  document.getElementById("navToggle")?.addEventListener("click", () => nav?.classList.toggle("open"));
+  document.getElementById("navToggle")?.addEventListener("click", () => {
+    const acik = nav?.classList.toggle("open");
+    document.body.classList.toggle("nav-open", !!acik);
+  });
+  /* Menüden bir bağlantıya dokununca menü kapansın */
+  nav?.addEventListener("click", e => {
+    if (e.target.closest("a")) { nav.classList.remove("open"); document.body.classList.remove("nav-open"); }
+  });
 
   /* ---------- Arama Overlay ---------- */
   const overlay = document.getElementById("searchOverlay");
