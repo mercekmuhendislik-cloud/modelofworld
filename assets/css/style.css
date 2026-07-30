@@ -162,6 +162,7 @@ section { padding: clamp(64px, 9vw, 120px) 0; }
   background: var(--gold-grad); color: #fff;
   padding: 9px 20px; border-radius: 999px;
   font-weight: 500; box-shadow: 0 6px 18px rgba(211, 79, 110, 0.28);
+  white-space: nowrap; text-align: center; flex: 0 0 auto;
 }
 .main-nav a.nav-cta::after { display: none; }
 .main-nav a.nav-cta:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 10px 24px rgba(211, 79, 110, 0.36); }

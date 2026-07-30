@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=93131dc">
+  <link rel="stylesheet" href="assets/css/style.css?v=f9decae">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
 </head>
 <body data-page="uye">
@@ -53,8 +53,8 @@
   <div id="site-footer"></div>
 
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=93131dc"></script>
-  <script src="assets/js/main.js?v=93131dc"></script>
+  <script src="assets/js/data.js?v=f9decae"></script>
+  <script src="assets/js/main.js?v=f9decae"></script>
   <script>
     (function () {
       /* Zaten girişliyse panele git */
@@ -62,7 +62,16 @@
 
       function showErr(msg) {
         document.getElementById("authError").style.display = msg ? "block" : "none";
-        document.getElementById("authErrorText").textContent = msg;
+        document.getElementById("authErrorText").innerHTML = msg;
+      }
+      function nedenAcikla(kod, sunucuMesaji) {
+        if (sunucuMesaji) return sunucuMesaji;
+        if (kod === 0) return "İnternet bağlantınıza ulaşamadık. Bağlantınızı kontrol edip tekrar deneyin.";
+        if (kod >= 502 && kod <= 504)
+          return "Giriş sunucumuz şu anda geçici olarak yanıt vermiyor (hata " + kod +
+                 "). Şifreniz doğru — lütfen 1–2 dakika sonra tekrar deneyin.";
+        if (kod >= 500) return "Sunucuda beklenmeyen bir hata oluştu (hata " + kod + "). Birkaç dakika sonra tekrar deneyin.";
+        return "Giriş yapılamadı (hata " + kod + ").";
       }
 
       document.getElementById("loginForm").addEventListener("submit", async e => {
@@ -78,9 +87,9 @@
           });
           const d = await r.json().catch(() => ({}));
           if (r.ok) { location.href = "panel"; return; }
-          showErr(d.error || "Bir hata oluştu, tekrar deneyin.");
+          showErr(nedenAcikla(r.status, d.error || ""));
         } catch {
-          showErr("Sunucuya ulaşılamadı. Lütfen daha sonra tekrar deneyin.");
+          showErr(nedenAcikla(0, ""));
         }
         btn.disabled = false; btn.textContent = "Giriş Yap";
       });

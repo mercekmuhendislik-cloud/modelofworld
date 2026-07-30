@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=93131dc">
+  <link rel="stylesheet" href="assets/css/style.css?v=f9decae">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     /* --- Kayıt blokları --- */
@@ -68,7 +68,7 @@
     <div class="container center">
       <span class="eyebrow" style="justify-content:center">Kariyer</span>
       <h1>Ajansımıza Katılın</h1>
-      <p class="muted mt-2" style="max-width:58ch;margin-inline:auto">Başvurunuz yaklaşık <strong class="gold">2 dakika</strong> sürer: profil bilgileriniz, fotoğraflarınız ve hesabınız. Kaydınız oluştuğunda ölçülerinizi ve diğer bilgileri panelinizden tamamlarsınız. <strong class="gold">Ajansımız adaylardan hiçbir aşamada kayıt ücreti almaz.</strong></p>
+      <p class="muted mt-2" style="max-width:58ch;margin-inline:auto">Başvurunuz yaklaşık <strong class="gold">2 dakika</strong> sürer: hesabınız, profil bilgileriniz ve fotoğraflarınız. Kaydınız oluştuğunda ölçülerinizi ve diğer bilgileri panelinizden tamamlarsınız. <strong class="gold">Ajansımız adaylardan hiçbir aşamada kayıt ücreti almaz.</strong></p>
     </div>
   </div>
 
@@ -78,9 +78,51 @@
       <div class="form-card" id="kayitKart">
         <form id="kayitForm" novalidate>
 
-          <!-- ================= 1) PROFİL ================= -->
-          <div class="blok" id="blok1">
-            <div class="blok-bas"><span class="blok-no">1</span> Profil Bilgileri</div>
+          <!-- ================= 1) HESAP ================= -->
+          <div class="blok" id="blokHesap">
+            <div class="blok-bas"><span class="blok-no">1</span> Hesap Bilgileri</div>
+            <p class="blok-alt">Panelinize <strong>e-posta adresiniz ve şifrenizle</strong> giriş yapacaksınız.</p>
+            <div class="form-grid">
+              <div class="field">
+                <label>Ad Soyad <span class="req">*</span></label>
+                <input type="text" name="fullname" placeholder="Adınız Soyadınız">
+                <span class="err">Ad ve soyadınızı girin.</span>
+              </div>
+              <div class="field">
+                <label>Telefon <span class="req">*</span></label>
+                <input type="tel" name="phone" placeholder="05xx xxx xx xx">
+                <span class="err">Geçerli bir telefon numarası girin.</span>
+              </div>
+              <div class="field">
+                <label>E-posta <span class="req">*</span></label>
+                <input type="email" name="email" placeholder="ornek@mail.com" autocomplete="email">
+                <span class="err">Geçerli bir e-posta adresi girin.</span>
+              </div>
+              <div class="field">
+                <label>Şifre <span class="req">*</span></label>
+                <input type="password" name="password" placeholder="En az 6 karakter" autocomplete="new-password">
+                <span class="err">Şifre en az 6 karakter olmalı.</span>
+              </div>
+              <div class="field">
+                <label>Şifre (Tekrar) <span class="req">*</span></label>
+                <input type="password" name="password2" placeholder="Şifrenizi tekrar yazın" autocomplete="new-password">
+                <span class="err">Şifreler birbiriyle aynı olmalı.</span>
+              </div>
+              <div class="field full">
+                <div class="checkbox-row">
+                  <input type="checkbox" id="kvkk">
+                  <label for="kvkk" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.86rem">
+                    Kişisel verilerimin başvuru değerlendirme amacıyla <a href="kvkk" class="gold" target="_blank">KVKK Aydınlatma Metni</a> kapsamında işlenmesini kabul ediyorum; <a href="sozlesme" class="gold" target="_blank">çalışma prensipleri ve şartları</a> okudum. <span class="req">*</span>
+                  </label>
+                </div>
+                <span class="err">Devam etmek için onay gereklidir.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ================= 2) PROFİL ================= -->
+          <div class="blok" id="blokProfil">
+            <div class="blok-bas"><span class="blok-no">2</span> Profil Bilgileri</div>
             <p class="blok-alt">Sizi hangi işlere yönlendirebileceğimizi bilelim.</p>
             <div class="form-grid">
               <div class="field full" id="fCat">
@@ -143,9 +185,9 @@
             </div>
           </div>
 
-          <!-- ================= 2) FOTOĞRAFLAR ================= -->
-          <div class="blok" id="blok2">
-            <div class="blok-bas"><span class="blok-no">2</span> Fotoğraflarınız <span class="req">*</span></div>
+          <!-- ================= 3) FOTOĞRAFLAR ================= -->
+          <div class="blok" id="blokFoto">
+            <div class="blok-bas"><span class="blok-no">3</span> Fotoğraflarınız <span class="req">*</span></div>
             <p class="blok-alt">Fotoğrafsız başvurular değerlendirmeye alınamaz.</p>
 
             <div class="guide-box" style="margin-bottom:16px">
@@ -163,43 +205,6 @@
             <span class="hint">En fazla 4 fotoğraf · JPG, PNG veya HEIC · fotoğraflarınız otomatik sıkıştırılır ve <strong>Model of World</strong> filigranı eklenir.</span>
             <div class="uyari" id="fotoUyari" style="display:none">
               <strong>Fotoğraf zorunludur.</strong> Başvurunuzu gönderebilmek için en az 1 fotoğraf eklemelisiniz.
-            </div>
-          </div>
-
-          <!-- ================= 3) HESAP ================= -->
-          <div class="blok" id="blok3">
-            <div class="blok-bas"><span class="blok-no">3</span> Hesap Bilgileri</div>
-            <p class="blok-alt">Panelinize <strong>e-posta adresiniz ve şifrenizle</strong> giriş yapacaksınız.</p>
-            <div class="form-grid">
-              <div class="field">
-                <label>Ad Soyad <span class="req">*</span></label>
-                <input type="text" name="fullname" placeholder="Adınız Soyadınız">
-                <span class="err">Ad ve soyadınızı girin.</span>
-              </div>
-              <div class="field">
-                <label>Telefon <span class="req">*</span></label>
-                <input type="tel" name="phone" placeholder="05xx xxx xx xx">
-                <span class="err">Geçerli bir telefon numarası girin.</span>
-              </div>
-              <div class="field">
-                <label>E-posta <span class="req">*</span></label>
-                <input type="email" name="email" placeholder="ornek@mail.com" autocomplete="email">
-                <span class="err">Geçerli bir e-posta adresi girin.</span>
-              </div>
-              <div class="field">
-                <label>Şifre <span class="req">*</span></label>
-                <input type="password" name="password" placeholder="En az 6 karakter" autocomplete="new-password">
-                <span class="err">Şifre en az 6 karakter olmalı.</span>
-              </div>
-              <div class="field full">
-                <div class="checkbox-row">
-                  <input type="checkbox" id="kvkk">
-                  <label for="kvkk" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.86rem">
-                    Kişisel verilerimin başvuru değerlendirme amacıyla <a href="kvkk" class="gold" target="_blank">KVKK Aydınlatma Metni</a> kapsamında işlenmesini kabul ediyorum; <a href="sozlesme" class="gold" target="_blank">çalışma prensipleri ve şartları</a> okudum. <span class="req">*</span>
-                  </label>
-                </div>
-                <span class="err">Devam etmek için onay gereklidir.</span>
-              </div>
             </div>
           </div>
 
@@ -238,9 +243,9 @@
   <div id="site-footer"></div>
 
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=93131dc"></script>
-  <script src="assets/js/main.js?v=93131dc"></script>
-  <script src="assets/js/analytics.js?v=93131dc"></script>
+  <script src="assets/js/data.js?v=f9decae"></script>
+  <script src="assets/js/main.js?v=f9decae"></script>
+  <script src="assets/js/analytics.js?v=f9decae"></script>
   <script>
     document.getElementById("faqCandidates").innerHTML = window.VERA.FAQ_CANDIDATES.map(f => `
       <details class="acc-item"><summary>${f.q}</summary><div class="acc-body">${f.a}</div></details>`).join("");
@@ -287,7 +292,7 @@
           (FOTOLAR.length < MAKS_FOTO
             ? `<button type="button" class="foto-ekle" id="fotoEkle"><span>＋</span><span>Fotoğraf Ekle</span></button>`
             : "");
-        if (FOTOLAR.length) { $("fotoUyari").style.display = "none"; $("blok2").classList.remove("hatali"); }
+        if (FOTOLAR.length) { $("fotoUyari").style.display = "none"; $("blokFoto").classList.remove("hatali"); }
       }
       $("fotoGrid").addEventListener("click", e => {
         if (e.target.closest("#fotoEkle")) { $("fotoInput").click(); return; }
@@ -311,6 +316,22 @@
         mesaj("", "");
       });
       fotoCiz();
+
+      /* ---------- Hata metinlerini insan diline çevir ---------- */
+      const DESTEK = 'Sorun sürerse <a href="iletisim" class="gold">iletişim sayfamızdan</a> bize ulaşın; başvurunuzu sizin adınıza biz oluşturalım.';
+      function sunucuHatasi(kod, sunucuMesaji) {
+        if (sunucuMesaji) return sunucuMesaji;   /* doğrulama hatası — alan bazlı açıklama */
+        if (kod === 0) return "İnternet bağlantınıza ulaşamadık. Bağlantınızı kontrol edip <strong>Başvurumu Gönder</strong>'e tekrar basın. Formdaki bilgileriniz kaybolmaz.";
+        if (kod === 413) return "Seçtiğiniz fotoğraf çok büyük. Daha küçük bir fotoğraf seçip tekrar deneyin.";
+        if (kod === 429) return "Çok fazla deneme yapıldı. Lütfen birkaç dakika bekleyip tekrar deneyin.";
+        if (kod >= 502 && kod <= 504)
+          return "<strong>Bilgilerinizde bir sorun yok</strong> — kayıt sunucumuz şu anda geçici olarak yanıt vermiyor (hata " + kod +
+                 "). Sayfayı kapatmayın, 1–2 dakika sonra <strong>Başvurumu Gönder</strong>'e tekrar basın. " + DESTEK;
+        if (kod >= 500)
+          return "Sunucumuzda beklenmeyen bir hata oluştu (hata " + kod + "). Bilgilerinizde bir sorun yok. " +
+                 "Birkaç dakika sonra tekrar deneyin. " + DESTEK;
+        return "Kayıt tamamlanamadı (hata " + kod + "). Lütfen bilgilerinizi kontrol edip tekrar deneyin. " + DESTEK;
+      }
 
       /* ---------- Mesaj ---------- */
       function mesaj(tur, metin) {
@@ -343,6 +364,8 @@
         isaretle("phone", val("phone").replace(/\D/g, "").length < 10);
         isaretle("email", !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val("email")));
         isaretle("password", val("password").length < 6);
+        const sifreUyusmaz = val("password").length >= 6 && val("password2") !== val("password");
+        isaretle("password2", !val("password2") || sifreUyusmaz);
 
         const kvkkKotu = !$("kvkk").checked;
         $("kvkk").closest(".field").classList.toggle("invalid", kvkkKotu);
@@ -351,13 +374,15 @@
         /* Fotoğraf zorunlu */
         const fotoYok = !FOTOLAR.length;
         $("fotoUyari").style.display = fotoYok ? "" : "none";
-        $("blok2").classList.toggle("hatali", fotoYok);
-        if (fotoYok && !ilk) ilk = $("blok2");
+        $("blokFoto").classList.toggle("hatali", fotoYok);
+        if (fotoYok && !ilk) ilk = $("blokFoto");
 
         if (ilk) {
-          mesaj("hata", fotoYok && !document.querySelector("#kayitForm .field.invalid")
-            ? "Başvurunuzu gönderebilmek için en az 1 fotoğraf ekleyin."
-            : "Lütfen kırmızıyla işaretlenen zorunlu alanları kontrol edin.");
+          mesaj("hata", sifreUyusmaz
+            ? "Girdiğiniz iki şifre birbirinden farklı — lütfen kontrol edin."
+            : fotoYok && !document.querySelector("#kayitForm .field.invalid")
+              ? "Başvurunuzu gönderebilmek için en az 1 fotoğraf ekleyin."
+              : "Lütfen kırmızıyla işaretlenen zorunlu alanları kontrol edin.");
           ilk.scrollIntoView({ behavior: "smooth", block: "center" });
           return false;
         }
@@ -378,7 +403,11 @@
         fd.append("album", "genel");
         fd.append("file", f.blob, f.ad);
         const r = await fetch("/api/upload", { method: "POST", body: fd }).catch(() => null);
-        if (!r || !r.ok) throw new Error("yukleme");
+        if (!r) throw new Error(sunucuHatasi(0, ""));
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          throw new Error(d.error || sunucuHatasi(r.status, ""));
+        }
       }
       $("kayitForm").addEventListener("submit", async e => {
         e.preventDefault();
@@ -397,6 +426,12 @@
         };
         if (rasitDegil()) { govde.parent_name = val("parent_name"); govde.parent_phone = val("parent_phone"); }
 
+        function bitir(metin) {
+          mesaj("hata", metin);
+          btn.disabled = false; btn.textContent = "Başvurumu Gönder";
+          $("kayitMsg").scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
         let r;
         try {
           r = await fetch("/api/register", {
@@ -404,32 +439,37 @@
             body: JSON.stringify(govde),
           });
         } catch {
-          mesaj("hata", "Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.");
-          btn.disabled = false; btn.textContent = "Başvurumu Gönder"; return;
+          bitir(sunucuHatasi(0, "")); return;
         }
         if (!r.ok) {
+          /* Sunucu JSON döndüremediyse (502 vb.) gövde boş gelir — nedeni koda göre açıklıyoruz */
           const d = await r.json().catch(() => ({}));
-          mesaj("hata", r.status === 409
-            ? 'Bu e-posta adresi zaten kayıtlı. <a href="uye" class="gold">Giriş yapın →</a>'
-            : (d.error || "Kayıt tamamlanamadı, bilgilerinizi kontrol edin."));
-          hatali("email", r.status === 409);
-          btn.disabled = false; btn.textContent = "Başvurumu Gönder";
-          $("kayitMsg").scrollIntoView({ behavior: "smooth", block: "center" });
+          if (r.status === 409) {
+            hatali("email", true);
+            bitir('Bu e-posta adresi <strong>zaten kayıtlı</strong>. Şifrenizle <a href="uye" class="gold">giriş yapın →</a> ' +
+                  'ya da farklı bir e-posta adresi yazın.');
+          } else {
+            bitir(sunucuHatasi(r.status, d.error || ""));
+          }
           return;
         }
 
         /* Hesap açıldı — oturum çerezi hazır, fotoğraflar yükleniyor */
-        let basarisiz = 0;
+        let basarisiz = 0, sonHata = "";
         for (let i = 0; i < FOTOLAR.length; i++) {
           btn.textContent = `Fotoğraf yükleniyor ${i + 1}/${FOTOLAR.length}…`;
-          try { await yukle(FOTOLAR[i]); } catch { basarisiz++; }
+          try { await yukle(FOTOLAR[i]); }
+          catch (e) { basarisiz++; sonHata = e.message || ""; }
         }
         if (basarisiz === FOTOLAR.length) {
-          /* Hesap var ama foto yüklenemedi — panelde tekrar denesin */
-          mesaj("hata", "Hesabınız oluşturuldu ancak fotoğraflarınız yüklenemedi. Panelinizde <strong>Fotoğraf &amp; Video</strong> bölümünden tekrar yükleyebilirsiniz. Yönlendiriliyorsunuz…");
-          setTimeout(() => location.href = "panel", 3500);
+          /* Hesap açıldı ama foto yüklenemedi — nedenini söyle, panele yönlendir */
+          mesaj("hata", "<strong>Hesabınız oluşturuldu</strong>, ancak fotoğraflarınız yüklenemedi." +
+            (sonHata ? "<br>Sebep: " + sonHata : "") +
+            "<br>Panelinizdeki <strong>Fotoğraf &amp; Video</strong> bölümünden tekrar yükleyebilirsiniz — yönlendiriliyorsunuz…");
+          setTimeout(() => location.href = "panel", 6000);
           return;
         }
+        if (basarisiz) console.warn(basarisiz + " fotoğraf yüklenemedi: " + sonHata);
         $("kayitKart").style.display = "none";
         $("basariKart").style.display = "";
         $("basariKart").scrollIntoView({ behavior: "smooth", block: "center" });
