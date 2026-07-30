@@ -379,6 +379,46 @@
     return api;
   };
 
+  /* =========================================================
+     Telefon maskesi — 0532 555 55 55
+     Alan "05" ile açılır, yalnızca rakam kabul eder ve gruplayarak yazar.
+     Tüm input[type="tel"] alanlarına kendiliğinden uygulanır.
+     ========================================================= */
+  window.VERA.telefonBicimle = function (ham) {
+    let d = String(ham || "").replace(/\D/g, "");
+    if (d.startsWith("90")) d = d.slice(2);      /* +90 / 0090 ile başlarsa ülke kodunu at */
+    if (d && d[0] !== "0") d = "0" + d;          /* baştaki 0 her zaman bulunur */
+    d = d.slice(0, 11);
+    return [d.slice(0, 4), d.slice(4, 7), d.slice(7, 9), d.slice(9, 11)].filter(Boolean).join(" ");
+  };
+  window.VERA.telefonGecerli = function (deger) {
+    return /^0[1-9]\d{9}$/.test(String(deger || "").replace(/\D/g, ""));
+  };
+  (function telefonAlanlari() {
+    const bicim = window.VERA.telefonBicimle;
+    function uygula(inp) {
+      if (inp.dataset.telHazir) return;
+      inp.dataset.telHazir = "1";
+      if (!inp.value) inp.value = "05";
+      inp.addEventListener("focus", () => {
+        if (!inp.value.replace(/\D/g, "")) inp.value = "05";
+        else inp.value = bicim(inp.value);
+      });
+      inp.addEventListener("input", () => {
+        const b = bicim(inp.value);
+        if (b !== inp.value) inp.value = b;
+      });
+      inp.addEventListener("blur", () => {
+        /* Hiç girilmediyse yer tutucu görünsün */
+        if (inp.value.replace(/\D/g, "").length <= 2) inp.value = "";
+      });
+    }
+    const tara = () => document.querySelectorAll('input[type="tel"]').forEach(uygula);
+    tara();
+    /* Panel/başvuru gibi sonradan basılan alanlar için */
+    new MutationObserver(tara).observe(document.documentElement, { childList: true, subtree: true });
+  })();
+
   /* Fotoğrafı küçült + WebP'ye çevir + filigran bas (başvuru formu) */
   window.VERA.fotoHazirla = async function (file, maxKenar = 1600) {
     let bmp = null;

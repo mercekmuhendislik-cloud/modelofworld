@@ -6,7 +6,7 @@
   <title>Sedcard — Model of World</title>
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=d2a99d6">
+  <link rel="stylesheet" href="assets/css/style.css?v=57545fc">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     body { background: #f2f2f2; }
@@ -19,9 +19,19 @@
     .sc-head .logo2 span { color: #d34f6e; font-size: .9rem; }
     .sc-name { font-family: var(--font-serif); font-size: 2.2rem; }
     .sc-cat { color:#d34f6e; text-transform: uppercase; letter-spacing: .3em; font-size: .7rem; }
-    .sc-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 20px 0; }
+    .sc-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
+    .sc-grid.az { grid-template-columns: repeat(2, 1fr); gap: 14px; }
     .sc-grid .ph2 { aspect-ratio: 3/4; overflow: hidden; border-radius: 4px; background: #eee; position: relative; }
     .sc-grid img { width: 100%; height: 100%; object-fit: cover; }
+    /* Fotoğrafın ortasına, varlığı belli ama görüntüyü kapatmayan marka filigranı */
+    .sc-grid .ph2::after {
+      content: "MODEL OF WORLD"; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      font-family: var(--font-serif); font-size: .62rem; letter-spacing: .3em;
+      color: rgba(255,255,255,.34); text-shadow: 0 1px 3px rgba(0,0,0,.45);
+      transform: rotate(-24deg); pointer-events: none;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
     .sc-mea { display:grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 1px; background: #e8d5da; border: 1px solid #e8d5da; margin-top: 8px; }
     .sc-mea div { background: #fdf5f7; padding: 10px 12px; }
     .sc-mea dt { font-size: .6rem; text-transform: uppercase; letter-spacing: .16em; color: #96707c; }
@@ -33,8 +43,8 @@
       .no-print-bar, .site-header, .wa-float { display: none !important; }
     }
   </style>
-  <meta name="mow-surum" content="d2a99d6">
-  <script src="assets/js/surum-kontrol.js?v=d2a99d6"></script>
+  <meta name="mow-surum" content="57545fc">
+  <script src="assets/js/surum-kontrol.js?v=57545fc"></script>
 </head>
 <body data-page="sedcard">
   <div class="no-print-bar">
@@ -80,9 +90,11 @@
       const pool = (u.media || []).filter(m => m.kind === "photo" && !m.deleted);
       const order = ["studio", "podium", "polaroid", "genel"];
       pool.sort((a, b) => order.indexOf(a.album || "genel") - order.indexOf(b.album || "genel"));
-      const four = pool.slice(0, 4);
-      $("scPhotos").innerHTML = four.length
-        ? four.map(m => `<div class="ph2"><img src="/api/photo/${m.id}"></div>`).join("")
+      const secilen = pool.slice(0, 8);
+      /* 1-4 fotoğrafta 2 kolon (büyük görünsün), 5+ fotoğrafta 4 kolon */
+      $("scPhotos").classList.toggle("az", secilen.length <= 4);
+      $("scPhotos").innerHTML = secilen.length
+        ? secilen.map(m => `<div class="ph2"><img src="/api/photo/${m.id}"></div>`).join("")
         : '<p style="grid-column:1/-1;color:#96707c">Onaylı fotoğraf yok.</p>';
 
       const rows = [

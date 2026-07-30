@@ -21,10 +21,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=d2a99d6">
+  <link rel="stylesheet" href="assets/css/style.css?v=57545fc">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
-  <meta name="mow-surum" content="d2a99d6">
-  <script src="assets/js/surum-kontrol.js?v=d2a99d6"></script>
+  <meta name="mow-surum" content="57545fc">
+  <script src="assets/js/surum-kontrol.js?v=57545fc"></script>
 </head>
 <body data-page="teklif">
   <div id="site-header"></div>
@@ -63,7 +63,7 @@
             </div>
             <div class="field">
               <label>Telefon <span class="req">*</span></label>
-              <input type="tel" name="phone" required pattern="[0-9+() \-]{10,}" placeholder="05xx xxx xx xx">
+              <input type="tel" name="phone" inputmode="numeric" maxlength="14" required pattern="[0-9+() \-]{10,}" placeholder="05xx xxx xx xx">
               <span class="err">Geçerli bir telefon numarası girin.</span>
             </div>
 
@@ -187,10 +187,10 @@
   <div id="site-footer"></div>
 
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=d2a99d6"></script>
-  <script src="assets/js/main.js?v=d2a99d6"></script>
-  <script src="assets/js/analytics.js?v=d2a99d6"></script>
-  <script src="assets/js/forms.js?v=d2a99d6"></script>
+  <script src="assets/js/data.js?v=57545fc"></script>
+  <script src="assets/js/main.js?v=57545fc"></script>
+  <script src="assets/js/analytics.js?v=57545fc"></script>
+  <script src="assets/js/forms.js?v=57545fc"></script>
   <script>
     document.getElementById("faqClients").innerHTML = window.VERA.FAQ_CLIENTS.map(f => `
       <details class="acc-item"><summary>${f.q}</summary><div class="acc-body">${f.a}</div></details>`).join("");

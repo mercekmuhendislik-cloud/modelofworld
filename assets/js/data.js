@@ -25,7 +25,6 @@ const AGENCY = {
     taxOffice: "Şişli V.D.",
     taxNo: "000 000 0000",
     mersis: "0000-0000-0000-0000",
-    iskur: "İŞKUR Özel İstihdam Bürosu İzin Belgesi No: 000",
   },
   domain: "https://www.modelofworld.com",
 };
@@ -281,7 +280,7 @@ const SERVICES = [
       "Stant hostesi: karşılama, ürün tanıtımı, ikram yönetimi",
       "Servis hostesi: VIP lounge ve stant içi ikram servisi",
       "Tercüman hostes: EN/RU/DE/AR simultane destek",
-      "Kongre & seminer host/hostes ekipleri, süpervizörlü yönetim",
+      "Kongre & seminer host/hostes ekipleri",
     ],
     gradient: ["#332417", "#9c7a4a"], catalogCat: "hostes",
   },
@@ -292,7 +291,7 @@ const SERVICES = [
     details: [
       "Defile koreografisi ve prova yönetimi",
       "Fitting, backstage ve giyinme alanı organizasyonu",
-      "Manken kadrosu tedariki ve saha süpervizörlüğü",
+      "Manken kadrosu tedariki ve set koordinasyonu",
       "Sahne, ışık ve müzik akış koordinasyonu",
     ],
     gradient: ["#26102a", "#6e3a78"],
@@ -372,9 +371,8 @@ const FAQ_CANDIDATES = [
 
 /* Müşteri SSS */
 const FAQ_CLIENTS = [
-  { q: "İptal şartları nelerdir?", a: "Etkinliğe 7+ gün kala ücretsiz iptal; 3–7 gün arası %25, son 72 saatte %50 kesinti uygulanır. Detaylar sözleşme taslağında yer alır." },
+  { q: "İptal şartları nelerdir?", a: "Etkinliğe 3 günden fazla kala ücretsiz iptal; son 72 saat içinde %50 kesinti uygulanır. Detaylar sözleşme taslağında yer alır." },
   { q: "Personel değişikliği nasıl yapılır?", a: "Etkinlik öncesi onayladığınız cast'te değişiklik gerekirse eşdeğer profil alternatifi ücretsiz sunulur; son dakika durumları için her operasyonda yedek plan hazırdır." },
-  { q: "Personel sigortalı mı?", a: "Evet. Sahaya çıkan tüm personelimiz SGK'lı ve mevzuata uygun çalıştırılır; talep halinde belgeleri sunulur." },
   { q: "Teklife ne kadar sürede dönüş yapıyorsunuz?", a: "Aynı iş günü içinde size özel cast seçkisi ve fiyat çalışması iletilir. Acil operasyonlar için 7/24 WhatsApp hattımız açıktır." },
   { q: "Üniforma / kıyafetleri kim sağlıyor?", a: "Kurumsal üniforma, konsept elbise veya markanıza özel kıyafet ajans tarafından tedarik edilebilir; kendi kıyafetinizin kullanılması da mümkündür." },
 ];
@@ -391,7 +389,7 @@ const PROJECTS = [
   {
     title: "Uluslararası Turizm Fuarı Standı", img: IMG("1587825140708-dfaf72ae4b04"),
     category: "Fuar Hostesi",
-    scope: "8 çok dilli hostes · 4 gün · süpervizörlü ekip",
+    scope: "8 çok dilli hostes · 4 gün",
     date: "Mayıs 2026",
     gradient: ["#332417", "#9c7a4a"],
   },
@@ -428,7 +426,7 @@ const BRANDS = [
 /* Müşteri / marka yorumları */
 const TESTIMONIALS = [
   {
-    quote: "Fuar boyunca standımızdaki hostes ekibi, markamızı bizden iyi anlattı. Süpervizörlü ekip yönetimi sayesinde tek bir aksaklık yaşamadık.",
+    quote: "Fuar boyunca standımızdaki hostes ekibi, markamızı bizden iyi anlattı. Ekip yönetimi kusursuzdu, tek bir aksaklık yaşamadık.",
     name: "B. Aydın", role: "Pazarlama Direktörü", company: "Vesta Expo",
   },
   {

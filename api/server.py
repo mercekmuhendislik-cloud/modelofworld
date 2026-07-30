@@ -641,8 +641,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(400, {"error": "Şifre en az 6 karakter olmalı"})
             if len(adsoyad.split()) < 2:
                 return self._json(400, {"error": "Ad ve soyadınızı birlikte girin"})
-            if len(re.sub(r"\D", "", telefon)) < 10:
-                return self._json(400, {"error": "Geçerli bir telefon numarası girin"})
+            if not re.match(r"^0[1-9]\d{9}$", re.sub(r"\D", "", telefon)):
+                return self._json(400, {"error": "Telefon numarasını eksiksiz girin (örn. 0532 555 55 55)"})
 
             # --- Başvuru profili ---
             kats = [c for c in str(d.get("category") or "").split(",") if c in CATEGORY_KEYS]

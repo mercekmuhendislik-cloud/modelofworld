@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=d2a99d6">
+  <link rel="stylesheet" href="assets/css/style.css?v=57545fc">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     /* --- Kayıt blokları --- */
@@ -60,8 +60,8 @@
       .foto-grid { grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:10px; }
     }
   </style>
-  <meta name="mow-surum" content="d2a99d6">
-  <script src="assets/js/surum-kontrol.js?v=d2a99d6"></script>
+  <meta name="mow-surum" content="57545fc">
+  <script src="assets/js/surum-kontrol.js?v=57545fc"></script>
 </head>
 <body data-page="basvuru">
   <div id="site-header"></div>
@@ -93,7 +93,7 @@
               </div>
               <div class="field">
                 <label>Telefon <span class="req">*</span></label>
-                <input type="tel" name="phone" placeholder="05xx xxx xx xx">
+                <input type="tel" name="phone" placeholder="0532 555 55 55" inputmode="numeric" maxlength="14">
                 <span class="err">Geçerli bir telefon numarası girin.</span>
               </div>
               <div class="field">
@@ -181,7 +181,7 @@
                   </div>
                   <div class="field">
                     <label>Veli / Vasi Telefon <span class="req">*</span></label>
-                    <input type="tel" name="parent_phone" placeholder="05xx xxx xx xx">
+                    <input type="tel" name="parent_phone" placeholder="0532 555 55 55" inputmode="numeric" maxlength="14">
                     <span class="err">Veli telefonu gereklidir.</span>
                   </div>
                 </div>
@@ -206,7 +206,7 @@
 
             <div class="foto-grid" id="fotoGrid"></div>
             <input type="file" id="fotoInput" accept="image/*" multiple style="display:none">
-            <span class="hint">En fazla 4 fotoğraf · JPG, PNG veya HEIC · fotoğraflarınız otomatik sıkıştırılır ve <strong>Model of World</strong> filigranı eklenir.</span>
+            <span class="hint">En fazla 10 fotoğraf · JPG, PNG veya HEIC · fotoğraflarınız otomatik sıkıştırılır ve <strong>Model of World</strong> filigranı eklenir.</span>
             <div class="uyari" id="fotoUyari" style="display:none">
               <strong>Fotoğraf zorunludur.</strong> Başvurunuzu gönderebilmek için en az 1 fotoğraf eklemelisiniz.
             </div>
@@ -247,9 +247,9 @@
   <div id="site-footer"></div>
 
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=d2a99d6"></script>
-  <script src="assets/js/main.js?v=d2a99d6"></script>
-  <script src="assets/js/analytics.js?v=d2a99d6"></script>
+  <script src="assets/js/data.js?v=57545fc"></script>
+  <script src="assets/js/main.js?v=57545fc"></script>
+  <script src="assets/js/analytics.js?v=57545fc"></script>
   <script>
     document.getElementById("faqCandidates").innerHTML = window.VERA.FAQ_CANDIDATES.map(f => `
       <details class="acc-item"><summary>${f.q}</summary><div class="acc-body">${f.a}</div></details>`).join("");
@@ -259,7 +259,7 @@
       const $ = id => document.getElementById(id);
       const field = n => document.querySelector(`#kayitForm [name="${n}"]`);
       const val = n => (field(n)?.value || "").trim();
-      const MAKS_FOTO = 4;
+      const MAKS_FOTO = 10;
 
       /* Girişliyse doğrudan panele */
       fetch("/api/me").then(r => { if (r.ok) location.href = "panel"; }).catch(() => {});
@@ -274,6 +274,8 @@
 
       field("age").innerHTML = '<option value="">Seçiniz…</option>' +
         Array.from({ length: 50 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
+      /* Liste 1'den başlar ama açılışta 18 seçili gelir; aday yukarı/aşağı kaydırabilir */
+      field("age").value = "18";
       field("city").innerHTML = '<option value="">Seçiniz…</option>' +
         `<optgroup label="Büyük Şehirler">${ILLER_POPULER.map(i => `<option value="${i}">${i}</option>`).join("")}</optgroup>` +
         `<optgroup label="Tüm İller">${ILLER.map(i => `<option value="${i}">${i}</option>`).join("")}</optgroup>`;
@@ -362,10 +364,10 @@
         isaretle("city", !val("city"));
         if (rasitDegil()) {
           isaretle("parent_name", val("parent_name").length < 5);
-          isaretle("parent_phone", val("parent_phone").replace(/\D/g, "").length < 10);
+          isaretle("parent_phone", !window.VERA.telefonGecerli(val("parent_phone")));
         }
         isaretle("fullname", val("fullname").split(" ").filter(Boolean).length < 2);
-        isaretle("phone", val("phone").replace(/\D/g, "").length < 10);
+        isaretle("phone", !window.VERA.telefonGecerli(val("phone")));
         isaretle("email", !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val("email")));
         isaretle("password", val("password").length < 6);
         const sifreUyusmaz = val("password").length >= 6 && val("password2") !== val("password");
