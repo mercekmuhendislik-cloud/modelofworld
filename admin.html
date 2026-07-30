@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=c00e598">
+  <link rel="stylesheet" href="assets/css/style.css?v=d954f4a">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -178,8 +178,8 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
-  <meta name="mow-surum" content="c00e598">
-  <script src="assets/js/surum-kontrol.js?v=c00e598"></script>
+  <meta name="mow-surum" content="d954f4a">
+  <script src="assets/js/surum-kontrol.js?v=d954f4a"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -310,7 +310,7 @@
           <select class="adm-input" id="bulkRed" style="max-width:240px"><option value="">Red gerekçesi…</option></select>
           <button class="btn btn-ghost btn-sm" data-bulk="reddedildi">✕ Toplu Reddet</button>
           <button class="btn btn-ghost btn-sm" data-bulk="inceleniyor">↺ Beklet</button>
-          <button class="btn btn-tehlike btn-sm" id="bulkDel" title="Seçili üyeleri ve tüm dosyalarını kalıcı olarak siler">🗑 Toplu Sil</button>
+          <button class="btn btn-tehlike btn-sm" id="bulkDel" title="Seçili üyeleri çöp kutusuna taşır — Silinenler sekmesinden geri alınabilir">🗑 Toplu Sil</button>
           <button class="btn btn-ghost btn-sm" id="bulkClear">Seçimi Bırak</button>
         </div>
 
@@ -320,6 +320,7 @@
           <button type="button" data-durum="yayinda">🌐 Sitede Yayında <span class="sayi" data-s="yayinda">0</span></button>
           <button type="button" data-durum="reddedildi">✕ Reddedilen <span class="sayi" data-s="reddedildi">0</span></button>
           <button type="button" data-durum="">👥 Tümü <span class="sayi" data-s="">0</span></button>
+          <button type="button" data-durum="silinen">🗑 Silinenler <span class="sayi" data-s="silinen">0</span></button>
         </div>
 
         <div class="adm-row" id="hizlandirRow" style="margin-bottom:14px">
@@ -536,6 +537,7 @@
         onaylandi:   hepsi.filter(u => u.profile?.status === "onaylandi").length,
         reddedildi:  hepsi.filter(u => u.profile?.status === "reddedildi").length,
         yayinda:     hepsi.filter(u => u.profile?.published === "1").length,
+        silinen:     (DATA.silinenler || []).length,
       };
       $("durumSekme").querySelectorAll(".sayi").forEach(el => el.textContent = say[el.dataset.s] ?? 0);
     }
@@ -779,31 +781,37 @@
     document.addEventListener("keydown", e => {
       if (e.key === "Escape" && $("onayKatman").classList.contains("open")) onayIptal();
     });
-    /* Silme çağrısı tek yerden yapılır: tek üye de toplu silme de aynı ucu kullanır */
-    async function uyeleriSil(ids) {
-      toast("⏳ " + ids.length + " üye siliniyor…");
+    /* Silme çağrısı tek yerden yapılır: tek üye de toplu silme de aynı ucu kullanır.
+       kalici=false → çöp kutusuna taşır (geri alınabilir), true → sunucudan tamamen siler. */
+    async function uyeleriSil(ids, kalici) {
+      const fiil = kalici ? "siliniyor" : "çöp kutusuna taşınıyor";
+      const bitti = kalici ? "kalıcı olarak silindi" : "çöp kutusuna taşındı";
+      toast("⏳ " + ids.length + " üye " + fiil + "…");
       /* user_id de gönderilir: sunucu henüz yeniden başlatılmadıysa tek silme yine çalışsın */
-      const sonuc = await api("/api/admin/delete", { user_ids: ids, user_id: ids.length === 1 ? ids[0] : 0 });
+      const sonuc = await api("/api/admin/delete",
+        { user_ids: ids, user_id: ids.length === 1 ? ids[0] : 0, kalici: kalici ? 1 : 0 });
       if (sonuc.ok) {
         const d = sonuc.data || {};
-        toast("🗑 " + (d.silinen || ids.length) + " üye kalıcı olarak silindi" +
+        toast((kalici ? "🗑 " : "🗑 ") + (d.silinen || ids.length) + " üye " + bitti +
               (d.dosya ? " (" + d.dosya + " dosya)" : ""));
         load();
         return true;
       }
-      /* Sunucu sürümü toplu silmeyi bilmiyorsa (API yeniden başlatılmamış) tek tek sil */
+      /* Sunucu sürümü toplu işlemi bilmiyorsa (API yeniden başlatılmamış) tek tek dene */
       if (ids.length > 1) {
         let basarili = 0;
-        for (const uid of ids) { if ((await api("/api/admin/delete", { user_id: uid })).ok) basarili++; }
+        for (const uid of ids) {
+          if ((await api("/api/admin/delete", { user_id: uid, kalici: kalici ? 1 : 0 })).ok) basarili++;
+        }
         if (basarili) {
-          toast("🗑 " + basarili + " üye kalıcı olarak silindi" +
-                (basarili < ids.length ? " (" + (ids.length - basarili) + " üye silinemedi)" : ""),
+          toast("🗑 " + basarili + " üye " + bitti +
+                (basarili < ids.length ? " (" + (ids.length - basarili) + " üye işlenemedi)" : ""),
                 basarili < ids.length ? "hata" : "");
           load();
           return true;
         }
       }
-      toast(sonuc.err || "Silinemedi", "hata");
+      toast(sonuc.err || "İşlem yapılamadı", "hata");
       return false;
     }
     document.addEventListener("change", e => { if (e.target.classList?.contains("uSel") || e.target.id === "selAll") {
@@ -812,18 +820,17 @@
     }});
     $("bulkClear").addEventListener("click", () => { document.querySelectorAll(".uSel,#selAll").forEach(c => c.checked = false); syncBulk(); });
 
-    /* --- Toplu kalıcı silme --- */
+    /* --- Toplu silme: çöp kutusuna taşır --- */
     $("bulkDel").addEventListener("click", async () => {
       const ids = seciliIds();
       if (!ids.length) return toast("Önce silinecek üyeleri seçin", "hata");
       const secili = (DATA.users || []).filter(u => ids.includes(u.id));
       const adlar = secili.map(u => "· " + (u.fullname || u.email || "#" + u.id)).join("\n");
-      const fotoSayi = secili.reduce((t, u) => t + (u.media || []).filter(m => m.kind === "photo").length, 0);
-      const onay = await silOnayi(
-        ids.length + " üye kalıcı olarak silinecek:\n" + adlar + "\n\n" +
-        "Silinecekler: üyelik hesapları, profil ve ölçü bilgileri, " +
-        fotoSayi + " fotoğraf/belge dosyası (sunucudan da silinir) ve iş teklifi kayıtları.");
-      if (!onay) { toast("Silme iptal edildi.", "hata"); return; }
+      if (!(await onayIste(
+            ids.length + " üye çöp kutusuna taşınacak:\n" + adlar + "\n\n" +
+            "Üyeler listeden ve siteden kalkar; fotoğrafları ve bilgileri saklanır.",
+            "🗑 Çöp Kutusuna Taşı", "Üyeleri Kaldır",
+            "Silinenler sekmesinden geri alabilir veya kalıcı olarak silebilirsiniz.", true))) return;
       await uyeleriSil(ids);
     });
     document.querySelectorAll("[data-bulk]").forEach(b => b.addEventListener("click", async () => {
@@ -1130,11 +1137,58 @@
       return parts.length ? `<br>💰 Kaşe: ${parts.map(x => x[0] + " " + x[1]).join(" · ")}` : "";
     }
 
+    /* Üye hem etkin listede hem çöp kutusunda aranır */
+    function uyeBul(uid) {
+      return (DATA.users || []).find(x => x.id === uid)
+          || (DATA.silinenler || []).find(x => x.id === uid) || {};
+    }
+
+    /* --- Çöp kutusu: silinen üyeler --- */
+    function renderSilinenler(q) {
+      const liste = (DATA.silinenler || []).filter(u => {
+        const p = u.profile || {};
+        return !q || `${u.fullname} ${u.email} ${p.city} ${p.category}`.toLowerCase().includes(q);
+      }).sort((a, b) => (b.deleted || "").localeCompare(a.deleted || ""));
+      LISTE = liste;
+      $("countInfo").textContent = liste.length + " silinen üye";
+      $("results").innerHTML = liste.length ? liste.map(u => {
+        const p = u.profile || {};
+        const fotolar = (u.media || []).filter(m => m.kind === "photo" && !m.deleted);
+        const thumb = fotolar[0]
+          ? `<img class="adm-thumb" src="/api/photo/${fotolar[0].id}?k=1" loading="lazy" alt="">`
+          : `<div class="adm-thumb" title="Fotoğraf yok"></div>`;
+        return `
+        <div class="adm-user" data-uid="${u.id}">
+          <div class="adm-top">
+            ${thumb}
+            <div class="adm-id">
+              <strong>${esc(u.fullname) || "(isimsiz)"}</strong>
+              <small>#${u.id} · ${esc(p.city) || "?"} · ${catAd(p.category)} · kayıt: ${trTarih(u.created)}</small>
+            </div>
+            <span class="adm-badge" style="color:#c33;border-color:#d95a5a">🗑 ${trTarih(u.deleted)} tarihinde silindi</span>
+            ${fotolar.length ? `<span class="adm-badge">📷 ${fotolar.length}</span>` : ""}
+            <div class="adm-actions">
+              <button class="btn btn-gold" data-act="geri-al">↩ Geri Al</button>
+              <button class="btn btn-tehlike" data-act="kalici-sil"
+                      title="Kaydı ve tüm dosyaları sunucudan tamamen kaldırır — geri alınamaz">🗑 Kalıcı Sil</button>
+            </div>
+          </div>
+          <div class="adm-body open" style="display:block">
+            📧 ${esc(u.email)} · 📞 ${esc(u.phone) || "—"}
+            <div class="mini" style="margin-top:6px">Geri alındığında üye tekrar listeye döner; yayın ve öne çıkarma
+              durumu kapalı gelir, siteye çıkarmak için yeniden onaylamanız gerekir.</div>
+          </div>
+        </div>`;
+      }).join("") : '<div class="bos-durum"><span class="ikon">🗑</span>Çöp kutusu boş — silinen üye yok.</div>';
+      syncBulk();
+    }
+
     function renderUsers() {
       const q = ($("fText").value || "").toLowerCase();
       const catF = $("fCat").value;
       const from = $("fFrom").value, to = $("fTo").value;
       sekmeSayaclari();
+      if (DURUM === "silinen") { renderSilinenler(q); return; }
       let users = DATA.users.filter(u => {
         const p = u.profile || {};
         if (DURUM === "yayinda") { if (p.published !== "1") return false; }
@@ -1209,7 +1263,7 @@
               ${(st === "onaylandi" && p.published === "1" && p.privacy === "public")
                 ? `<a class="btn btn-ghost" href="model-detay?id=u${u.id}" target="_blank" title="Üyenin sitedeki herkese açık sayfası">🔗 Sitedeki Sayfası</a>` : ""}
               <a class="btn btn-ghost" href="sedcard?id=${u.id}" target="_blank">🪪 Sedcard</a>
-              <button class="btn btn-tehlike" data-act="sil" title="Üyeyi ve tüm dosyalarını kalıcı olarak siler">🗑 Sil</button>
+              <button class="btn btn-tehlike" data-act="sil" title="Üyeyi çöp kutusuna taşır — Silinenler sekmesinden geri alınabilir">🗑 Sil</button>
             </div>
           </div>
           <div class="adm-body">
@@ -1287,6 +1341,7 @@
           </div>
         </div>`;
       }).join("") : bosDurum();
+      syncBulk();
     }
 
     /* Okunur tarih + yeni kayıt + sekmeye özel boş ekran */
@@ -1327,20 +1382,48 @@
       if (!b) return;
       const act = b.dataset.act;
 
-      /* --- Üyeyi kalıcı sil --- */
+      /* --- Üyeyi çöp kutusuna taşı --- */
       if (act === "sil") {
-        const uye = (DATA.users || []).find(x => x.id === uid) || {};
+        const uye = uyeBul(uid);
+        const ad = uye.fullname || uye.email || ("#" + uid);
+        if (!(await onayIste(
+              ad + (uye.email ? " (" + uye.email + ")" : "") + " çöp kutusuna taşınacak. " +
+              "Üye listeden ve siteden kalkar, oturumu kapatılır; fotoğrafları ve bilgileri saklanır.",
+              "🗑 Çöp Kutusuna Taşı", "Üyeyi Kaldır",
+              "Silinenler sekmesinden geri alabilir veya kalıcı olarak silebilirsiniz.", true))) return;
+        await uyeleriSil([uid]);
+        return;
+      }
+
+      /* --- Çöp kutusundan geri al --- */
+      if (act === "geri-al") {
+        const uye = uyeBul(uid);
+        if (!(await onayIste(
+              (uye.fullname || "Üye") + " listeye geri alınacak. Yayın ve öne çıkarma durumu kapalı gelir; " +
+              "siteye çıkarmak için yeniden onaylamanız gerekir.",
+              "↩ Geri Al", "Üyeyi Geri Al"))) return;
+        const r = await api("/api/admin/delete", { user_ids: [uid], geri_al: 1 });
+        if (!r.ok) { toast(r.err || "Geri alınamadı", "hata"); return; }
+        toast("↩ " + (uye.fullname || "Üye") + " geri alındı");
+        load();
+        return;
+      }
+
+      /* --- Çöp kutusundan kalıcı sil --- */
+      if (act === "kalici-sil") {
+        const uye = uyeBul(uid);
         const ad = uye.fullname || uye.email || ("#" + uid);
         const fotoSayi = (uye.media || []).filter(m => m.kind === "photo").length;
         const onay = await silOnayi(
-          ad + (uye.email ? " (" + uye.email + ")" : "") + " kalıcı olarak silinecek.\n\n" +
+          ad + (uye.email ? " (" + uye.email + ")" : "") + " sunucudan tamamen silinecek.\n\n" +
           "Silinecekler:\n" +
           "· Üyelik hesabı ve giriş bilgileri\n" +
           "· Profil ve ölçü bilgileri\n" +
           "· " + fotoSayi + " fotoğraf/belge dosyası (sunucudan da silinir)\n" +
-          "· İş teklifi kayıtları");
+          "· İş teklifi kayıtları",
+          "Bu işlem geri alınamaz. Üyeyi saklamak istiyorsanız <strong>Geri Al</strong> kullanın.");
         if (!onay) { toast("Silme iptal edildi.", "hata"); return; }
-        await uyeleriSil([uid]);
+        await uyeleriSil([uid], true);
         return;
       }
 
@@ -1664,25 +1747,45 @@
         return;
       }
 
+      /* Ziyaretçi numarasını WhatsApp bağlantısına çevir: 0532 555 55 55 → 905325555555 */
+      const waTel = t => {
+        let d = String(t || "").replace(/\D/g, "");
+        if (d.startsWith("0")) d = d.slice(1);
+        if (!d.startsWith("90")) d = "90" + d;
+        return d.length >= 12 ? d : "";
+      };
+
       $("subs").innerHTML = liste.map(s => {
         const v = frmVeri(s);
         const sos = String(s.kind).toUpperCase() === "SOS";
+        /* Site içi mesaj kutusu ve iletişim formu: üyeye dönüştürülmez, yanıtlanır */
+        const mesajKaydi = ["mesaj", "iletisim"].includes(String(s.kind).toLowerCase());
         const islendi = s.processed === "1";
-        const ad = v.fullname || v.uye || "(isimsiz)";
+        const ad = v.fullname || v.name || v.uye || "(isimsiz)";   /* iletişim formu "name" alanını kullanır */
         const yas = v.birthdate && /^\d{4}-/.test(v.birthdate)
           ? new Date().getFullYear() - +v.birthdate.slice(0, 4) : (v.age || "");
         const bilinen = new Set(FRM_ALAN.map(a => a[0]).concat(["kvkk", "uye", "age"]));
         const ekstra = Object.keys(v).filter(k => !bilinen.has(k) && v[k]);
         /* Aynı e-posta ile üyelik var mı? (dönüştürmeye çalışmadan önce belli olsun) */
-        const mevcutUye = (!sos && v.email)
+        const mevcutUye = (!sos && !mesajKaydi && v.email)
           ? (DATA.users || []).find(u => (u.email || "").toLowerCase() === String(v.email).toLowerCase())
           : null;
+
+        const wa = mesajKaydi ? waTel(v.phone) : "";
 
         const govde = sos
           ? `<div class="frm-satir">
                📞 <b>${esc(v.tel) || "—"}</b> · 📍 Konum: <b>${esc(v.konum) || "—"}</b>
                ${v.harita ? ` · <a class="gold" href="${esc(v.harita)}" target="_blank">haritada aç</a>` : ""}
                ${v.mesaj ? `<br>💬 ${esc(v.mesaj)}` : ""}
+             </div>`
+          : mesajKaydi
+          ? `<div class="frm-satir">
+               📞 <b>${v.phone ? `<a class="gold" href="tel:${esc(String(v.phone).replace(/\D/g, ""))}">${esc(v.phone)}</a>` : "—"}</b>
+               ${v.email ? ` · 📧 <a class="gold" href="mailto:${esc(v.email)}">${esc(v.email)}</a>` : ""}
+               ${v.subject ? `<br>🏷 <b>${esc(v.subject)}</b>` : ""}
+               <br>💬 ${esc(v.message || v.mesaj || "—").replace(/\n/g, "<br>")}
+               ${v.sayfa ? `<br><span style="opacity:.7">geldiği sayfa: ${esc(v.sayfa)}</span>` : ""}
              </div>`
           : `<div class="frm-satir">
                📧 <b>${esc(v.email) || "—"}</b> · 📞 <b>${esc(v.phone) || "—"}</b>
@@ -1703,25 +1806,34 @@
         return `
         <div class="frm ${sos ? "sos" : ""} ${islendi ? "islendi" : ""}" data-sid="${s.id}">
           <div class="frm-ust">
-            <span class="frm-tur">${sos ? "🆘 SOS" : "başvuru"}</span>
+            <span class="frm-tur">${sos ? "🆘 SOS" : mesajKaydi ? "💬 mesaj" : "başvuru"}</span>
             <strong>${esc(ad)}</strong>
-            ${islendi
-              ? `<span class="adm-badge" style="color:#20744c;border-color:#4da878">✓ üye #${s.user_id || "?"} oluşturuldu</span>`
-              : mevcutUye
-                ? `<span class="adm-badge eksik" title="Bu e-posta ile zaten bir üyelik var; mükerrer kayıt açılmaz">⚠️ bu e-posta zaten üye #${mevcutUye.id}</span>`
-                : '<span class="adm-badge eksik">⏳ işlenmedi</span>'}
+            ${mesajKaydi
+              ? (islendi
+                  ? '<span class="adm-badge" style="color:#20744c;border-color:#4da878">✓ yanıtlandı</span>'
+                  : '<span class="adm-badge eksik">⏳ yanıt bekliyor</span>')
+              : islendi
+                ? `<span class="adm-badge" style="color:#20744c;border-color:#4da878">✓ üye #${s.user_id || "?"} oluşturuldu</span>`
+                : mevcutUye
+                  ? `<span class="adm-badge eksik" title="Bu e-posta ile zaten bir üyelik var; mükerrer kayıt açılmaz">⚠️ bu e-posta zaten üye #${mevcutUye.id}</span>`
+                  : '<span class="adm-badge eksik">⏳ işlenmedi</span>'}
             <span class="frm-tarih">${trTarih(s.created)} ${String(s.created || "").slice(11, 16)}</span>
           </div>
           ${govde}
           <div class="frm-eylem">
-            ${(!sos && !islendi && !mevcutUye) ? '<button class="btn btn-gold" data-frm="donustur">✓ Üyeye Dönüştür</button>' : ""}
-            ${(islendi || mevcutUye)
+            ${mesajKaydi ? `
+              ${wa ? `<a class="btn btn-gold" href="https://wa.me/${wa}?text=${encodeURIComponent("Merhaba " + (ad === "(isimsiz)" ? "" : ad) + ", Model of World'den yazıyoruz. Mesajınız için teşekkürler —")}" target="_blank" rel="noopener">💬 WhatsApp'tan Yanıtla</a>` : ""}
+              ${v.email ? `<a class="btn btn-ghost" href="mailto:${esc(v.email)}?subject=${encodeURIComponent("Model of World — mesajınıza yanıt")}">📧 E-posta ile Yanıtla</a>` : ""}
+              <button class="btn btn-ghost" data-frm="yanitlandi">${islendi ? "↩︎ Yeniden Aç" : "✓ Yanıtlandı İşaretle"}</button>
+            ` : ""}
+            ${(!sos && !mesajKaydi && !islendi && !mevcutUye) ? '<button class="btn btn-gold" data-frm="donustur">✓ Üyeye Dönüştür</button>' : ""}
+            ${(!mesajKaydi && (islendi || mevcutUye))
               ? `<a class="btn btn-ghost" href="#" data-frm="git" data-uid="${islendi ? (s.user_id || "") : mevcutUye.id}">👤 Üye Kartına Git</a>` : ""}
-            ${!sos ? '<button class="btn btn-ghost" data-frm="duzenle">✏️ Düzenle</button>' : ""}
+            ${(!sos && !mesajKaydi) ? '<button class="btn btn-ghost" data-frm="duzenle">✏️ Düzenle</button>' : ""}
             <button class="btn btn-tehlike" data-frm="sil">🗑 Sil</button>
             <span class="mini" data-frmmsg></span>
           </div>
-          ${!sos ? `
+          ${(!sos && !mesajKaydi) ? `
           <div class="frm-duzen" data-frmduzen>
             <div class="frm-grid">
               ${FRM_ALAN.map(([k, et]) =>
@@ -1772,6 +1884,14 @@
           setTimeout(() => card.style.borderColor = "", 2500);
         }
         return;
+      }
+
+      if (act === "yanitlandi") {
+        yaz("Kaydediliyor…", false);
+        const sonuc = await api("/api/admin/submission", { id: sid, action: "done" });
+        if (!sonuc.ok) { yaz("⚠️ " + (sonuc.err || "İşaretlenemedi"), true); return; }
+        toast(sonuc.data?.processed === "1" ? "✓ Mesaj yanıtlandı olarak işaretlendi" : "↩︎ Mesaj yeniden açıldı");
+        load(); return;
       }
 
       if (act === "kaydet") {

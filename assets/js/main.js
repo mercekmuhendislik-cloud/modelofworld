@@ -117,7 +117,7 @@
               <li><a href="tel:${AGENCY.phone.replace(/[^\d+]/g, "")}">${AGENCY.phone}</a></li>
               <li><a href="${AGENCY.waLink()}" target="_blank" rel="noopener">WhatsApp: ${AGENCY.whatsapp}</a></li>
               <li><a href="mailto:${AGENCY.email}">${AGENCY.email}</a></li>
-              <li><span class="muted">${AGENCY.address}</span></li>
+              <li><a href="${AGENCY.mapsYolTarifi()}" target="_blank" rel="noopener" title="Yol tarifi al">${AGENCY.address}</a></li>
               <li><a href="blog">Blog & Haberler</a></li>
               <li class="mt-2"><a class="btn btn-ghost btn-sm" href="teklif">Hızlı Teklif İste</a></li>
             </ul>
@@ -130,7 +130,7 @@
           </div>
         </div>
         <div class="footer-bottom">
-          <span>© ${year} ${AGENCY.legal.title} · ${AGENCY.address}</span>
+          <span>© ${year} ${AGENCY.legal.title} · ${AGENCY.addressShort}</span>
           <span><a href="kvkk">KVKK & Gizlilik</a> · <a href="kvkk#cerez">Çerez Politikası</a> · <a href="sozlesme">Sözleşme & Şartlar</a></span>
         </div>
       </div>
@@ -139,6 +139,37 @@
     <a class="wa-float" href="${AGENCY.waLink()}" target="_blank" rel="noopener" aria-label="WhatsApp ile yazın" title="WhatsApp: ${AGENCY.whatsapp}">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2Zm5.4 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.4-.7-2.9-1.2-4.7-4.1-4.9-4.3-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.4l.9 2.1c.1.2.1.4 0 .6l-.4.6-.5.5c-.2.2-.3.4-.1.7.2.3.8 1.4 1.8 2.2 1.2 1.1 2.3 1.4 2.6 1.6.3.1.5.1.7-.1l1-1.2c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.3Z"/></svg>
     </a>
+
+    <!-- Site içi mesaj kutusu: ziyaretçi siteden çıkmadan yazar, mesaj yönetici paneline düşer -->
+    <button class="msg-float" id="msgFloat" type="button" aria-label="Bize mesaj yazın" aria-expanded="false" aria-controls="msgPanel">
+      <svg class="ic-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12Z"/><path d="M8.5 11h7M8.5 14.5h4"/></svg>
+      <svg class="ic-kapat hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+
+    <div class="msg-panel" id="msgPanel" role="dialog" aria-label="Bize mesaj yazın" hidden>
+      <div class="msg-head">
+        <div>
+          <strong>Bize buradan yazın</strong>
+          <span>Mesajınız doğrudan ekibimize ulaşır — hafta içi 09:00–19:00 arası aynı gün dönüş yapılır.</span>
+        </div>
+        <button type="button" class="msg-x" id="msgKapat" aria-label="Kapat">×</button>
+      </div>
+      <form class="msg-form" id="msgForm" novalidate>
+        <input type="text"  name="fullname" placeholder="Adınız Soyadınız" autocomplete="name" required>
+        <input type="tel"   name="phone"    placeholder="Telefon" inputmode="numeric" maxlength="14" autocomplete="tel" required>
+        <input type="email" name="email"    placeholder="E-posta (isteğe bağlı)" autocomplete="email">
+        <textarea name="message" rows="3" placeholder="Mesajınız…" required></textarea>
+        <button type="submit" class="btn btn-gold btn-sm" id="msgGonder">Mesajı Gönder</button>
+        <div class="msg-durum" id="msgDurum"></div>
+        <p class="msg-alt">Anında yazışmayı tercih ederseniz:
+          <a href="${AGENCY.waLink()}" target="_blank" rel="noopener">WhatsApp'tan yazın →</a></p>
+      </form>
+      <div class="msg-ok" id="msgOk">
+        <div class="tik">✓</div>
+        <strong>Mesajınız bize ulaştı</strong>
+        <p>En kısa sürede size dönüş yapacağız. Acil bir durum varsa <a href="${AGENCY.waLink()}" target="_blank" rel="noopener">WhatsApp'tan</a> da yazabilirsiniz.</p>
+      </div>
+    </div>
 
     <div class="search-overlay" id="searchOverlay" role="dialog" aria-label="Site içi arama">
       <button class="icon-btn search-close" id="searchClose" aria-label="Kapat">
@@ -164,6 +195,86 @@
     if (document.body.dataset.page === "cast-listem") window.dispatchEvent(new Event("favs-changed"));
   });
   updateFavBadge();
+
+  /* =========================================================
+     Site içi mesaj kutusu
+     Ziyaretçi siteden ayrılmadan yazar; mesaj /api/submit ile
+     yönetici paneline ("Formlar" bölümü) düşer. Sunucuya
+     ulaşılamazsa mesaj tarayıcıda saklanır ve WhatsApp önerilir.
+     ========================================================= */
+  (function mesajKutusu() {
+    const acBtn = document.getElementById("msgFloat");
+    const panel = document.getElementById("msgPanel");
+    if (!acBtn || !panel) return;
+
+    const form   = document.getElementById("msgForm");
+    const durum  = document.getElementById("msgDurum");
+    const okKart = document.getElementById("msgOk");
+    const gonder = document.getElementById("msgGonder");
+
+    const ac = durumu => {
+      panel.hidden = !durumu;
+      panel.classList.toggle("open", durumu);
+      acBtn.classList.toggle("acik", durumu);
+      acBtn.setAttribute("aria-expanded", String(durumu));
+      acBtn.querySelector(".ic-chat").classList.toggle("hidden", durumu);
+      acBtn.querySelector(".ic-kapat").classList.toggle("hidden", !durumu);
+      if (durumu) setTimeout(() => form.querySelector('[name="fullname"]')?.focus(), 120);
+    };
+
+    acBtn.addEventListener("click", () => ac(panel.hidden));
+    document.getElementById("msgKapat").addEventListener("click", () => ac(false));
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && !panel.hidden) ac(false); });
+
+    /* Sayfa adresi ve hangi sayfadan yazıldığı mesajla birlikte gitsin */
+    const uyari = (metin, tur) => {
+      durum.textContent = metin;
+      durum.className = "msg-durum" + (metin ? " " + tur : "");
+    };
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const v = ad => form.querySelector(`[name="${ad}"]`).value.trim();
+      if (v("fullname").length < 3)              return uyari("Lütfen adınızı ve soyadınızı yazın.", "hata");
+      if (!window.VERA.telefonGecerli(v("phone"))) return uyari("Telefon numaranızı 11 hane olacak şekilde girin (0532 555 55 55).", "hata");
+      if (v("message").length < 5)               return uyari("Lütfen mesajınızı yazın.", "hata");
+
+      gonder.disabled = true;
+      uyari("Gönderiliyor…", "bilgi");
+
+      const kayit = {
+        kind: "mesaj",
+        data: {
+          fullname: v("fullname"), phone: v("phone"), email: v("email"),
+          message: v("message"), sayfa: location.pathname + location.search,
+        },
+        at: new Date().toISOString(),
+      };
+
+      let iletildi = false;
+      try {
+        const r = await fetch("/api/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(kayit),
+        });
+        iletildi = r.ok;
+      } catch { iletildi = false; }
+
+      gonder.disabled = false;
+      if (!iletildi) {
+        /* Mesaj kaybolmasın: yerelde sakla, ziyaretçiye WhatsApp alternatifini göster */
+        const bekleyen = JSON.parse(localStorage.getItem("vera-submissions") || "[]");
+        bekleyen.push(kayit);
+        localStorage.setItem("vera-submissions", JSON.stringify(bekleyen));
+        uyari("Şu anda bağlantı kurulamadı. Aşağıdaki WhatsApp bağlantısından yazarsanız hemen dönüş yapabiliriz.", "hata");
+        return;
+      }
+      uyari("", "");
+      form.style.display = "none";
+      okKart.classList.add("show");
+    });
+  })();
 
   /* ---------- Bülten ---------- */
   document.getElementById("newsletterForm")?.addEventListener("submit", e => {

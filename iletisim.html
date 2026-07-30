@@ -21,10 +21,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=c00e598">
+  <link rel="stylesheet" href="assets/css/style.css?v=d954f4a">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
-  <meta name="mow-surum" content="c00e598">
-  <script src="assets/js/surum-kontrol.js?v=c00e598"></script>
+  <meta name="mow-surum" content="d954f4a">
+  <script src="assets/js/surum-kontrol.js?v=d954f4a"></script>
 </head>
 <body data-page="iletisim">
   <div id="site-header"></div>
@@ -89,25 +89,26 @@
       <div class="section-head reveal">
         <span class="eyebrow">Konum</span>
         <h2>Showroom &amp; Ofis</h2>
-        <p>Nişantaşı, İstanbul — randevu ile ziyaret edebilirsiniz. Haritaya tıklayarak yol tarifi alın.</p>
+        <p id="konumMetin">Randevu ile ziyaret edebilirsiniz. Haritanın altındaki düğmeden yol tarifi alabilirsiniz.</p>
       </div>
       <div class="reveal" style="border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)">
-        <iframe
-          src="https://www.google.com/maps?q=Ni%C5%9Fanta%C5%9F%C4%B1%2C%20%C5%9Ei%C5%9Fli%2F%C4%B0stanbul&output=embed"
+        <iframe id="konumHarita"
           width="100%" height="420" style="border:0;display:block;filter:grayscale(.2)"
           allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"
           title="Model of World konum haritası"></iframe>
       </div>
-      <p class="muted mt-2" style="font-size:.8rem">Gerçek ofis adresi netleştiğinde harita pin'i güncellenecektir.</p>
+      <div class="center mt-3">
+        <a class="btn btn-ghost" id="yolTarifiBtn" href="#" target="_blank" rel="noopener">📍 Yol Tarifi Al</a>
+      </div>
     </div>
   </section>
 
   <div id="site-footer"></div>
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=c00e598"></script>
-  <script src="assets/js/main.js?v=c00e598"></script>
-  <script src="assets/js/analytics.js?v=c00e598"></script>
-  <script src="assets/js/forms.js?v=c00e598"></script>
+  <script src="assets/js/data.js?v=d954f4a"></script>
+  <script src="assets/js/main.js?v=d954f4a"></script>
+  <script src="assets/js/analytics.js?v=d954f4a"></script>
+  <script src="assets/js/forms.js?v=d954f4a"></script>
   <script>
     (function () {
       const { AGENCY } = window.VERA;
@@ -117,12 +118,19 @@
         <div><dt>E-posta</dt><dd style="font-size:1.1rem"><a href="mailto:${AGENCY.email}">${AGENCY.email}</a></dd></div>
         <div><dt>Showroom</dt><dd style="font-size:1.1rem">${AGENCY.address}</dd></div>
         <div><dt>Çalışma Saatleri</dt><dd style="font-size:1.1rem">Hafta içi 09:00 – 19:00</dd></div>`;
+      /* Konum bölümü: harita, metin ve yol tarifi tek kaynaktan (AGENCY.address) */
+      document.getElementById("konumHarita").src = AGENCY.mapsEmbed();
+      document.getElementById("konumMetin").innerHTML =
+        `<strong>${AGENCY.address}</strong> — randevu ile ziyaret edebilirsiniz. Haritanın altındaki düğmeden yol tarifi alabilirsiniz.`;
+      document.getElementById("yolTarifiBtn").href = AGENCY.mapsYolTarifi();
+
       document.getElementById("waBtn").href = AGENCY.waLink();
       document.getElementById("mailBtn").href = "mailto:" + AGENCY.email;
 
-      /* İletişim formu — forms.js altyapısını kullan */
+      /* İletişim formu — mesaj sunucuya (yönetici paneline) gider */
       const form = document.getElementById("contactForm");
-      form.addEventListener("submit", e => {
+      const gonderBtn = form.querySelector('button[type="submit"]');
+      form.addEventListener("submit", async e => {
         e.preventDefault();
         let ok = true;
         form.querySelectorAll(".field").forEach(f => {
@@ -133,9 +141,36 @@
           if (!v) ok = false;
         });
         if (!ok) return;
-        const all = JSON.parse(localStorage.getItem("vera-submissions") || "[]");
-        all.push({ kind: "iletisim", data: Object.fromEntries(new FormData(form).entries()), at: new Date().toISOString() });
-        localStorage.setItem("vera-submissions", JSON.stringify(all));
+
+        const kayit = { kind: "iletisim", data: Object.fromEntries(new FormData(form).entries()), at: new Date().toISOString() };
+        gonderBtn.disabled = true;
+        let iletildi = false;
+        try {
+          const r = await fetch("/api/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(kayit),
+          });
+          iletildi = r.ok;
+        } catch { iletildi = false; }
+        gonderBtn.disabled = false;
+
+        if (!iletildi) {
+          /* Sunucuya ulaşılamadı: mesaj kaybolmasın, ziyaretçiye WhatsApp alternatifi gösterilsin */
+          const bekleyen = JSON.parse(localStorage.getItem("vera-submissions") || "[]");
+          bekleyen.push(kayit);
+          localStorage.setItem("vera-submissions", JSON.stringify(bekleyen));
+          let uyari = document.getElementById("contactHata");
+          if (!uyari) {
+            uyari = document.createElement("p");
+            uyari.id = "contactHata";
+            uyari.className = "mt-2";
+            uyari.style.cssText = "color:var(--danger);font-size:.86rem;line-height:1.6";
+            form.appendChild(uyari);
+          }
+          uyari.innerHTML = `Mesajınız şu anda iletilemedi. Lütfen <a class="gold" href="${AGENCY.waLink()}" target="_blank" rel="noopener">WhatsApp'tan yazın</a> ya da <a class="gold" href="tel:${AGENCY.phone.replace(/[^\d+]/g, "")}">${AGENCY.phone}</a> numarasını arayın.`;
+          return;
+        }
         form.style.display = "none";
         document.getElementById("contactSuccess").classList.add("show");
       });

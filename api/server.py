@@ -283,7 +283,8 @@ def cast_list():
        Öne çıkanlar başta. Hassas/kişisel hiçbir alan dışa verilmez."""
     rows = db().execute("""
         SELECT u.fullname, p.* FROM profiles p JOIN users u ON u.id = p.user_id
-        WHERE COALESCE(p.published,'0') = '1'
+        WHERE COALESCE(u.deleted,'') = ''
+          AND COALESCE(p.published,'0') = '1'
           AND COALESCE(p.status,'') = 'onaylandi'
           AND COALESCE(p.privacy,'private') = 'public'
         ORDER BY CASE WHEN COALESCE(p.featured,'0')='1' THEN 0 ELSE 1 END, p.user_id DESC
@@ -490,7 +491,7 @@ class Handler(BaseHTTPRequestHandler):
             if not adm: return self._json(403, {"error": "Yetki yok"})
             n = lambda q: db().execute(q).fetchone()[0]
             return self._json(200, {
-                "users": n("SELECT COUNT(*) FROM users"),
+                "users": n("SELECT COUNT(*) FROM users WHERE COALESCE(deleted,'')=''"),
                 "bekleyen": n("SELECT COUNT(*) FROM profiles WHERE COALESCE(status,'inceleniyor')='inceleniyor'"),
                 "sos": n("SELECT COUNT(*) FROM submissions WHERE kind='SOS'"),
                 "subs": n("SELECT COUNT(*) FROM submissions"),
@@ -557,7 +558,8 @@ class Handler(BaseHTTPRequestHandler):
             for uid_s in (sh["user_ids"] or "").split(","):
                 if not uid_s.isdigit(): continue
                 uid = int(uid_s)
-                user = db().execute("SELECT fullname FROM users WHERE id=?", (uid,)).fetchone()
+                user = db().execute("SELECT fullname FROM users WHERE id=? AND COALESCE(deleted,'')=''",
+                                    (uid,)).fetchone()
                 prof = db().execute("SELECT * FROM profiles WHERE user_id=?", (uid,)).fetchone()
                 if not user or not prof: continue
                 pr = dict(prof)
@@ -591,9 +593,13 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/admin/list":
             adm = self._admin(qs)
             if not adm: return self._json(403, {"error": "Yetki yok"})
+            # Çöp kutusundaki üyeler ayrı listede döner; normal listeye karışmaz
             users = [dict(r) for r in db().execute(
-                "SELECT id,email,fullname,phone,created FROM users ORDER BY id DESC")]
-            for usr in users:
+                "SELECT id,email,fullname,phone,created,COALESCE(deleted,'') deleted FROM users"
+                " ORDER BY id DESC")]
+            silinenler = [u for u in users if u["deleted"]]
+            users = [u for u in users if not u["deleted"]]
+            for usr in users + silinenler:
                 prof = db().execute("SELECT * FROM profiles WHERE user_id=?", (usr["id"],)).fetchone()
                 usr["profile"] = dict(prof) if prof else {}
                 usr["media"] = [dict(r) for r in db().execute(
@@ -613,14 +619,15 @@ class Handler(BaseHTTPRequestHandler):
             shares = [dict(r) for r in db().execute("SELECT token, user_ids, allow_sensitive, expires, client_likes FROM shares WHERE expires >= ? ORDER BY rowid DESC LIMIT 20", (now(),))]
             # Rol bazlı veri filtresi: finans izni olmayan roller IBAN/vergi göremez
             if not self._can(adm, "finance"):
-                for usr in users:
+                for usr in users + silinenler:
                     for f in ("iban", "bank_name", "account_name", "invoice_type", "tax_no"):
                         if usr["profile"].get(f): usr["profile"][f] = "••• (yetki yok)"
             tasks = [dict(r) for r in db().execute("SELECT * FROM tasks ORDER BY status='acik' DESC, id DESC LIMIT 60")]
             trow = db().execute("SELECT v FROM settings WHERE k='red_templates'").fetchone()
             templates = json.loads(trow["v"]) if trow else []
             mrow = db().execute("SELECT v FROM settings WHERE k='maintenance'").fetchone()
-            out = {"users": users, "jobs": jobs, "submissions": subs, "audit": logs,
+            out = {"users": users, "silinenler": silinenler,
+                   "jobs": jobs, "submissions": subs, "audit": logs,
                    "sos": sos, "shares": shares, "tasks": tasks, "templates": templates,
                    "maintenance": bool(mrow and mrow["v"] == "1"),
                    "me": {"username": adm["username"], "role": adm["role"]}}
@@ -695,7 +702,11 @@ class Handler(BaseHTTPRequestHandler):
             if resit_degil and (len(veli_ad.split()) < 2 or len(re.sub(r"\D", "", veli_tel)) < 10):
                 return self._json(400, {"error": "18 yaş altı başvurularda veli ad soyad ve telefon zorunludur"})
 
-            if db().execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone():
+            var = db().execute("SELECT COALESCE(deleted,'') d FROM users WHERE email=?", (email,)).fetchone()
+            if var and var["d"]:
+                return self._json(409, {"error": "Bu e-posta ile daha önce kayıt yapılmış ve kayıt kaldırılmış. "
+                                                 "Yeniden başvurmak için ajansla iletişime geçin."})
+            if var:
                 return self._json(409, {"error": "Bu e-posta zaten kayıtlı — giriş yapın"})
             salt = secrets.token_hex(16)
             cur = db().execute(
@@ -1211,6 +1222,15 @@ class Handler(BaseHTTPRequestHandler):
                 db().commit()
                 return self._json(200, {"ok": True})
 
+            if act == "done":
+                # Mesaj/iletişim kayıtları üyeye dönüştürülmez; yalnızca "yanıtlandı" işaretlenir
+                yeni_durum = "0" if (row["processed"] or "0") == "1" else "1"
+                db().execute("UPDATE submissions SET processed=? WHERE id=?", (yeni_durum, sid))
+                audit("admin:" + adm["username"], "form-isaretlendi", None,
+                      "%s #%d · %s" % (row["kind"], sid, "yanıtlandı" if yeni_durum == "1" else "yeniden açıldı"))
+                db().commit()
+                return self._json(200, {"ok": True, "processed": yeni_durum})
+
             if act == "update":
                 yeni = d.get("data")
                 if not isinstance(yeni, dict): return self._json(400, {"error": "Geçersiz veri"})
@@ -1229,7 +1249,11 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json(400, {"error": "Formda geçerli bir e-posta yok — önce Düzenle ile ekleyin"})
                 if len(adsoyad.split()) < 2:
                     return self._json(400, {"error": "Formda ad soyad eksik — önce Düzenle ile tamamlayın"})
-                if db().execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone():
+                eski = db().execute("SELECT COALESCE(deleted,'') d FROM users WHERE email=?", (email,)).fetchone()
+                if eski and eski["d"]:
+                    return self._json(409, {"error": "Bu e-posta çöp kutusundaki bir üyeye ait — "
+                                                     "Silinenler sekmesinden geri alın veya kalıcı silin"})
+                if eski:
                     return self._json(409, {"error": "Bu e-posta zaten üye — mükerrer kayıt oluşturulmadı"})
 
                 dogum = str(veri.get("birthdate") or "").strip()
@@ -1292,34 +1316,52 @@ class Handler(BaseHTTPRequestHandler):
             if len(hedefler) > 200:
                 return self._json(400, {"error": "Tek seferde en fazla 200 üye silinebilir"})
 
-            silinen_dosya, silinenler, bulunamayan = 0, [], []
+            # Üç kip: çöp kutusuna taşı (varsayılan) · geri al · kalıcı sil
+            kalici = bool(d.get("kalici"))
+            geri_al = bool(d.get("geri_al"))
+            silinen_dosya, islenen, bulunamayan = 0, [], []
             for uid in hedefler:
-                row = db().execute("SELECT email, fullname FROM users WHERE id=?", (uid,)).fetchone()
+                row = db().execute("SELECT email, fullname, COALESCE(deleted,'') deleted"
+                                   " FROM users WHERE id=?", (uid,)).fetchone()
                 if not row:
                     bulunamayan.append(uid)
                     continue
-                for m in db().execute("SELECT filename FROM photos WHERE user_id=?", (uid,)).fetchall():
-                    try:
-                        os.remove(os.path.join(UPLOAD_DIR, m["filename"]))
-                        silinen_dosya += 1
-                    except OSError:
-                        pass   # dosya zaten yok — kaydı silmeye devam
-                db().execute("DELETE FROM photos WHERE user_id=?", (uid,))
-                db().execute("DELETE FROM job_offers WHERE user_id=?", (uid,))
-                db().execute("DELETE FROM sessions WHERE user_id=?", (uid,))
-                db().execute("DELETE FROM profiles WHERE user_id=?", (uid,))
-                db().execute("DELETE FROM users WHERE id=?", (uid,))
-                silinenler.append("%s <%s>" % (row["fullname"] or "?", row["email"]))
-                audit("admin:" + adm["username"], "uye-sil", uid,
-                      "%s <%s>" % (row["fullname"] or "?", row["email"]))
-            if len(silinenler) > 1:
-                audit("admin:" + adm["username"], "uye-sil-toplu", None,
-                      "%d üye: %s · %d dosya silindi" % (len(silinenler), "; ".join(silinenler)[:400], silinen_dosya))
+                kim = "%s <%s>" % (row["fullname"] or "?", row["email"])
+                if geri_al:
+                    db().execute("UPDATE users SET deleted=NULL WHERE id=?", (uid,))
+                    audit("admin:" + adm["username"], "uye-geri-al", uid, kim)
+                elif kalici:
+                    for m in db().execute("SELECT filename FROM photos WHERE user_id=?", (uid,)).fetchall():
+                        try:
+                            os.remove(os.path.join(UPLOAD_DIR, m["filename"]))
+                            silinen_dosya += 1
+                        except OSError:
+                            pass   # dosya zaten yok — kaydı silmeye devam
+                    db().execute("DELETE FROM photos WHERE user_id=?", (uid,))
+                    db().execute("DELETE FROM job_offers WHERE user_id=?", (uid,))
+                    db().execute("DELETE FROM sessions WHERE user_id=?", (uid,))
+                    db().execute("DELETE FROM profiles WHERE user_id=?", (uid,))
+                    db().execute("DELETE FROM users WHERE id=?", (uid,))
+                    audit("admin:" + adm["username"], "uye-kalici-sil", uid, kim)
+                else:
+                    if row["deleted"]:
+                        bulunamayan.append(uid)   # zaten çöp kutusunda
+                        continue
+                    # Çöp kutusu: kayıt ve dosyalar durur, üye siteden/listelerden kalkar
+                    db().execute("UPDATE users SET deleted=? WHERE id=?", (now(), uid))
+                    db().execute("UPDATE profiles SET published='0', featured='0' WHERE user_id=?", (uid,))
+                    db().execute("DELETE FROM sessions WHERE user_id=?", (uid,))
+                    audit("admin:" + adm["username"], "uye-cop-kutusu", uid, kim)
+                islenen.append(kim)
+            if len(islenen) > 1:
+                audit("admin:" + adm["username"],
+                      "uye-geri-al-toplu" if geri_al else ("uye-kalici-sil-toplu" if kalici else "uye-cop-kutusu-toplu"),
+                      None, "%d üye: %s" % (len(islenen), "; ".join(islenen)[:400]))
             db().commit()
-            if not silinenler:
-                return self._json(404, {"error": "Üye bulunamadı (zaten silinmiş olabilir)"})
+            if not islenen:
+                return self._json(404, {"error": "Üye bulunamadı (zaten işlenmiş olabilir)"})
             return self._json(200, {"ok": True, "dosya": silinen_dosya,
-                                    "silinen": len(silinenler), "bulunamayan": bulunamayan})
+                                    "silinen": len(islenen), "bulunamayan": bulunamayan})
 
         if p == "/api/admin/job":
             adm = self._admin(qs)

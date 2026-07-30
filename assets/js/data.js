@@ -17,7 +17,9 @@ const AGENCY = {
   phone: "+90 541 153 34 10",
   whatsapp: "+90 541 153 34 10",
   email: "info@modelofworld.com",
-  address: "Nişantaşı, İstanbul",
+  address: "Osmanağa Mah. Vahapbey Sok. No: 27 Kat: 3, Kadıköy / İstanbul",
+  addressShort: "Kadıköy, İstanbul",
+  addressMaps: "Osmanağa Mahallesi Vahapbey Sokak No 27 Kadıköy İstanbul",   /* harita/yol tarifi sorgusu */
   instagram: "https://instagram.com/",
   /* Resmi ticari bilgiler — yayın öncesi gerçek değerlerle doldurulacak */
   legal: {
@@ -34,6 +36,12 @@ const AGENCY = {
 AGENCY.waNumara = AGENCY.whatsapp.replace(/\D/g, "");
 AGENCY.waLink = (metin = "Merhaba, Model of World ile iletişime geçmek istiyorum.") =>
   `https://wa.me/${AGENCY.waNumara}?text=${encodeURIComponent(metin)}`;
+
+/* Harita: gömülü çerçeve ve yol tarifi bağlantısı — adres tek yerden gelir */
+AGENCY.mapsEmbed = () =>
+  `https://www.google.com/maps?q=${encodeURIComponent(AGENCY.addressMaps)}&output=embed`;
+AGENCY.mapsYolTarifi = () =>
+  `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(AGENCY.addressMaps)}`;
 
 /* Kategori tanımları */
 const CATEGORIES = {

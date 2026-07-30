@@ -846,6 +846,63 @@ body { animation: pageIn 0.6s ease both; }
 .wa-float:hover { transform: translateY(-3px) scale(1.05); }
 .wa-float svg { width: 26px; height: 26px; }
 
+/* ---------- Site içi mesaj kutusu (WhatsApp butonunun üstünde) ---------- */
+.msg-float {
+  position: fixed; right: 22px; bottom: 86px; z-index: 70;
+  width: 54px; height: 54px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--gold-grad); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+  transition: transform 0.25s ease;
+}
+.msg-float:hover { transform: translateY(-3px) scale(1.05); }
+.msg-float svg { width: 25px; height: 25px; }
+.msg-float .hidden { display: none; }
+
+.msg-panel {
+  position: fixed; right: 22px; bottom: 150px; z-index: 71;
+  width: min(340px, calc(100vw - 44px));
+  max-height: min(560px, calc(100vh - 190px)); overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 16px; box-shadow: 0 22px 60px rgba(0, 0, 0, 0.28);
+  opacity: 0; transform: translateY(10px); transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.msg-panel.open { opacity: 1; transform: none; }
+.msg-head {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 16px 16px 12px; border-bottom: 1px solid var(--line);
+}
+.msg-head strong { display: block; font-family: var(--font-serif); font-size: 1.05rem; }
+.msg-head span { display: block; margin-top: 4px; font-size: 0.76rem; color: var(--text-2); line-height: 1.5; }
+.msg-x {
+  margin-left: auto; flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--line); background: transparent; color: var(--text-2);
+  font-size: 1.1rem; line-height: 1; cursor: pointer;
+}
+.msg-x:hover { color: var(--text); border-color: var(--gold); }
+.msg-form { display: flex; flex-direction: column; gap: 9px; padding: 14px 16px 16px; }
+.msg-form input, .msg-form textarea {
+  width: 100%; padding: 11px 13px; font: inherit; font-size: 0.88rem;
+  color: var(--text); background: var(--bg-2);
+  border: 1px solid var(--line); border-radius: 9px; resize: vertical;
+}
+.msg-form input:focus, .msg-form textarea:focus { outline: none; border-color: var(--gold); }
+.msg-form button[type="submit"] { width: 100%; margin-top: 2px; }
+.msg-durum { font-size: 0.79rem; line-height: 1.55; }
+.msg-durum.hata { color: var(--danger); }
+.msg-durum.bilgi { color: var(--text-2); }
+.msg-alt { font-size: 0.76rem; color: var(--text-2); text-align: center; margin: 2px 0 0; }
+.msg-alt a { color: #1fb355; font-weight: 600; }
+.msg-ok { display: none; padding: 26px 20px 28px; text-align: center; }
+.msg-ok.show { display: block; }
+.msg-ok .tik {
+  width: 46px; height: 46px; margin: 0 auto 12px; border-radius: 50%;
+  background: var(--gold-grad); color: #fff; font-size: 1.3rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.msg-ok strong { font-family: var(--font-serif); font-size: 1.1rem; }
+.msg-ok p { margin-top: 8px; font-size: 0.82rem; color: var(--text-2); line-height: 1.7; }
+
 /* ---------- Favori (Cast Listem) ---------- */
 .fav-btn {
   position: absolute; top: 12px; right: 12px; z-index: 3;
@@ -1190,6 +1247,9 @@ body { animation: pageIn 0.6s ease both; }
   /* Yüzen butonlar içeriği kapatmasın */
   .wa-float { width: 48px; height: 48px; right: 14px; bottom: 14px; }
   .wa-float svg { width: 23px; height: 23px; }
+  .msg-float { width: 48px; height: 48px; right: 14px; bottom: 72px; }
+  .msg-float svg { width: 22px; height: 22px; }
+  .msg-panel { right: 14px; bottom: 130px; width: calc(100vw - 28px); max-height: calc(100vh - 160px); }
 
   /* Uzun e-posta/etiketler taşmasın */
   .adm-meta, .adm-sub, .mini, .offer-meta { overflow-wrap: anywhere; }
