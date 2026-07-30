@@ -109,6 +109,24 @@
     .toast.sos { border-left-color:#c62828; background:rgba(198,40,40,.08); font-weight:600; }
     @keyframes toastIn { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:none; } }
 
+    /* Onay penceresi — tarayıcının confirm/prompt kutuları yerine.
+       Chrome'da "bu sayfanın ek iletişim kutusu oluşturmasını engelle" işaretlenirse
+       native confirm/prompt sessizce iptal döner ve işlem hiç yapılmaz; bu pencere ondan etkilenmez. */
+    #onayKatman { position:fixed; inset:0; z-index:400; background:rgba(20,8,14,.6); backdrop-filter:blur(6px);
+      display:none; align-items:center; justify-content:center; padding:20px; }
+    #onayKatman.open { display:flex; }
+    #onayKutu { background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);
+      width:min(560px,100%); max-height:86vh; overflow:auto; padding:24px 26px; animation:fadeUp .25s ease both; }
+    #onayKutu h3 { font-family:var(--font-serif); font-size:1.35rem; margin-bottom:12px; color:var(--danger); }
+    #onayKutu .onay-metin { font-size:.9rem; line-height:1.7; color:var(--text-2); white-space:pre-wrap; overflow-wrap:anywhere; }
+    #onayKutu .onay-uyari { margin-top:14px; padding:10px 14px; border-radius:10px; font-size:.84rem;
+      border:1px solid #d95a5a; background:rgba(217,90,90,.08); color:#c33; }
+    #onayKutu label { display:block; font-size:.62rem; letter-spacing:.14em; text-transform:uppercase;
+      color:var(--text-2); margin:16px 0 6px; }
+    #onayKelime { width:100%; }
+    #onayKutu .onay-eylem { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; flex-wrap:wrap; }
+    #onayHata { color:#c33; font-size:.8rem; margin-top:8px; min-height:1em; }
+
     /* Komut paleti */
     #palette { position:fixed; inset:0; z-index:250; background:rgba(20,8,14,.55); backdrop-filter:blur(6px);
       display:none; align-items:flex-start; justify-content:center; padding-top:14vh; }
@@ -399,6 +417,23 @@
   </section>
 
   <div id="toasts"></div>
+
+  <!-- Kalıcı silme onay penceresi (tarayıcı iletişim kutularından bağımsız) -->
+  <div id="onayKatman">
+    <div id="onayKutu" role="dialog" aria-modal="true" aria-labelledby="onayBaslik">
+      <h3 id="onayBaslik">Kalıcı Silme</h3>
+      <div class="onay-metin" id="onayMetin"></div>
+      <div class="onay-uyari">Bu işlem geri alınamaz. Silmek yerine <strong>Reddet</strong> de kullanabilirsiniz.</div>
+      <label for="onayKelime">Onaylamak için <strong style="color:var(--gold)">SİL</strong> yazın</label>
+      <input class="adm-input" id="onayKelime" autocomplete="off" placeholder="SİL">
+      <div id="onayHata"></div>
+      <div class="onay-eylem">
+        <button class="btn btn-ghost btn-sm" id="onayVazgec">Vazgeç</button>
+        <button class="btn btn-tehlike btn-sm" id="onayTamam">🗑 Kalıcı Olarak Sil</button>
+      </div>
+    </div>
+  </div>
+
   <div id="palette"><div class="pal-box">
     <input id="palInput" placeholder="Üye ara veya komut yazın…  (↑↓ seç, Enter git, Esc kapat)">
     <div class="pal-list" id="palList"></div>
@@ -659,13 +694,38 @@
       if (all) { all.checked = hepsi > 0 && n === hepsi; all.indeterminate = n > 0 && n < hepsi; }
     }
 
-    /* Kalıcı silme teyidi — Türkçe klavyede büyük "İ" yazıldığı için
-       SIL / SİL / sil / sıl yazımlarının hepsi kabul edilir. */
-    function silTeyidi(adet) {
-      const c = prompt("Onaylamak için SİL yazın — " + adet + " üye kalıcı olarak silinecek:");
-      if (c === null) return false;
-      return c.trim().toUpperCase().replace(/İ/g, "I") === "SIL";
+    /* Kalıcı silme onayı — sayfa içi pencere.
+       Tarayıcının confirm/prompt kutuları KULLANILMAZ: Chrome'da "bu sayfanın ek
+       iletişim kutusu oluşturmasını engelle" işaretlendiğinde bunlar sessizce
+       iptal döndüğü için silme hiç çalışmıyordu.
+       Yazım denetimi Türkçe klavyeye toleranslıdır: SİL / SIL / sil / sıl kabul edilir. */
+    let onayCoz = null;
+    function silOnayi(metin) {
+      $("onayMetin").textContent = metin;
+      $("onayKelime").value = "";
+      $("onayHata").textContent = "";
+      $("onayKatman").classList.add("open");
+      setTimeout(() => $("onayKelime").focus(), 60);
+      return new Promise(res => { onayCoz = res; });
     }
+    function onayKapat(sonuc) {
+      $("onayKatman").classList.remove("open");
+      const f = onayCoz; onayCoz = null;
+      if (f) f(sonuc);
+    }
+    function onayDogru() {
+      return $("onayKelime").value.trim().toUpperCase().replace(/İ/g, "I") === "SIL";
+    }
+    $("onayTamam").addEventListener("click", () => {
+      if (!onayDogru()) { $("onayHata").textContent = "Onaylamak için kutuya SİL yazmanız gerekiyor."; $("onayKelime").focus(); return; }
+      onayKapat(true);
+    });
+    $("onayVazgec").addEventListener("click", () => onayKapat(false));
+    $("onayKatman").addEventListener("click", e => { if (e.target.id === "onayKatman") onayKapat(false); });
+    $("onayKelime").addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); $("onayTamam").click(); }
+      if (e.key === "Escape") onayKapat(false);
+    });
     /* Silme çağrısı tek yerden yapılır: tek üye de toplu silme de aynı ucu kullanır */
     async function uyeleriSil(ids) {
       toast("⏳ " + ids.length + " üye siliniyor…");
@@ -706,12 +766,11 @@
       const secili = (DATA.users || []).filter(u => ids.includes(u.id));
       const adlar = secili.map(u => "· " + (u.fullname || u.email || "#" + u.id)).join("\n");
       const fotoSayi = secili.reduce((t, u) => t + (u.media || []).filter(m => m.kind === "photo").length, 0);
-      if (!confirm(
-        "KALICI SİLME — " + ids.length + " ÜYE\n\n" + adlar + "\n\n" +
+      const onay = await silOnayi(
+        ids.length + " üye kalıcı olarak silinecek:\n" + adlar + "\n\n" +
         "Silinecekler: üyelik hesapları, profil ve ölçü bilgileri, " +
-        fotoSayi + " fotoğraf/belge dosyası (sunucudan da silinir) ve iş teklifi kayıtları.\n\n" +
-        "Bu işlem GERİ ALINAMAZ. Silmek yerine 'Toplu Reddet' de kullanabilirsiniz.\n\nDevam etmek istiyor musunuz?")) return;
-      if (!silTeyidi(ids.length)) { toast("Silme iptal edildi.", "hata"); return; }
+        fotoSayi + " fotoğraf/belge dosyası (sunucudan da silinir) ve iş teklifi kayıtları.");
+      if (!onay) { toast("Silme iptal edildi.", "hata"); return; }
       await uyeleriSil(ids);
     });
     document.querySelectorAll("[data-bulk]").forEach(b => b.addEventListener("click", async () => {
@@ -1210,15 +1269,14 @@
         const uye = (DATA.users || []).find(x => x.id === uid) || {};
         const ad = uye.fullname || uye.email || ("#" + uid);
         const fotoSayi = (uye.media || []).filter(m => m.kind === "photo").length;
-        if (!confirm(
-          "KALICI SİLME\n\n" + ad + " (" + (uye.email || "") + ")\n\n" +
+        const onay = await silOnayi(
+          ad + (uye.email ? " (" + uye.email + ")" : "") + " kalıcı olarak silinecek.\n\n" +
           "Silinecekler:\n" +
           "· Üyelik hesabı ve giriş bilgileri\n" +
           "· Profil ve ölçü bilgileri\n" +
           "· " + fotoSayi + " fotoğraf/belge dosyası (sunucudan da silinir)\n" +
-          "· İş teklifi kayıtları\n\n" +
-          "Bu işlem GERİ ALINAMAZ. Üyeyi silmek yerine 'Reddet' de kullanabilirsiniz.\n\nDevam etmek istiyor musunuz?")) return;
-        if (!silTeyidi(1)) { toast("Silme iptal edildi.", "hata"); return; }
+          "· İş teklifi kayıtları");
+        if (!onay) { toast("Silme iptal edildi.", "hata"); return; }
         await uyeleriSil([uid]);
         return;
       }
