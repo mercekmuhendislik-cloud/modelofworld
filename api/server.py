@@ -595,8 +595,12 @@ class Handler(BaseHTTPRequestHandler):
             if kind not in UPLOAD_RULES: kind = "photo"
             album = fields.get("album", "genel")
             if album not in ALBUMS: album = "genel"
-            if album == "sanatsal" and is_minor(uid):
-                return self._json(403, {"error": "Bu albüm 18 yaş altı üyelere kapalıdır"})
+            if album == "sanatsal":
+                if is_minor(uid):
+                    return self._json(403, {"error": "Bu albüm 18 yaş altı üyelere kapalıdır"})
+                pr = db().execute("SELECT shoot_prefs FROM profiles WHERE user_id=?", (uid,)).fetchone()
+                if not any(x in ((pr["shoot_prefs"] if pr else "") or "") for x in ("yari_nu", "nu")):
+                    return self._json(403, {"error": "Önce Tercihler sekmesinden sanatsal çekim tercihinizi işaretleyin"})
             exts, max_size, max_count = UPLOAD_RULES[kind]
             count = db().execute("SELECT COUNT(*) c FROM photos WHERE user_id=? AND kind=? AND deleted=0",
                                  (uid, kind)).fetchone()["c"]

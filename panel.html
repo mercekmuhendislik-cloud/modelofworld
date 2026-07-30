@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=732f9ff">
+  <link rel="stylesheet" href="assets/css/style.css?v=17875dd">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -240,6 +240,11 @@
         <div class="form-grid" style="grid-template-columns:1fr">
           <div class="field" id="prefField">
             <label>Kabul Ettiğim Çekim Türleri</label>
+            <div class="guide-box" id="nuHint" style="display:none;margin-bottom:12px">
+              <strong>ℹ️ Sanatsal / Nü çekim tercihleri</strong>
+              Bu tercihler yalnızca <em>“Nü / Sanatsal Model (18+)”</em> kategorisini seçen üyelere gösterilir.
+              İlgileniyorsanız <strong>Temel Bilgiler</strong> sekmesinden bu kategoriyi ekleyebilirsiniz.
+            </div>
             <div class="skill-grid">
               <label class="skill-check"><input type="checkbox" class="prf" value="standart"><span>Standart Giyim</span></label>
               <label class="skill-check"><input type="checkbox" class="prf" value="guzellik"><span>Güzellik / Yüz</span></label>
@@ -493,8 +498,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=732f9ff"></script>
-  <script src="assets/js/main.js?v=732f9ff"></script>
+  <script src="assets/js/data.js?v=17875dd"></script>
+  <script src="assets/js/main.js?v=17875dd"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -513,27 +518,33 @@
         const txt = el.querySelector(".msel-txt");
         el.querySelector(".msel-btn").addEventListener("click", () => el.classList.toggle("open"));
         document.addEventListener("click", e => { if (!el.contains(e.target)) el.classList.remove("open"); });
-        function sync() {
+        let bildiriliyor = false;
+        function sync(bildir = true) {
           const vals = api.get();
           const labels = options.filter(o => vals.includes(o.value)).map(o => o.label);
           txt.textContent = labels.length
             ? (labels.length > 3 ? labels.slice(0, 3).join(", ") + " +" + (labels.length - 3) : labels.join(", "))
             : placeholder;
           txt.classList.toggle("bos", !labels.length);
-          if (onChange) onChange(vals);
+          /* Geri bildirim döngüsünü engelle (disable → sync → onChange → disable …) */
+          if (bildir && onChange && !bildiriliyor) {
+            bildiriliyor = true;
+            try { onChange(vals); } finally { bildiriliyor = false; }
+          }
         }
         el.querySelector(".msel-panel").addEventListener("change", sync);
         const api = {
           get: () => [...el.querySelectorAll("input:checked")].map(i => i.value),
           set: vals => { el.querySelectorAll("input").forEach(i => i.checked = vals.includes(i.value)); sync(); },
-          disable: (v, d) => { const i = el.querySelector(`input[value="${v}"]`); if (i) { if (d) i.checked = false; i.disabled = d; sync(); } },
+          disable: (v, d) => { const i = el.querySelector(`input[value="${v}"]`); if (i) { if (d) i.checked = false; i.disabled = d; sync(false); } },
+          hide: (v, h) => { const i = el.querySelector(`input[value="${v}"]`); if (i) { if (h) i.checked = false; i.closest(".msel-opt").style.display = h ? "none" : ""; sync(false); } },
         };
         return api;
       }
 
       const catSel = makeMsel($("catSel"),
         Object.entries(window.VERA.CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
-        "Kategori seçin…", () => { syncParentFields(); syncMinorNu(); });
+        "Kategori seçin…", () => { syncParentFields(); syncMinorNu(); syncPrefUI(); });
       const langSel = makeMsel($("langSel"),
         window.VERA.DILLER.map(d => ({ value: d, label: d })), "Dil seçin…");
 
@@ -713,17 +724,29 @@
       /* ---- Tercih gorunurlukleri ---- */
       function syncPrefUI() {
         const minor = isMinor();
+        const nuKat = getCats().includes("nu");   /* "Nü / Sanatsal Model (18+)" kategorisi seçili mi */
         $("prefLock").style.display = minor ? "" : "none";
         document.querySelectorAll(".prf").forEach(c => c.disabled = minor);
+
+        /* Nü / Yarı Nü seçenekleri: yalnızca ilgili kategoriyi seçen yetişkinlere göster */
+        const nuGoster = nuKat && !minor;
+        document.querySelectorAll(".prf").forEach(c => {
+          if (!["yari_nu", "nu"].includes(c.value)) return;
+          c.closest(".skill-check").style.display = nuGoster ? "" : "none";
+          if (!nuGoster) c.checked = false;
+        });
+        $("nuHint").style.display = (nuGoster || minor) ? "none" : "";
+
         const marked = [...document.querySelectorAll(".prf:checked")].map(c => c.value);
-        const sensitive = !minor && marked.some(v => ["ic_giyim", "yari_nu", "nu"].includes(v));
-        $("bndField").style.display = sensitive ? "" : "none";
-        $("rateArtWrap").style.display = sensitive ? "" : "none";
+        const sanatsal = nuGoster && marked.some(v => ["yari_nu", "nu"].includes(v));
+        const hassas = !minor && (sanatsal || marked.includes("ic_giyim"));
+        $("bndField").style.display = hassas ? "" : "none";       /* kişisel sınırlar */
+        $("rateArtWrap").style.display = sanatsal ? "" : "none";  /* sanatsal kaşe */
         const sw = $("sanatsalWrap");
-        if (sw) sw.style.display = sensitive ? "" : "none";
+        if (sw) sw.style.display = sanatsal ? "" : "none";        /* sanatsal albüm */
       }
       document.querySelectorAll(".prf").forEach(c => c.addEventListener("change", syncPrefUI));
-      ["category", "birthdate"].forEach(n => field(n).addEventListener("change", syncPrefUI));
+      field("birthdate").addEventListener("change", syncPrefUI);
 
       /* ============ İmza ============ */
       const sc = $("sigCanvas"), sx2 = sc.getContext("2d");
@@ -776,7 +799,17 @@
       const NEXT_TAB = { genel: "olculer", olculer: "medya", medya: "onaylar", onaylar: "teklifler" };
 
       document.querySelectorAll("[data-save]").forEach(btn => btn.addEventListener("click", async () => {
-        const key = btn.dataset.save, msg = $("msg-" + key), payload = {};
+        const key = btn.dataset.save, msgEl = $("msg-" + key), payload = {};
+        /* Mesajı renklendirip görünür kılan sarmalayıcı — mevcut msg.textContent çağrıları çalışmaya devam eder */
+        const msg = {
+          set textContent(v) {
+            msgEl.textContent = v;
+            const iyi = /^✓/.test(v), bekle = /Kaydediliyor|kaydediliyor/.test(v);
+            msgEl.style.color = !v ? "" : iyi ? "var(--ok)" : bekle ? "var(--text-2)" : "var(--danger)";
+            msgEl.style.fontWeight = (!v || iyi || bekle) ? "400" : "600";
+            if (v && !iyi && !bekle) msgEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          },
+        };
         if (key === "takvim") payload.availability = JSON.stringify(AVAIL);
         else if (key === "gizlilik") {
           const sel = document.querySelector('[name="privacy"]:checked');
