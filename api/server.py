@@ -667,7 +667,7 @@ class Handler(BaseHTTPRequestHandler):
             db().execute(
                 "INSERT INTO profiles(user_id, status, privacy, category, gender, age, city, "
                 "languages, instagram, about, parent_name, parent_phone, consent_kvkk) "
-                "VALUES(?, 'inceleniyor', 'private', ?,?,?,?,?,?,?,?,?,?)",
+                "VALUES(?, 'inceleniyor', 'public', ?,?,?,?,?,?,?,?,?,?)",
                 (uid, ",".join(kats), cinsiyet, str(yas), sehir,
                  str(d.get("languages") or "")[:200], str(d.get("instagram") or "").strip()[:60],
                  str(d.get("about") or "")[:1500],
@@ -1051,6 +1051,13 @@ class Handler(BaseHTTPRequestHandler):
             pr = db().execute("SELECT status, privacy, published, featured FROM profiles WHERE user_id=?", (uid,)).fetchone()
             if not pr: return self._json(404, {"error": "Üye bulunamadı"})
 
+            # Yönetici açıkça istediyse gizlilik tercihini de herkese açık yap
+            if d.get("gizlilik_ac"):
+                db().execute("UPDATE profiles SET privacy='public' WHERE user_id=?", (uid,))
+                audit("admin:" + adm["username"], "gizlilik-herkese-acik", uid,
+                      "yayına alma sırasında yönetici tarafından açıldı")
+                pr = {**dict(pr), "privacy": "public"}
+
             if "published" in d:
                 yayin = "1" if d.get("published") else "0"
                 if yayin == "1" and (pr["status"] or "") != "onaylandi":
@@ -1059,7 +1066,7 @@ class Handler(BaseHTTPRequestHandler):
                 audit("admin:" + adm["username"], "yayin-" + ("acildi" if yayin == "1" else "kaldirildi"), uid, "")
                 if yayin == "1" and (pr["privacy"] or "private") != "public":
                     db().commit()
-                    return self._json(200, {"ok": True, "uyari": "Üye profilini 'özel' seçtiği için herkese açık katalogda görünmeyecek; yalnızca VIP paylaşım linklerinde yer alır."})
+                    return self._json(200, {"ok": True, "gizli": True, "uyari": "Üye profili 'özel' olduğu için herkese açık katalogda GÖRÜNMEYECEK; yalnızca VIP paylaşım linklerinde yer alır. Katalogda görünmesi için gizliliği herkese açık yapın."})
 
             if "featured" in d:
                 one = "1" if d.get("featured") else "0"

@@ -130,6 +130,10 @@ section { padding: clamp(64px, 9vw, 120px) 0; }
 
 .logo { display: flex; align-items: center; gap: 11px; color: var(--text); }
 .logo-mark { width: 40px; height: 40px; flex: none; color: var(--gold); }
+/* Başlık çubuğunda yalnızca yuvarlak MW amblemi görünür — yazı menüye yer bırakır.
+   Footer'daki logo tam haliyle (MODEL of WORLD + AGENCY) kalır. */
+.site-header .logo-word { display: none; }
+.site-header .logo-mark { width: 46px; height: 46px; }
 .logo-word { display: flex; flex-direction: column; line-height: 1; }
 .lw-top { font-family: var(--font-serif); font-size: 1.18rem; font-weight: 600; letter-spacing: 0.14em; }
 .lw-top em {
@@ -142,10 +146,12 @@ section { padding: clamp(64px, 9vw, 120px) 0; }
   letter-spacing: 0.62em; text-transform: uppercase; color: var(--gold); margin-top: 5px;
 }
 
-.main-nav { display: flex; align-items: center; gap: 34px; }
+/* 7 bağlantı + eylem butonları 1240px'lik kapsayıcıya sığsın diye ölçüler kısıldı */
+.main-nav { display: flex; align-items: center; gap: 22px; }
 .main-nav a {
-  font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.2em;
+  font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.14em;
   color: var(--text-2); position: relative; padding: 6px 0;
+  white-space: nowrap;   /* "Cast / Katalog", "Nasıl Çalışır?" iki satıra bölünmesin */
   transition: color 0.25s ease;
 }
 .main-nav a::after {
@@ -202,11 +208,21 @@ section { padding: clamp(64px, 9vw, 120px) 0; }
 .nav-toggle { display: none; }
 .header-cta { margin-left: 6px; }
 
+/* Dizüstü genişlikleri: 7 bağlantı + eylem butonları taşmasın diye menü sıkışır */
+@media (max-width: 1280px) {
+  .header-inner { gap: 14px; }
+  .main-nav { gap: 18px; }
+  .main-nav a { font-size: 0.72rem; letter-spacing: 0.12em; }
+  .main-nav a.nav-cta { padding: 9px 15px; }
+  .header-actions { gap: 6px; }
+  .icon-btn { width: 38px; height: 38px; }
+}
+
 /* Mobil menü
    ÖNEMLİ: .site-header'da backdrop-filter var; bu, içindeki position:fixed
    ögeleri header'a göre hizalar ve menü kutusu yükseklik alamaz (arka plan
    çizilmez, yazılar sayfa içeriğiyle karışır). Bu yüzden absolute kullanılır. */
-@media (max-width: 960px) {
+@media (max-width: 1024px) {
   .main-nav {
     position: absolute; top: 100%; left: 0; right: 0;
     height: calc(100svh - var(--header-h));
@@ -1105,7 +1121,7 @@ body { animation: pageIn 0.6s ease both; }
 .nav-mob { display: none; }
 .hide-mob { display: inline-flex; }
 
-@media (max-width: 960px) {
+@media (max-width: 1024px) {
   /* Mobil menüye taşınan ek bağlantılar */
   .main-nav .nav-mob {
     display: block; width: 100%; text-align: left; cursor: pointer;
@@ -1184,6 +1200,7 @@ body { animation: pageIn 0.6s ease both; }
   /* Başlık çubuğu taşmasın: logo küçülür, üye+tema menüye taşınır */
   .logo { gap: 8px; }
   .logo-mark { width: 31px; height: 31px; }
+  .site-header .logo-mark { width: 38px; height: 38px; }
   .lw-top { font-size: 0.9rem; letter-spacing: 0.08em; }
   .logo-word small { font-size: 0.4rem; letter-spacing: 0.3em; margin-top: 3px; }
   .header-actions { gap: 5px; }

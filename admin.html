@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=c8978cd">
+  <link rel="stylesheet" href="assets/css/style.css?v=4a83a79">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -964,14 +964,16 @@
               <strong>${esc(u.fullname) || "(isimsiz)"} <span class="adm-stars">${stars}</span></strong>
               <small>#${u.id} · ${esc(p.city) || "?"} · ${catAd(p.category)} · ${trTarih(u.created)}</small>
             </div>
-            <span class="adm-badge st-${st}">${st === "onaylandi" ? "✓ onaylı" : st === "reddedildi" ? "✕ red" : "⏳ bekliyor"}</span>
+            <span class="adm-badge st-${st}">${st === "onaylandi" ? "✓ ONAYLANDI" : st === "reddedildi" ? "✕ REDDEDİLDİ" : "⏳ ONAY BEKLİYOR"}</span>
             ${p.published === "1"
               ? '<span class="adm-badge" style="color:#20744c;border-color:#4da878">🌐 SİTEDE</span>'
               : '<span class="adm-badge" style="opacity:.65">⚪ sitede değil</span>'}
             ${p.featured === "1" ? '<span class="adm-badge" style="color:var(--gold);border-color:var(--gold)">⭐ öne çıkan</span>' : ""}
             ${p.privacy === "public"
-              ? '<span class="adm-badge" title="Üye profilinin herkese açık olmasını seçti">🌍 açık</span>'
-              : '<span class="adm-badge" title="Üye profilini özel seçti — yayınlansa bile katalogda görünmez, yalnızca VIP paylaşımlarda çıkar">🔒 özel</span>'}
+              ? '<span class="adm-badge" title="Profil herkese açık — yayına alındığında katalogda görünür">🌍 açık</span>'
+              : (p.published === "1"
+                ? '<span class="adm-badge eksik" title="Üye profili özel — yayında olmasına rağmen katalogda GÖRÜNMEZ. Düzeltmek için Yayından Al → Siteye Çıkar yapıp gizliliği açın.">⚠️ ÖZEL — KATALOGDA GÖRÜNMEZ</span>'
+                : '<span class="adm-badge" title="Profil özel — yayına alınsa bile katalogda görünmez, yalnızca VIP paylaşımlarda çıkar">🔒 özel</span>')}
             ${p.admin_tags ? `<span class="adm-badge">🏷 ${esc(p.admin_tags)}</span>` : ""}
             ${yeniMi(u.created) ? '<span class="adm-badge" style="color:#20744c;border-color:#4da878">🆕 yeni</span>' : ""}
             ${fotolar.length ? `<span class="adm-badge">📷 ${fotolar.length}</span>`
@@ -985,8 +987,12 @@
                 ? `<button class="btn btn-ghost" data-act="reddet-menu">✕ Reddet</button>` : ""}
               ${st === "onaylandi"
                 ? `<button class="btn ${p.published === "1" ? "btn-ghost" : "btn-gold"}" data-act="yayin">${p.published === "1" ? "⛔ Yayından Al" : "🌐 Siteye Çıkar"}</button>
+                   ${(p.published === "1" && p.privacy !== "public")
+                     ? `<button class="btn btn-gold" data-act="gizlilikac" title="Profil özel olduğu için katalogda görünmüyor — tek tıkla herkese açık yapın">🌍 Katalogda Göster</button>` : ""}
                    <button class="btn btn-ghost" data-act="one">${p.featured === "1" ? "☆ Öne Çıkarma" : "⭐ Öne Çıkar"}</button>` : ""}
               <button class="btn btn-ghost" data-act="edit">✏️ Düzenle</button>
+              ${(st === "onaylandi" && p.published === "1" && p.privacy === "public")
+                ? `<a class="btn btn-ghost" href="model-detay?id=u${u.id}" target="_blank" title="Üyenin sitedeki herkese açık sayfası">🔗 Sitedeki Sayfası</a>` : ""}
               <a class="btn btn-ghost" href="sedcard?id=${u.id}" target="_blank">🪪 Sedcard</a>
               <button class="btn btn-tehlike" data-act="sil" title="Üyeyi ve tüm dosyalarını kalıcı olarak siler">🗑 Sil</button>
             </div>
@@ -1128,6 +1134,18 @@
         load(); return;
       }
 
+      /* --- Yayında ama özel: gizliliği açıp katalogda göster --- */
+      if (act === "gizlilikac") {
+        const uye = (DATA.users || []).find(x => x.id === uid) || {};
+        if (!confirm((uye.fullname || "Üye") + " profili ÖZEL olduğu için katalogda görünmüyor.\n\n" +
+                     "Gizlilik tercihi 'herkese açık' yapılacak ve üye katalogda görünmeye başlayacak " +
+                     "(adı + soyadının baş harfi ve fotoğraflarıyla).\n\nOnaylıyor musunuz?")) return;
+        const sonuc = await api("/api/admin/publish", { user_id: uid, published: 1, gizlilik_ac: 1 });
+        if (!sonuc.ok) { toast(sonuc.err || "Hata", "hata"); return; }
+        toast("🌍 Üye artık katalogda görünüyor (30 saniye içinde sitede)");
+        load(); return;
+      }
+
       /* --- Siteye çıkarma / öne çıkarma --- */
       if (act === "yayin" || act === "one") {
         const uye = (DATA.users || []).find(x => x.id === uid) || {};
@@ -1143,6 +1161,14 @@
               && !confirm("Bu üyenin yayınlanabilir fotoğrafı yok — katalogda boş görünecek. Yine de yayınlansın mı?")) return;
           if (yeni && !confirm((uye.fullname || "Üye") + " herkese açık katalogda YAYINLANACAK. Onaylıyor musunuz?")) return;
           if (!yeni && !confirm("Üye siteden kaldırılacak (profili silinmez). Onaylıyor musunuz?")) return;
+          /* Gizlilik 'özel' ise yayınlamak tek başına yetmez — yöneticiye açıkça sor */
+          if (yeni && (pr.privacy || "private") !== "public") {
+            gonder.gizlilik_ac = confirm(
+              (uye.fullname || "Üye") + " profili şu anda ÖZEL.\n\n" +
+              "Özel profiller yayına alınsa bile katalogda GÖRÜNMEZ (yalnızca VIP paylaşım linklerinde çıkar).\n\n" +
+              "TAMAM  → gizliliği 'herkese açık' yap ve katalogda göster\n" +
+              "İPTAL  → yalnızca yayına al (katalogda görünmez)") ? 1 : 0;
+          }
           gonder.published = yeni ? 1 : 0;
         } else {
           gonder.featured = pr.featured === "1" ? 0 : 1;
@@ -1151,7 +1177,9 @@
         if (!sonuc.ok) { toast(sonuc.err || "Hata", "hata"); return; }
         if (sonuc.data && sonuc.data.uyari) toast(sonuc.data.uyari, "hata");
         else toast(act === "yayin"
-          ? (gonder.published ? "🌐 Üye sitede yayında" : "Üye yayından alındı")
+          ? (gonder.published
+              ? (gonder.gizlilik_ac ? "🌐 Üye sitede yayında (gizlilik herkese açık yapıldı)" : "🌐 Üye sitede yayında")
+              : "Üye yayından alındı")
           : (gonder.featured ? "⭐ Öne çıkarıldı — ana sayfada önce görünür" : "Öne çıkarma kaldırıldı"));
         load(); return;
       }
