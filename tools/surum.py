@@ -35,10 +35,10 @@ for f in glob.glob("*.html"):
         yeni = yeni.replace("</head>", "  " + META + "\n</head>", 1)
         damga += 1
 
-    # Tazeleme betiği her sayfada bulunur (sürüm damgası pat ile güncellenir)
-    if "surum-kontrol.js" not in yeni:
-        yeni = yeni.replace("</body>", "  " + BETIK + "\n</body>", 1)
-        damga += 1
+    # Tazeleme + temiz adres betiği <head>'te bulunur (yönlendirme sayfa çizilmeden olsun)
+    yeni = re.sub(r'[ \t]*<script src="assets/js/surum-kontrol\.js[^"]*"></script>\r?\n?', "", yeni)
+    yeni = yeni.replace(META, META + "\n  " + BETIK, 1)
+    damga += 1
 
     if yeni != s:
         io.open(f, "w", encoding="utf-8").write(yeni)

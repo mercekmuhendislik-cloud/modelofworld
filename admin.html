@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=6ce37b6">
+  <link rel="stylesheet" href="assets/css/style.css?v=5f8c936">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -178,7 +178,8 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
-  <meta name="mow-surum" content="6ce37b6">
+  <meta name="mow-surum" content="5f8c936">
+  <script src="assets/js/surum-kontrol.js?v=5f8c936"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -423,9 +424,11 @@
     <div id="onayKutu" role="dialog" aria-modal="true" aria-labelledby="onayBaslik">
       <h3 id="onayBaslik">Kalıcı Silme</h3>
       <div class="onay-metin" id="onayMetin"></div>
-      <div class="onay-uyari">Bu işlem geri alınamaz. Silmek yerine <strong>Reddet</strong> de kullanabilirsiniz.</div>
-      <label for="onayKelime">Onaylamak için <strong style="color:var(--gold)">SİL</strong> yazın</label>
-      <input class="adm-input" id="onayKelime" autocomplete="off" placeholder="SİL">
+      <div class="onay-uyari" id="onayUyari">Bu işlem geri alınamaz. Silmek yerine <strong>Reddet</strong> de kullanabilirsiniz.</div>
+      <div id="onayGiris">
+        <label for="onayKelime" id="onayEtiket">Onaylamak için <strong style="color:var(--gold)">SİL</strong> yazın</label>
+        <input class="adm-input" id="onayKelime" autocomplete="off" placeholder="SİL" style="width:100%">
+      </div>
       <div id="onayHata"></div>
       <div class="onay-eylem">
         <button class="btn btn-ghost btn-sm" id="onayVazgec">Vazgeç</button>
@@ -637,7 +640,8 @@
     $("taskList").addEventListener("click", async e => {
       const b = e.target.closest("[data-task]");
       if (!b) return;
-      if (b.dataset.task === "delete" && !confirm("Görev silinsin mi?")) return;
+      if (b.dataset.task === "delete" &&
+          !(await onayIste("Bu görev listeden kalıcı olarak kaldırılacak.", "Görevi Sil", "Görev Silme", "", true))) return;
       await api("/api/admin/task", { action: b.dataset.task, id: +b.dataset.tid });
       load();
     });
@@ -658,7 +662,7 @@
     $("backupBtn").addEventListener("click", () => { toast("💾 Yedek indiriliyor…"); location.href = "/api/admin/backup"; });
     $("maintBtn").addEventListener("click", async () => {
       const yeni = !DATA.maintenance;
-      if (yeni && !confirm("Site ziyaretçilere KAPATILACAK (bakım sayfası gösterilir). Emin misiniz?")) return;
+      if (yeni && !(await onayIste("Site ziyaretçilere KAPATILACAK — herkese bakım sayfası gösterilir. Başvuru formu da dahil hiçbir sayfa açılmaz.", "Bakım Modunu Aç", "Bakım Modu", "", true))) return;
       const r = await api("/api/admin/maintenance", { on: yeni ? 1 : 0 });
       toast(r.ok ? (yeni ? "🔧 Bakım modu AÇIK — site kapalı" : "🟢 Site tekrar yayında") : r.err, r.ok ? "" : "hata");
       load();
@@ -699,14 +703,50 @@
        iletişim kutusu oluşturmasını engelle" işaretlendiğinde bunlar sessizce
        iptal döndüğü için silme hiç çalışmıyordu.
        Yazım denetimi Türkçe klavyeye toleranslıdır: SİL / SIL / sil / sıl kabul edilir. */
-    let onayCoz = null;
-    function silOnayi(metin) {
-      $("onayMetin").textContent = metin;
-      $("onayKelime").value = "";
+    let onayCoz = null, onayMod = "sil";
+    /* Tek pencere üç modda çalışır:
+       "sil"   → SİL yazdırır, geri döndürür true/false
+       "onay"  → yalnızca Onayla/Vazgeç, true/false
+       "metin" → serbest metin ister, girilen metni veya null döndürür */
+    function onayAc(a) {
+      onayMod = a.mod;
+      $("onayBaslik").textContent = a.baslik;
+      $("onayMetin").textContent = a.metin || "";
+      $("onayMetin").style.display = a.metin ? "" : "none";
+      $("onayUyari").style.display = a.uyari ? "" : "none";
+      if (a.uyari) $("onayUyari").innerHTML = a.uyari;
+      $("onayGiris").style.display = a.giris ? "" : "none";
+      $("onayEtiket").innerHTML = a.etiket || "";
+      $("onayKelime").placeholder = a.yer || "";
+      $("onayKelime").value = a.deger || "";
       $("onayHata").textContent = "";
+      const t = $("onayTamam");
+      t.textContent = a.buton;
+      t.className = "btn btn-sm " + (a.tehlike ? "btn-tehlike" : "btn-gold");
       $("onayKatman").classList.add("open");
-      setTimeout(() => $("onayKelime").focus(), 60);
+      if (a.giris) setTimeout(() => { $("onayKelime").focus(); $("onayKelime").select(); }, 60);
       return new Promise(res => { onayCoz = res; });
+    }
+    function silOnayi(metin, uyari) {
+      return onayAc({
+        mod: "sil", baslik: "Kalıcı Silme", metin,
+        uyari: uyari || "Bu işlem geri alınamaz. Silmek yerine <strong>Reddet</strong> de kullanabilirsiniz.",
+        giris: true, etiket: 'Onaylamak için <strong style="color:var(--gold)">SİL</strong> yazın',
+        yer: "SİL", buton: "🗑 Kalıcı Olarak Sil", tehlike: true,
+      });
+    }
+    function onayIste(metin, buton, baslik, uyari, tehlike) {
+      return onayAc({
+        mod: "onay", baslik: baslik || "Onay Gerekiyor", metin,
+        uyari: uyari || "", giris: false,
+        buton: buton || "Onayla", tehlike: !!tehlike,
+      });
+    }
+    function metinIste(etiket, baslik, deger, buton) {
+      return onayAc({
+        mod: "metin", baslik: baslik || "Bilgi Girin", metin: "", uyari: "",
+        giris: true, etiket, yer: "", deger: deger || "", buton: buton || "Kaydet",
+      });
     }
     function onayKapat(sonuc) {
       $("onayKatman").classList.remove("open");
@@ -717,14 +757,22 @@
       return $("onayKelime").value.trim().toUpperCase().replace(/İ/g, "I") === "SIL";
     }
     $("onayTamam").addEventListener("click", () => {
-      if (!onayDogru()) { $("onayHata").textContent = "Onaylamak için kutuya SİL yazmanız gerekiyor."; $("onayKelime").focus(); return; }
+      if (onayMod === "sil") {
+        if (!onayDogru()) { $("onayHata").textContent = "Onaylamak için kutuya SİL yazmanız gerekiyor."; $("onayKelime").focus(); return; }
+        return onayKapat(true);
+      }
+      if (onayMod === "metin") return onayKapat($("onayKelime").value.trim());
       onayKapat(true);
     });
-    $("onayVazgec").addEventListener("click", () => onayKapat(false));
-    $("onayKatman").addEventListener("click", e => { if (e.target.id === "onayKatman") onayKapat(false); });
+    const onayIptal = () => onayKapat(onayMod === "metin" ? null : false);
+    $("onayVazgec").addEventListener("click", onayIptal);
+    $("onayKatman").addEventListener("click", e => { if (e.target.id === "onayKatman") onayIptal(); });
     $("onayKelime").addEventListener("keydown", e => {
       if (e.key === "Enter") { e.preventDefault(); $("onayTamam").click(); }
-      if (e.key === "Escape") onayKapat(false);
+      if (e.key === "Escape") onayIptal();
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && $("onayKatman").classList.contains("open")) onayIptal();
     });
     /* Silme çağrısı tek yerden yapılır: tek üye de toplu silme de aynı ucu kullanır */
     async function uyeleriSil(ids) {
@@ -780,7 +828,7 @@
       let note = "";
       if (st === "reddedildi") { note = $("bulkRed").value; if (!note) return toast("Önce red gerekçesi seçin", "hata"); }
       if (st === "onaylandi") note = "Tebrikler! Model of World ailesine katıldınız — profiliniz kadroya alındı.";
-      if (!confirm(ids.length + " üye için işlem uygulanacak. Onaylıyor musunuz?")) return;
+      if (!(await onayIste(ids.length + " üye için bu işlem uygulanacak.", "Uygula", "Toplu İşlem"))) return;
       toast("⏳ " + ids.length + " üye işleniyor…");
       for (const uid of ids) await api("/api/admin/review", { user_id: uid, status: st, review_note: note });
       toast("✓ Toplu işlem tamamlandı (" + ids.length + " üye)");
@@ -956,12 +1004,21 @@
     $("usersCard").addEventListener("click", async e => {
       const del = e.target.closest("[data-udel]");
       const pw = e.target.closest("[data-upw]");
-      if (del && confirm(del.dataset.udel + " silinsin mi?")) {
-        await api("/api/admin/user", { action: "delete", username: del.dataset.udel }); load();
+      if (del) {
+        if (await onayIste("Yönetici hesabı silinecek: " + del.dataset.udel +
+                           " — bu kişi artık panele giriş yapamaz.", "Hesabı Sil", "Yetkili Silme", "", true)) {
+          await api("/api/admin/user", { action: "delete", username: del.dataset.udel });
+          toast("🗑 Yetkili silindi");
+          load();
+        }
+        return;
       }
       if (pw) {
-        const yeni = prompt(pw.dataset.upw + " için yeni şifre (min 8):");
-        if (yeni) { const r = await api("/api/admin/user", { action: "resetpw", username: pw.dataset.upw, password: yeni }); alert(r.ok ? "Şifre güncellendi" : r.err); }
+        const yeni = await metinIste(pw.dataset.upw + " için yeni şifre (en az 8 karakter)", "Şifre Sıfırla", "", "Şifreyi Değiştir");
+        if (yeni) {
+          const r = await api("/api/admin/user", { action: "resetpw", username: pw.dataset.upw, password: yeni });
+          toast(r.ok ? "✓ Şifre güncellendi — yeni şifreyi ilgili kişiye iletin" : (r.err || "Hata"), r.ok ? "" : "hata");
+        }
       }
     });
     $("usersCard").addEventListener("change", async e => {
@@ -990,7 +1047,8 @@
     }
     $("sessCard").addEventListener("click", async e => {
       const b = e.target.closest("[data-rev]");
-      if (!b || !confirm("Bu oturum sonlandırılsın mı?")) return;
+      if (!b) return;
+      if (!(await onayIste("Bu oturum sonlandırılacak; ilgili cihazdan çıkış yapılır.", "Oturumu Kapat", "Oturum Sonlandır"))) return;
       await api("/api/admin/revoke", { token: b.dataset.rev });
       load();
     });
@@ -1284,9 +1342,10 @@
       /* --- Yayında ama özel: gizliliği açıp katalogda göster --- */
       if (act === "gizlilikac") {
         const uye = (DATA.users || []).find(x => x.id === uid) || {};
-        if (!confirm((uye.fullname || "Üye") + " profili ÖZEL olduğu için katalogda görünmüyor.\n\n" +
-                     "Gizlilik tercihi 'herkese açık' yapılacak ve üye katalogda görünmeye başlayacak " +
-                     "(adı + soyadının baş harfi ve fotoğraflarıyla).\n\nOnaylıyor musunuz?")) return;
+        if (!(await onayIste(
+              (uye.fullname || "Üye") + " profili ÖZEL olduğu için katalogda görünmüyor. Gizlilik tercihi " +
+              "'herkese açık' yapılacak ve üye katalogda görünmeye başlayacak (adı + soyadının baş harfi ve fotoğraflarıyla).",
+              "🌍 Katalogda Göster", "Gizliliği Aç"))) return;
         const sonuc = await api("/api/admin/publish", { user_id: uid, published: 1, gizlilik_ac: 1 });
         if (!sonuc.ok) { toast(sonuc.err || "Hata", "hata"); return; }
         toast("🌍 Üye artık katalogda görünüyor (30 saniye içinde sitede)");
@@ -1305,16 +1364,19 @@
             msg.textContent = "Önce onaylayın"; return;
           }
           if (yeni && !(uye.media || []).some(m => m.kind === "photo" && !m.deleted)
-              && !confirm("Bu üyenin yayınlanabilir fotoğrafı yok — katalogda boş görünecek. Yine de yayınlansın mı?")) return;
-          if (yeni && !confirm((uye.fullname || "Üye") + " herkese açık katalogda YAYINLANACAK. Onaylıyor musunuz?")) return;
-          if (!yeni && !confirm("Üye siteden kaldırılacak (profili silinmez). Onaylıyor musunuz?")) return;
+              && !(await onayIste("Bu üyenin yayınlanabilir fotoğrafı yok — katalogda boş bir kart görünecek.",
+                                  "Yine de Yayınla", "Fotoğraf Yok", "", true))) return;
+          if (yeni && !(await onayIste((uye.fullname || "Üye") + " herkese açık katalogda YAYINLANACAK.",
+                                      "🌐 Siteye Çıkar", "Yayına Alma"))) return;
+          if (!yeni && !(await onayIste("Üye siteden kaldırılacak. Profili ve fotoğrafları silinmez, yalnızca " +
+                                        "katalogdan çıkar.", "⛔ Yayından Al", "Yayından Alma"))) return;
           /* Gizlilik 'özel' ise yayınlamak tek başına yetmez — yöneticiye açıkça sor */
           if (yeni && (pr.privacy || "private") !== "public") {
-            gonder.gizlilik_ac = confirm(
-              (uye.fullname || "Üye") + " profili şu anda ÖZEL.\n\n" +
-              "Özel profiller yayına alınsa bile katalogda GÖRÜNMEZ (yalnızca VIP paylaşım linklerinde çıkar).\n\n" +
-              "TAMAM  → gizliliği 'herkese açık' yap ve katalogda göster\n" +
-              "İPTAL  → yalnızca yayına al (katalogda görünmez)") ? 1 : 0;
+            gonder.gizlilik_ac = (await onayIste(
+              (uye.fullname || "Üye") + " profili şu anda ÖZEL. Özel profiller yayına alınsa bile katalogda " +
+              "GÖRÜNMEZ (yalnızca VIP paylaşım linklerinde çıkar).",
+              "Gizliliği Aç ve Katalogda Göster", "Gizlilik Tercihi",
+              "<strong>Vazgeç</strong> derseniz üye yayına alınır ama katalogda görünmez.")) ? 1 : 0;
           }
           gonder.published = yeni ? 1 : 0;
         } else {
@@ -1356,7 +1418,7 @@
       let note = "";
       if (act === "reddedildi") {
         note = card.querySelector("[data-redsel]").value;
-        if (note === "__ozel") note = prompt("Üyeye iletilecek gerekçe:") || "";
+        if (note === "__ozel") note = (await metinIste("Üyeye iletilecek red gerekçesi", "Red Gerekçesi", "", "Gerekçeyi Kullan")) || "";
         if (!note) { card.classList.add("open"); msg.textContent = "Önce gerekçe seçin."; return; }
       }
       if (act === "onaylandi") note = "Tebrikler! Model of World ailesine katıldınız — profiliniz kadroya alındı.";
@@ -1683,9 +1745,11 @@
 
       if (act === "sil") {
         const v = frmVeri(kayit);
-        if (!confirm("Bu form kaydı kalıcı olarak silinecek:\n\n" +
-                     (v.fullname || v.uye || "(isimsiz)") + " — " + kayit.kind + "\n\n" +
-                     "Üyeliğe dönüştürdüyseniz üye kaydı silinmez, yalnızca bu form satırı silinir.\n\nOnaylıyor musunuz?")) return;
+        if (!(await onayIste(
+              "Bu form kaydı kalıcı olarak silinecek: " + (v.fullname || v.uye || "(isimsiz)") + " — " + kayit.kind,
+              "🗑 Kalıcı Olarak Sil", "Form Kaydını Sil",
+              "Bu işlem geri alınamaz. Üyeliğe dönüştürdüyseniz <strong>üye kaydı silinmez</strong>, yalnızca bu form satırı silinir.",
+              true))) { yaz("Silme iptal edildi.", false); return; }
         const sonuc = await api("/api/admin/submission", { id: sid, action: "delete" });
         if (!sonuc.ok) { yaz("⚠️ " + (sonuc.err || "Silinemedi"), true); toast(sonuc.err || "Silinemedi", "hata"); return; }
         toast("🗑 Form kaydı silindi");
@@ -1694,10 +1758,11 @@
 
       if (act === "donustur") {
         const v = frmVeri(kayit);
-        if (!confirm((v.fullname || "Bu başvuru") + " için üyelik hesabı oluşturulacak.\n\n" +
-                     "· Üye, ONAY BEKLEYENLER listesine eklenir\n" +
-                     "· Geçici bir şifre üretilir; adaya ileterek panele girmesini sağlayabilirsiniz\n" +
-                     "· Fotoğraf ve ölçülerini adayın kendisi panelden tamamlar\n\nDevam edilsin mi?")) return;
+        if (!(await onayIste(
+              (v.fullname || "Bu başvuru") + " için üyelik hesabı oluşturulacak. Üye ONAY BEKLEYENLER listesine " +
+              "eklenir, geçici bir şifre üretilir; adaya ileterek panele girmesini sağlayabilirsiniz. Fotoğraf ve " +
+              "ölçülerini adayın kendisi panelden tamamlar.",
+              "✓ Üyeye Dönüştür", "Üyelik Oluştur"))) { yaz("İşlem iptal edildi.", false); return; }
         yaz("Oluşturuluyor…", false);
         const sonuc = await api("/api/admin/submission", { id: sid, action: "convert" });
         if (!sonuc.ok) {
@@ -1727,7 +1792,7 @@
           await navigator.clipboard.writeText(b.dataset.mesaj || "");
           toast("📋 Mesaj kopyalandı — WhatsApp'tan gönderebilirsiniz");
         } catch {
-          prompt("Kopyalayın:", b.dataset.mesaj || "");
+          metinIste("Metni seçip elle kopyalayın", "Kopyalanacak Mesaj", b.dataset.mesaj || "", "Kapat");
         }
       }
     });
@@ -1737,6 +1802,5 @@
         `<div class="adm-log">${l.created?.slice(0,16).replace("T"," ")} · <strong>${l.who}</strong>${l.ip ? ' <span style="opacity:.6">[' + l.ip + ']</span>' : ""} → ${l.action}${l.user_id ? " (üye #" + l.user_id + ")" : ""}${l.detail ? " — " + esc(l.detail) : ""}</div>`).join("");
     }
   </script>
-  <script src="assets/js/surum-kontrol.js?v=6ce37b6"></script>
 </body>
 </html>

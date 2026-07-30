@@ -1,3 +1,18 @@
 *.zip
 Thumbs.db
 desktop.ini
+
+# ---- Hassas veriler: ASLA depoya girmemeli (depo herkese açık) ----
+data/
+*.db
+admin-key.txt
+cj*.txt
+*.cookie
+
+# ---- Geçici/test dosyaları ----
+t.png
+t.exe
+t.mp4
+t.pdf
+t[0-9].png
+adm_live.html

@@ -353,9 +353,17 @@ class Handler(BaseHTTPRequestHandler):
         m = re.search(r'mowadm=([A-Za-z0-9_\-]+)', raw)
         return m.group(1) if m else None
 
+    def _yerel_istek(self):
+        """İstek doğrudan sunucunun kendisinden mi geldi?
+        Caddy üzerinden gelen her istekte X-Forwarded-For bulunur; yoksa istek
+        127.0.0.1:8010'a doğrudan yapılmış demektir (sunucu konsolu)."""
+        return not (self.headers.get("X-Forwarded-For") or "").strip()
+
     def _admin(self, qs=None):
-        """Aktif yönetici kimliği: {username, role} veya None. Yedek anahtar = tam yetkili."""
-        if qs is not None and qs.get("key", [""])[0] == ADMIN_KEY:
+        """Aktif yönetici kimliği: {username, role} veya None.
+        Yedek anahtar (?key=) yalnızca sunucunun kendisinden kabul edilir — anahtar
+        bir şekilde dışa sızsa bile internetten yönetici yetkisi alınamaz."""
+        if qs is not None and qs.get("key", [""])[0] == ADMIN_KEY and self._yerel_istek():
             return {"username": "yedek-anahtar", "role": "admin"}
         tok = self._admin_token()
         if not tok: return None

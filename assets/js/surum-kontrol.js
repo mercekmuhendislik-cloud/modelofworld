@@ -6,6 +6,14 @@
    karşılaştırır; farklıysa sayfayı bir kez tazeler.
    Döngü koruması: aynı sürüm için yalnızca bir yenileme denenir.
    ========================================================= */
+/* --- Temiz adres: /sayfa.html açıldıysa /sayfa adresine geç --- */
+(function () {
+  const y = location.pathname;
+  if (!/\.html$/i.test(y)) return;
+  const hedef = /\/index\.html$/i.test(y) ? "/" : y.replace(/\.html$/i, "");
+  location.replace(hedef + location.search + location.hash);
+})();
+
 (function () {
   const benim = document.querySelector('meta[name="mow-surum"]')?.content?.trim();
   if (!benim) return;
