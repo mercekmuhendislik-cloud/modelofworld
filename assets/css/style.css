@@ -666,6 +666,23 @@ body.isik-acik { overflow: hidden; }
   letter-spacing: 0.2em; color: var(--text-2); margin-bottom: 9px;
 }
 .field label .req { color: var(--gold); }
+/* ---------- Şifre göster / gizle ---------- */
+.sifre-sar { position: relative; display: block; }
+.sifre-sar input { padding-right: 46px !important; width: 100%; }
+.sifre-goz {
+  position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; border: 0; background: none; cursor: pointer;
+  color: var(--text-2); border-radius: 8px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color 0.2s, background 0.2s;
+}
+.sifre-goz:hover { color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); }
+.sifre-goz svg { width: 18px; height: 18px; pointer-events: none; }
+.caps-uyari {
+  display: block; margin-top: 6px; font-size: 0.76rem; color: #b1651f;
+  letter-spacing: 0.02em; text-transform: none;
+}
+
 .field input, .field select, .field textarea {
   width: 100%; padding: 13px 16px; border-radius: 10px;
   background: var(--bg-2); border: 1px solid var(--line);
