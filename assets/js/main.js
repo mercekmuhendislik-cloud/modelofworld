@@ -214,7 +214,9 @@
 
     const ac = durumu => {
       panel.hidden = !durumu;
-      panel.classList.toggle("open", durumu);
+      /* Açılış animasyonu için sınıf bir sonraki karede eklenir */
+      if (durumu) requestAnimationFrame(() => panel.classList.add("open"));
+      else panel.classList.remove("open");
       acBtn.classList.toggle("acik", durumu);
       acBtn.setAttribute("aria-expanded", String(durumu));
       acBtn.querySelector(".ic-chat").classList.toggle("hidden", durumu);

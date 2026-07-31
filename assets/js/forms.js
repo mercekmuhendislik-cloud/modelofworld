@@ -135,24 +135,44 @@
   }
 
   /* ================= GÖNDERİM (entegrasyon noktası) ================= */
-  function submitTo(kind, form) {
+  /* Sunucuya gönder ve GERÇEKTEN iletildi mi diye bak.
+     Eskiden yanıt kontrol edilmiyordu: sunucu hata verse bile ziyaretçiye
+     "talebiniz alındı" yazıyordu ve talep yalnızca ziyaretçinin tarayıcısında
+     kalıyordu — yani ajansa hiç ulaşmıyordu. */
+  async function submitTo(kind, form) {
     const fd = new FormData(form);
     const data = Object.fromEntries(fd.entries());
     data.skills = fd.getAll("skills").join(", ");
-    delete data.photos; delete data.video; /* dosyalar backend hazır olunca yüklenecek */
+    delete data.photos; delete data.video;
+    data.sayfa = location.pathname + location.search;
     const record = { kind, data, at: new Date().toISOString() };
 
-    /* Önce sunucuya gönder (admin'den görüntülenir); sunucu yoksa yerelde sakla */
-    fetch("/api/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(record),
-    }).catch(() => {
-      const all = JSON.parse(localStorage.getItem("vera-submissions") || "[]");
-      all.push(record);
-      localStorage.setItem("vera-submissions", JSON.stringify(all));
-    });
-    console.info(`[VERA] ${kind} kaydı alındı:`, record);
+    try {
+      const r = await fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(record),
+      });
+      if (r.ok) return { ok: true };
+      return { ok: false, kod: r.status };
+    } catch {
+      return { ok: false, kod: 0 };
+    } finally {
+      /* Ulaşmadıysa yerelde sakla — ziyaretçi tekrar denerse kaybolmasın */
+      if (!navigator.onLine) {
+        const all = JSON.parse(localStorage.getItem("vera-submissions") || "[]");
+        all.push(record);
+        localStorage.setItem("vera-submissions", JSON.stringify(all));
+      }
+    }
+  }
+
+  function gonderimHatasi(kod) {
+    if (kod === 0) return "İnternet bağlantınıza ulaşamadık. Bağlantınızı kontrol edip tekrar gönderin.";
+    if (kod >= 502 && kod <= 504)
+      return "Sunucumuz şu anda geçici olarak yanıt vermiyor (hata " + kod +
+             "). Bilgileriniz formda duruyor; 1–2 dakika sonra tekrar gönderin.";
+    return "Talebiniz gönderilemedi (hata " + kod + "). Lütfen tekrar deneyin ya da WhatsApp'tan yazın.";
   }
 
   function wire(formId, successId, kind) {
@@ -160,10 +180,34 @@
     const success = document.getElementById(successId);
     if (!form) return;
     bindLiveValidation(form);
-    form.addEventListener("submit", e => {
+    /* Hata mesajı alanı (yoksa oluşturulur) */
+    let hataEl = null;
+    const hataGoster = metin => {
+      if (!hataEl) {
+        hataEl = document.createElement("p");
+        hataEl.style.cssText = "margin-top:16px;padding:13px 16px;border:1px solid var(--danger);" +
+          "border-radius:10px;color:var(--danger);font-size:.9rem;" +
+          "background:color-mix(in srgb, var(--danger) 8%, transparent)";
+        form.appendChild(hataEl);
+      }
+      hataEl.innerHTML = metin +
+        ' <a class="gold" href="' + window.VERA.AGENCY.waLink() + '" target="_blank" rel="noopener">WhatsApp\'tan yazın →</a>';
+      hataEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
+
+    form.addEventListener("submit", async e => {
       e.preventDefault();
       if (!validate(form)) return;
-      submitTo(kind, form);
+      const btn = form.querySelector('button[type="submit"]');
+      const eskiMetin = btn ? btn.textContent : "";
+      if (btn) { btn.disabled = true; btn.textContent = "Gönderiliyor…"; }
+
+      const sonuc = await submitTo(kind, form);
+
+      if (btn) { btn.disabled = false; btn.textContent = eskiMetin; }
+      if (!sonuc.ok) { hataGoster(gonderimHatasi(sonuc.kod)); return; }   /* başarı GÖSTERİLMEZ */
+
+      if (hataEl) hataEl.remove(), (hataEl = null);
       form.style.display = "none";
       const wsteps = form.closest(".form-card")?.querySelector(".wizard-steps");
       if (wsteps) wsteps.style.display = "none";

@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=d954f4a">
+  <link rel="stylesheet" href="assets/css/style.css?v=74c8b78">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -197,8 +197,8 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
-  <meta name="mow-surum" content="d954f4a">
-  <script src="assets/js/surum-kontrol.js?v=d954f4a"></script>
+  <meta name="mow-surum" content="74c8b78">
+  <script src="assets/js/surum-kontrol.js?v=74c8b78"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -419,11 +419,20 @@
 
         <h2 class="adm-section-title" id="subTitle" hidden>✉️ Gelen Formlar</h2>
         <div id="subInfo" class="mini" hidden style="margin:-6px 0 16px;line-height:1.9">
-          Siteden gelen <strong>form kayıtları</strong> — henüz üyelik hesabı oluşmamış başvurular ve üyelerden gelen
-          <strong>SOS</strong> bildirimleri. Bir başvuruyu <strong>Üyeye Dönüştür</strong> ile üyelik hesabına çevirdiğinizde
-          <em>Üyeler &amp; Onaylar</em> sekmesinde onay bekleyenler arasında görünür; size verilen geçici şifreyi adaya
-          iletirseniz panelinden fotoğraf ve ölçülerini tamamlayabilir.
+          Siteden gelen her şey burada toplanır:<br>
+          💬 <strong>Mesajlar</strong> — iletişim sayfasındaki form ve sağ alttaki mesaj kutusundan gelen yazılar.
+          WhatsApp veya e-posta ile yanıtlayıp <strong>Yanıtlandı</strong> olarak işaretleyin.<br>
+          📝 <strong>Başvurular</strong> — üyelik hesabı oluşmamış aday başvuruları. <strong>Üyeye Dönüştür</strong> ile
+          hesaba çevirdiğinizde <em>Üyeler &amp; Onaylar</em> sekmesinde onay bekleyenler arasına düşer.<br>
+          🆘 <strong>SOS</strong> — sahadaki üyelerin panelinden gönderdiği acil durum bildirimleri.
         </div>
+        <div class="durum-sekme" id="frmSekme" hidden>
+          <button type="button" data-tur="" class="on">📋 Tümü <span class="sayi" data-fs="">0</span></button>
+          <button type="button" data-tur="mesaj">💬 Mesajlar <span class="sayi" data-fs="mesaj">0</span></button>
+          <button type="button" data-tur="basvuru">📝 Başvurular <span class="sayi" data-fs="basvuru">0</span></button>
+          <button type="button" data-tur="sos">🆘 SOS <span class="sayi" data-fs="sos">0</span></button>
+        </div>
+
         <div class="adm-row" id="subFiltre" hidden style="margin-bottom:14px">
           <label class="mini" style="display:flex;gap:6px;align-items:center">
             <input type="checkbox" class="selbox" id="subIslenmemis" checked> yalnızca işlenmemiş kayıtlar
@@ -614,6 +623,11 @@
         kart("yeni", `<strong>+${yeni}</strong><span>Son 7 Gün</span>`) +
         kart("kabul", `<strong>${kabul}</strong><span>Kabul Edilen İş</span>`) +
         kart("sitede", `<strong style="color:#20744c">${users.filter(u => u.profile?.published === "1").length}</strong><span>Sitede Yayında</span>`) +
+        kart("mesaj", (() => {
+          const bekleyenMesaj = (DATA.submissions || []).filter(x =>
+            ["mesaj", "iletisim"].includes(String(x.kind).toLowerCase()) && x.processed !== "1").length;
+          return `<strong style="color:${bekleyenMesaj ? "#c62828" : "var(--gold-2)"}">${bekleyenMesaj}</strong><span>Yanıt Bekleyen Mesaj</span>`;
+        })()) +
         kart("grafik", `<span>Üye Artışı (8 hafta)</span><canvas id="chBar" width="300" height="90" style="width:100%"></canvas>`).replace('dash-card"', 'dash-card dash-wide"') +
         kart("durum", `<span>Durum Dağılımı</span><canvas id="chDonut" width="90" height="90" style="float:right"></canvas><div class="mini" style="margin-top:8px">⏳ ${bekleyen} · ✓ ${onayli} · ✕ ${users.length - bekleyen - onayli}</div>`) +
         (H && !gizli.includes("saglik") ? kart("saglik",
@@ -929,7 +943,7 @@
       ["uyeler",  "👥", "Üyeler & Onaylar",   ["toolsRow","tplCard","bulkBar","durumSekme","hizlandirRow","filterRow2","results"]],
       ["isler",   "💼", "İşler & Paylaşım",   ["jobH2","jobCard","jobsList","shareH2","shareCard"]],
       ["finance", "💰", "Finansal Takip",      ["financeH2","financeTab"]],
-      ["formlar", "✉️", "Gelen Formlar",      ["subTitle","subInfo","subFiltre","subs"]],
+      ["formlar", "✉️", "Gelen Formlar",      ["subTitle","subInfo","frmSekme","subFiltre","subs"]],
       ["ekip",    "📌", "Ekip & Görevler",    ["tasksH2","tasksCard","usersCard"]],
       ["ayarlar", "⚙️", "Ayarlar & Güvenlik", ["pwCard","sessCard"]],
     ];
@@ -1802,6 +1816,21 @@
       ["instagram", "Instagram"], ["about", "Hakkında"],
     ];
     const frmVeri = s => { try { return JSON.parse(s.data || "{}"); } catch { return {}; } };
+    /* Kayıt türü: mesaj (site içi kutu + iletişim formu) / sos / basvuru */
+    const frmTuru = s => {
+      const k = String(s.kind || "").toLowerCase();
+      if (k === "sos") return "sos";
+      if (k === "mesaj" || k === "iletisim") return "mesaj";
+      return "basvuru";
+    };
+    let FRM_TUR = "";
+    $("frmSekme").addEventListener("click", e => {
+      const b = e.target.closest("[data-tur]");
+      if (!b) return;
+      FRM_TUR = b.dataset.tur;
+      $("frmSekme").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+      renderSubs();
+    });
 
     /* ---------- Eski fotoğraflara küçük kopya üretme ----------
        Sunucu tarafında görüntü kütüphanesi yok; küçültme tarayıcıda yapılır,
@@ -1844,12 +1873,21 @@
       $("subTitle").hidden = !hepsi.length;
       $("subInfo").hidden = !hepsi.length;
       $("subFiltre").hidden = !hepsi.length;
+      /* Tür sekmesi sayaçları */
+      const say = { "": hepsi.length, mesaj: 0, basvuru: 0, sos: 0 };
+      hepsi.forEach(x => say[frmTuru(x)]++);
+      $("frmSekme").hidden = !hepsi.length;
+      $("frmSekme").querySelectorAll(".sayi").forEach(el => el.textContent = say[el.dataset.fs] ?? 0);
+
       const sadeceYeni = $("subIslenmemis").checked;
-      const liste = sadeceYeni ? hepsi.filter(s => s.processed !== "1") : hepsi;
+      let liste = FRM_TUR ? hepsi.filter(s => frmTuru(s) === FRM_TUR) : hepsi;
+      liste = sadeceYeni ? liste.filter(s => s.processed !== "1") : liste;
       $("subSayi").textContent = `${liste.length} kayıt (toplam ${hepsi.length})`;
 
       if (!liste.length) {
-        $("subs").innerHTML = '<div class="bos-durum"><span class="ikon">✅</span>İşlenmemiş form kaydı yok.</div>';
+        const bosMetin = { mesaj: "Yanıt bekleyen mesaj yok.", basvuru: "İşlenmemiş başvuru yok.",
+                           sos: "SOS bildirimi yok." }[FRM_TUR] || "İşlenmemiş form kaydı yok.";
+        $("subs").innerHTML = `<div class="bos-durum"><span class="ikon">✅</span>${bosMetin}</div>`;
         return;
       }
 
