@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=1c1da02">
+  <link rel="stylesheet" href="assets/css/style.css?v=ff9c939">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -49,10 +49,7 @@
     .crop-controls { display:flex; gap:10px; align-items:center; margin:14px 0; }
     .crop-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
 
-    /* İmza */
-    #sigCanvas { border:1px dashed var(--gold); border-radius:10px; background:#fff; touch-action:none; cursor:crosshair; width:100%; max-width:480px; height:150px; }
-
-    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=1c1da02 */
+    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=ff9c939 */
 
     /* Profil tamamlanma ölçeri */
     .tamam-kart { border:1px solid var(--gold); border-radius:14px; padding:18px 20px; margin-bottom:24px;
@@ -75,8 +72,8 @@
     .offer-state.kabul { color:#20744c; border-color:#4da878; }
     .offer-state.red { color:#a33; border-color:#d95a5a; }
   </style>
-  <meta name="mow-surum" content="1c1da02">
-  <script src="assets/js/surum-kontrol.js?v=1c1da02"></script>
+  <meta name="mow-surum" content="ff9c939">
+  <script src="assets/js/surum-kontrol.js?v=ff9c939"></script>
 </head>
 <body data-page="panel">
   <div id="site-header"></div>
@@ -102,8 +99,6 @@
         <div class="wstep" data-ob="2"><span class="dot">2</span> Ölçüler</div>
         <div class="wline"></div>
         <div class="wstep" data-ob="3"><span class="dot">3</span> Fotoğraf / Video</div>
-        <div class="wline"></div>
-        <div class="wstep" data-ob="4"><span class="dot">4</span> İmza &amp; Onay</div>
       </div>
 
       <div class="tamam-kart no-print" id="tamamKart" style="display:none">
@@ -120,7 +115,6 @@
         <button class="tab-btn" data-tab="olculer">Ölçü Kartım</button>
         <button class="tab-btn" data-tab="medya">Fotoğraf &amp; Video</button>
         <button class="tab-btn" data-tab="tercihler">Tercihler &amp; Güvenlik</button>
-        <button class="tab-btn" data-tab="onaylar">İmza &amp; Onay</button>
         <button class="tab-btn" data-tab="teklifler">İş Tekliflerim <span id="offerBadge" class="fav-count" style="position:static;display:none"></span></button>
         <button class="tab-btn" data-tab="takvim">Müsaitlik</button>
         <button class="tab-btn" data-tab="odeme">Ödeme</button>
@@ -352,53 +346,6 @@
       </div>
 
       <!-- 4) İMZA & ONAY -->
-      <div class="form-card tab-pane" id="tab-onaylar">
-        <h3 style="margin-bottom:18px">Sözleşme, KVKK ve Dijital İmza</h3>
-        <div class="form-grid" style="grid-template-columns:1fr">
-          <div class="field">
-            <div class="checkbox-row">
-              <input type="checkbox" name="consent_kvkk" id="cKvkk">
-              <label for="cKvkk" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.9rem">
-                Kişisel verilerimin (ölçüler, fotoğraf ve videolar dahil) casting değerlendirmesi amacıyla
-                <a class="gold" href="kvkk" target="_blank">KVKK Aydınlatma Metni</a> kapsamında işlenmesine açık rıza veriyorum. <span class="req">*</span>
-              </label>
-            </div>
-          </div>
-          <div class="field">
-            <div class="checkbox-row">
-              <input type="checkbox" name="consent_contract" id="cContract">
-              <label for="cContract" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.9rem">
-                <a class="gold" href="sozlesme" target="_blank">Çalışma prensipleri ve şartlarını</a> okudum, kabul ediyorum.
-                Ajansın adaylardan hiçbir ücret talep etmediğini biliyorum. <span class="req">*</span>
-              </label>
-            </div>
-          </div>
-          <div class="field">
-            <label>Kimlik &amp; Adli Sicil Belgesi <span class="muted" style="text-transform:none;letter-spacing:0">(güvenlik gereği — KVKK kapsamında şifreli saklanır, 3. kişilerle paylaşılmaz)</span></label>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-              <label class="btn btn-ghost btn-sm" style="cursor:pointer">🪪 Kimlik Ön Yüzü
-                <input type="file" id="kimlikInput" accept=".pdf,image/*" style="display:none"></label>
-              <label class="btn btn-ghost btn-sm" style="cursor:pointer">📋 Adli Sicil Kaydı (e-Devlet)
-                <input type="file" id="adliInput" accept=".pdf,image/*" style="display:none"></label>
-              <span class="muted" id="belgeStat" style="font-size:.82rem"></span>
-            </div>
-          </div>
-          <div class="field">
-            <label>Dijital İmzanız <span class="req">*</span> <span class="muted" style="text-transform:none;letter-spacing:0">— aşağıdaki alana parmağınız veya fareyle imza atın</span></label>
-            <canvas id="sigCanvas" width="480" height="150"></canvas>
-            <div class="mt-2" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-              <button type="button" class="btn btn-ghost btn-sm" id="sigClear">Temizle</button>
-              <span class="muted" id="sigStatus" style="font-size:.84rem"></span>
-            </div>
-          </div>
-        </div>
-        <div class="wizard-nav">
-          <span class="muted" id="msg-onaylar" style="font-size:.85rem"></span>
-          <button class="btn btn-gold" data-save="onaylar">İmzala ve Başvurumu Tamamla ✓</button>
-        </div>
-      </div>
-
-      <!-- İŞ TEKLİFLERİ -->
       <div class="form-card tab-pane" id="tab-teklifler">
         <h3 style="margin-bottom:6px">İş Tekliflerim</h3>
         <p class="muted" style="font-size:.86rem;margin-bottom:18px">Ajans size uygun bir proje bulduğunda teklif buraya düşer. Detayları inceleyip kabul veya reddedebilirsiniz.</p>
@@ -530,8 +477,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=1c1da02"></script>
-  <script src="assets/js/main.js?v=1c1da02"></script>
+  <script src="assets/js/data.js?v=ff9c939"></script>
+  <script src="assets/js/main.js?v=ff9c939"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -541,7 +488,7 @@
       const val = n => { const el = field(n); return el ? (el.type === "checkbox" ? (el.checked ? "1" : "") : el.value) : ""; };
 
       const yasHesap = b => { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); };
-      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=1c1da02) */
+      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=ff9c939) */
       const makeMsel = window.VERA.makeMsel;
       const catSel = makeMsel($("catSel"),
         Object.entries(window.VERA.CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
@@ -709,17 +656,6 @@
         catch (err) { $("msg-genel").textContent = err.message; }
         e.target.value = ""; load(false);
       });
-      $("kimlikInput").addEventListener("change", async e => {
-        const f = e.target.files[0]; if (!f) return;
-        try { await upload("kimlik", "genel", f, f.name); } catch (err) { alert(err.message); }
-        e.target.value = ""; load(false);
-      });
-      $("adliInput").addEventListener("change", async e => {
-        const f = e.target.files[0]; if (!f) return;
-        try { await upload("adli", "genel", f, f.name); } catch (err) { alert(err.message); }
-        e.target.value = ""; load(false);
-      });
-
       /* ---- SOS ---- */
       $("sosBtn").addEventListener("click", () => {
         if (!confirm("ACİL DURUM alarmı ajans yönetimine konumunuzla birlikte gönderilecek. Onaylıyor musunuz?")) return;
@@ -762,26 +698,15 @@
       document.querySelectorAll(".prf").forEach(c => c.addEventListener("change", syncPrefUI));
       /* yaş değişimi zaten yukarıda syncPrefUI çağırıyor */
 
-      /* ============ İmza ============ */
-      const sc = $("sigCanvas"), sx2 = sc.getContext("2d");
-      sx2.lineWidth = 2.2; sx2.lineCap = "round"; sx2.strokeStyle = "#1a1a2e";
-      let sigDrawn = false, sigOn = false;
-      function sigPos(e) { const r = sc.getBoundingClientRect(); return [(e.clientX - r.left) * sc.width / r.width, (e.clientY - r.top) * sc.height / r.height]; }
-      sc.addEventListener("pointerdown", e => { sigOn = true; const [x, y] = sigPos(e); sx2.beginPath(); sx2.moveTo(x, y); sc.setPointerCapture(e.pointerId); });
-      sc.addEventListener("pointermove", e => { if (!sigOn) return; const [x, y] = sigPos(e); sx2.lineTo(x, y); sx2.stroke(); sigDrawn = true; });
-      sc.addEventListener("pointerup", () => sigOn = false);
-      $("sigClear").addEventListener("click", () => { sx2.clearRect(0, 0, sc.width, sc.height); sigDrawn = false; });
-
       /* ============ Adım / sekme yönetimi ============ */
       function stepDone(n, p, media) {
         if (n === 1) return (p.category || "").length > 0 && p.gender && (p.age || p.birthdate) && p.city;
         if (n === 2) return p.height && p.weight;
         if (n === 3) return media.some(m => m.kind === "photo");
-        if (n === 4) return p.consent_kvkk === "1" && p.consent_contract === "1";
       }
       function refreshSteps() {
         let firstOpen = 0;
-        for (let i = 1; i <= 4; i++) {
+        for (let i = 1; i <= 3; i++) {
           const done = stepDone(i, ME.profile, ME.media);
           const el = document.querySelector(`[data-ob="${i}"]`);
           el.classList.toggle("done", !!done);
@@ -795,17 +720,15 @@
       }
       /* ============ Profil tamamlanma ölçeri ============ */
       const TAMAM_MADDE = [
-        { ad: "Temel bilgiler", puan: 15, tab: "genel",
+        { ad: "Temel bilgiler", puan: 20, tab: "genel",
           ok: (p) => (p.category || "").length > 0 && p.gender && (p.age || p.birthdate) && p.city },
         { ad: "Boy & kilo", puan: 15, tab: "olculer", ok: (p) => p.height && p.weight },
-        { ad: "Detaylı ölçüler (göğüs/bel/basen, ayakkabı)", puan: 10, tab: "olculer",
+        { ad: "Detaylı ölçüler (göğüs/bel/basen, ayakkabı)", puan: 15, tab: "olculer",
           ok: (p) => p.bust && p.waist && p.hip && p.shoe },
         { ad: "Saç & göz rengi", puan: 5, tab: "olculer", ok: (p) => p.hair && p.eye },
-        { ad: "En az 1 fotoğraf", puan: 20, tab: "medya", ok: (p, m) => m.some(x => x.kind === "photo") },
+        { ad: "En az 1 fotoğraf", puan: 25, tab: "medya", ok: (p, m) => m.some(x => x.kind === "photo") },
         { ad: "3 veya daha fazla fotoğraf", puan: 5, tab: "medya",
           ok: (p, m) => m.filter(x => x.kind === "photo").length >= 3 },
-        { ad: "İmza & onaylar", puan: 15, tab: "onaylar",
-          ok: (p) => p.consent_kvkk === "1" && p.consent_contract === "1" },
         { ad: "Çekim tercihleri", puan: 5, tab: "tercihler", ok: (p) => (p.shoot_prefs || "").length > 0 },
         { ad: "Müsaitlik takvimi", puan: 5, tab: "takvim",
           ok: (p) => { try { return Object.keys(JSON.parse(p.availability || "{}")).length > 0; } catch { return false; } } },
@@ -833,7 +756,7 @@
         if (b) showTab(b.dataset.git);
       });
 
-      const TAB_ORDER = ["genel", "olculer", "medya", "onaylar"];
+      const TAB_ORDER = ["genel", "olculer", "medya"];
       function showTab(key) {
         document.querySelectorAll("#panelTabs .tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === key));
         document.querySelectorAll(".tab-pane").forEach(pn => pn.classList.toggle("active", pn.id === "tab-" + key));
@@ -847,7 +770,6 @@
         olculer: ["height","weight","bust","waist","hip","shoe","size","hair","eye","skin","tattoo_info","scar_info","aesthetic_info"],
         tercihler: ["chaperone","rate_catalog","rate_runway","rate_artistic"],
         medya: ["video_link"],
-        onaylar: ["consent_kvkk","consent_contract"],
         odeme: ["iban","account_name","bank_name","invoice_type","tax_no"],
         gizlilik: ["privacy"],
       };
@@ -900,19 +822,6 @@
           }
         }
         if (key === "olculer" && (!payload.height || !payload.weight)) { msg.textContent = "Boy ve kilo zorunludur."; return; }
-        if (key === "onaylar") {
-          if (payload.consent_kvkk !== "1" || payload.consent_contract !== "1") {
-            msg.textContent = "İki onay kutusunu da işaretleyin."; return;
-          }
-          const hasSig = sigDrawn || ME.media.some(m => m.kind === "imza");
-          if (!hasSig) { msg.textContent = "Lütfen imza alanına imzanızı atın."; return; }
-          if (sigDrawn) {
-            msg.textContent = "İmzanız kaydediliyor…";
-            const blob = await new Promise(r => sc.toBlob(r, "image/png"));
-            try { await upload("imza", "genel", blob, "imza.png"); } catch (e2) { msg.textContent = e2.message; return; }
-          }
-        }
-
         msg.textContent = "Kaydediliyor…";
         const r = await fetch("/api/profile", {
           method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
@@ -938,10 +847,6 @@
             ? items.map(m => `<div class="my-photo"><img src="/api/photo/${m.id}?k=1" loading="lazy"><button data-del="${m.id}">✕</button></div>`).join("")
             : `<p class="muted" style="grid-column:1/-1;font-size:.82rem">Bu albümde fotoğraf yok.</p>`;
         });
-        /* kimlik & adli belge durumu */
-        const kim = ME.media.filter(m => m.kind === "kimlik").length;
-        const adl = ME.media.filter(m => m.kind === "adli").length;
-        $("belgeStat").textContent = `Kimlik: ${kim ? "✓ yüklü" : "eksik"} · Adli sicil: ${adl ? "✓ yüklü" : "eksik"}`;
         /* polaroid tazeliği (6 ay) */
         const pols = ME.media.filter(m => m.kind === "photo" && m.album === "polaroid");
         const newest = pols.map(m => m.created || "").sort().pop();
@@ -954,7 +859,6 @@
         $("belgeList").innerHTML = docs.length
           ? docs.map(m => `<a class="gold" href="/api/photo/${m.id}" target="_blank">📄 ${m.orig}</a>`).join(" · ")
           : "Henüz belge yüklenmedi";
-        $("sigStatus").textContent = ME.media.some(m => m.kind === "imza") ? "✓ Kayıtlı imzanız var — yenilemek için tekrar imzalayabilirsiniz" : "";
       }
       document.body.addEventListener("click", async e => {
         const b = e.target.closest("[data-del]");

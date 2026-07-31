@@ -721,13 +721,17 @@ class Handler(BaseHTTPRequestHandler):
             uid = cur.lastrowid
             db().execute(
                 "INSERT INTO profiles(user_id, status, privacy, category, gender, age, city, "
-                "languages, instagram, about, parent_name, parent_phone, consent_kvkk) "
-                "VALUES(?, 'inceleniyor', 'public', ?,?,?,?,?,?,?,?,?,?)",
+                "languages, instagram, about, parent_name, parent_phone, "
+                "consent_kvkk, consent_contract, consent_at) "
+                "VALUES(?, 'inceleniyor', 'public', ?,?,?,?,?,?,?,?,?,?,?,?)",
                 (uid, ",".join(kats), cinsiyet, str(yas), sehir,
                  str(d.get("languages") or "")[:200], str(d.get("instagram") or "").strip()[:60],
                  str(d.get("about") or "")[:1500],
                  veli_ad if resit_degil else "", veli_tel if resit_degil else "",
-                 "1" if str(d.get("consent_kvkk") or "") == "1" else "0"))
+                 # Başvuru formundaki tek onay kutusu KVKK + çalışma şartlarını kapsar
+                 "1" if str(d.get("consent_kvkk") or "") == "1" else "0",
+                 "1" if str(d.get("consent_contract") or "") == "1" else "0",
+                 now()))
             audit("uye", "kayit", uid, "%s · %s · %s yaş · %s" % (email, ",".join(kats), yas, sehir))
             db().commit()
             return self._json(200, {"ok": True}, cookie=self._make_session(uid))

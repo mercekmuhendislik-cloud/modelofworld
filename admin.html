@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=1c1da02">
+  <link rel="stylesheet" href="assets/css/style.css?v=ff9c939">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -56,6 +56,11 @@
     .durum-sekme .sayi { font-size:.7rem; padding:1px 7px; border-radius:999px;
       background:color-mix(in srgb, var(--gold) 16%, transparent); color:var(--gold); }
     .durum-sekme button.on .sayi { background:rgba(255,255,255,.24); color:#fff; }
+
+    /* Belge/imza yanindaki kucuk silme dugmesi */
+    .dosya-sil { border:0; background:none; color:#c33; cursor:pointer; font-size:.8rem;
+      padding:0 4px; line-height:1; opacity:.75; }
+    .dosya-sil:hover { opacity:1; }
 
     /* Tehlikeli işlem (kalıcı silme) */
     .btn-tehlike { border:1px solid #d95a5a !important; color:#c33 !important; background:transparent !important; }
@@ -197,8 +202,8 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
-  <meta name="mow-surum" content="1c1da02">
-  <script src="assets/js/surum-kontrol.js?v=1c1da02"></script>
+  <meta name="mow-surum" content="ff9c939">
+  <script src="assets/js/surum-kontrol.js?v=ff9c939"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -1309,7 +1314,7 @@
             ${fotolar.length ? `<span class="adm-badge">📷 ${fotolar.length}</span>`
                              : '<span class="adm-badge eksik" title="Fotoğrafı olmayan üye katalogda boş görünür">📷 fotoğraf yok</span>'}
             ${(p.height && p.weight) ? "" : '<span class="adm-badge eksik" title="Boy/kilo girilmemiş">📏 ölçü yok</span>'}
-            ${(p.consent_kvkk === "1" && p.consent_contract === "1") ? "" : '<span class="adm-badge eksik" title="Sözleşme onayı / imza tamamlanmamış">✍️ imza yok</span>'}
+            ${p.consent_kvkk === "1" ? "" : '<span class="adm-badge eksik" title="Başvuru sırasında KVKK onayı kaydedilmemiş (eski kayıt)">📋 onay yok</span>'}
             <div class="adm-actions">
               ${st !== "onaylandi"
                 ? `<button class="btn btn-gold" data-act="onaylandi">✓ ${st === "reddedildi" ? "Yeniden Onayla" : "Onayla"}</button>` : ""}
@@ -1379,8 +1384,16 @@
             <div class="mini" style="margin-top:8px">
               💳 ${p.iban || "IBAN yok"} (${esc(p.account_name) || "?"} · ${esc(p.bank_name) || "?"}) · 🧾 ${p.invoice_type || "—"}
               · 👨‍👩‍👧 ${esc(p.parent_name) || "veli yok"} ${p.parent_tc ? "TC:" + p.parent_tc : ""} ${esc(p.parent_phone) || ""}
-              · 📄 ${belgeler.map(m => `<a class="gold" href="/api/photo/${m.id}" target="_blank">${esc(m.orig)}</a>`).join(", ") || "belge yok"}
-              · ✍️ ${imzalar.length ? `<a class="gold" href="/api/photo/${imzalar[imzalar.length-1].id}" target="_blank">imza</a>` : "imza yok"}
+              · 📄 ${belgeler.map(m =>
+                  `<a class="gold" href="/api/photo/${m.id}" target="_blank">${esc(m.orig)}</a>` +
+                  `<button class="dosya-sil" data-dosyasil="${m.id}" title="Bu belgeyi kalıcı olarak sil">✕</button>`
+                ).join(", ") || "belge yok"}
+              · ✍️ ${imzalar.length
+                  ? imzalar.map(m =>
+                      `<a class="gold" href="/api/photo/${m.id}" target="_blank">imza</a>` +
+                      `<button class="dosya-sil" data-dosyasil="${m.id}" title="Bu imzayı kalıcı olarak sil">✕</button>`
+                    ).join(", ")
+                  : "imza istenmiyor"}
             </div>
             ${arsiv.length ? `<div class="mini" style="margin-top:6px">🗄 Arşiv (${arsiv.length}) — ↩ ile geri alın, ✕ ile sunucudan tamamen silin:</div>
               <div class="adm-photos">${arsiv.map(m => `<span class="foto-kutu">${m.kind === "photo"
@@ -1522,6 +1535,18 @@
       const uid = +card.dataset.uid;
       const msg = card.querySelector("[data-msg]");
       const b = e.target.closest("[data-act]");
+
+      /* Belge / imza dosyasını kalıcı sil (bu düğmede data-act yok) */
+      const dosyaBtn = e.target.closest("[data-dosyasil]");
+      if (dosyaBtn) {
+        const pid = +dosyaBtn.dataset.dosyasil;
+        if (!(await onayIste("Bu dosya sunucudan kalıcı olarak silinecek (belge veya imza).",
+                             "🗑 Kalıcı Olarak Sil", "Dosya Silme", "Bu işlem geri alınamaz.", true))) return;
+        const sonuc = await api("/api/admin/media", { photo_id: pid, action: "kalici" });
+        if (!sonuc.ok) { toast(sonuc.err || "Silinemedi", "hata"); return; }
+        toast("🗑 Dosya kalıcı olarak silindi");
+        load(); return;
+      }
 
       /* kart aç/kapa (butonlara tıklamadıysa) */
       if (!b && e.target.closest("[data-toggle]") && !e.target.closest("a,button,select,input")) {
