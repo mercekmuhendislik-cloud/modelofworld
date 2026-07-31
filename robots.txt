@@ -6,6 +6,7 @@ Disallow: /panel
 Disallow: /admin
 Disallow: /sedcard
 Disallow: /paylasim
+Disallow: /onay
 Disallow: /api/
 
 Sitemap: https://www.modelofworld.com/sitemap.xml

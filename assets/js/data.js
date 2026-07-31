@@ -43,6 +43,36 @@ AGENCY.mapsEmbed = () =>
 AGENCY.mapsYolTarifi = () =>
   `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(AGENCY.addressMaps)}`;
 
+/* ---------------------------------------------------------
+   Onay metni (onay.html) — yönetici panelden üye açtığında
+   WhatsApp'tan gönderilen bağlantıda bu maddeler gösterilir.
+   Metni değiştirmek için yalnızca burayı düzenleyin.
+   --------------------------------------------------------- */
+const ONAY_MADDELERI = [
+  {
+    baslik: "Ajans kaydı",
+    metin: "Model of World'ün model / hostes kadrosuna kaydedilmemi, verdiğim bilgilerin iş " +
+           "yönlendirmesi ve casting süreçleri için ajans tarafından işlenmesini kabul ediyorum.",
+  },
+  {
+    baslik: "Kişisel verilerin işlenmesi (KVKK)",
+    metin: "Ad soyad, iletişim bilgilerim, ölçülerim ve fotoğraflarımın 6698 sayılı KVKK kapsamında " +
+           "ajans tarafından kaydedilmesine ve saklanmasına izin veriyorum. Bilgilerim yalnızca " +
+           "iş süreçleri için kullanılır, üçüncü kişilere pazarlama amacıyla satılmaz.",
+  },
+  {
+    baslik: "Görsel kullanımı",
+    metin: "Fotoğraflarımın ajansın internet sitesinde, cast kataloğunda ve müşterilere sunulan " +
+           "seçkilerde tanıtım amacıyla yayınlanmasına izin veriyorum. Sitede gizlilik kuralı gereği " +
+           "yalnızca adım ve soyadımın baş harfi görünür.",
+  },
+  {
+    baslik: "Ücret alınmaz",
+    metin: "Ajansa kayıt, değerlendirme ve iş yönlendirmesi için hiçbir ücret ödemediğimi; " +
+           "benden kayıt, dosya veya çekim ücreti istenmediğini beyan ederim.",
+  },
+];
+
 /* Kategori tanımları */
 const CATEGORIES = {
   model:   { label: "Manken / Model",           short: "Model",        icon: "◆" },
@@ -518,6 +548,6 @@ window.VERA = {
   DEMO_ESIK, GERCEK_SAYI: CAST_CANLI.length,
   AGENCY, CATEGORIES, LABELS, SERVICES, ILLER, ILLER_POPULER, DILLER,
   RATES, HEADCOUNT_MID, DURATION_DAYS, FAQ_CANDIDATES, FAQ_CLIENTS,
-  PROJECTS, COUNTERS, BRANDS, TESTIMONIALS, BLOG_POSTS,
+  PROJECTS, COUNTERS, BRANDS, TESTIMONIALS, BLOG_POSTS, ONAY_MADDELERI,
   talentPlaceholder, formatLanguages,
 };

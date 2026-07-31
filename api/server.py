@@ -137,6 +137,15 @@ def init_db():
     # boş/NULL ise üye etkin demektir. Kalıcı silme kaydı tamamen kaldırır.
     try: c.execute("ALTER TABLE users ADD COLUMN deleted TEXT")
     except sqlite3.OperationalError: pass
+    # v8: yönetici elle üye açabilir. Şifreyi yönetici belirlediği için üye ilk
+    # girişinde kendi şifresini seçmeden panele devam edemez.
+    try: c.execute("ALTER TABLE users ADD COLUMN must_change_pw TEXT")
+    except sqlite3.OperationalError: pass
+    # v8: KVKK / görsel kullanım onayı WhatsApp'tan gönderilen tek kullanımlık
+    # bağlantıyla alınır. Token onaylanınca silinir; tarih ve IP delil olarak kalır.
+    for col in ["consent_token", "consent_ip", "consent_sent"]:
+        try: c.execute(f"ALTER TABLE profiles ADD COLUMN {col} TEXT")
+        except sqlite3.OperationalError: pass
     # Yönetici şifresi ilk kurulumda mevcut anahtara eşitlenir (sonra panelden değiştirilir)
     if not c.execute("SELECT 1 FROM settings WHERE k='admin_salt'").fetchone():
         salt = secrets.token_hex(16)
@@ -272,6 +281,26 @@ def is_minor(uid):
         return (datetime.now() - bd).days / 365.25 < 18
     except Exception:
         return False
+
+def onay_token_uret(uid):
+    """Üyeye özel tek kullanımlık onay bağlantısı üretir (WhatsApp ile gönderilir)."""
+    tok = secrets.token_urlsafe(24)
+    db().execute("UPDATE profiles SET consent_token=?, consent_sent=? WHERE user_id=?", (tok, now(), uid))
+    return tok
+
+def yayin_engeli(uid):
+    """Katalogda yayın için eksik olan şart — yoksa None.
+       Kural: en az bir fotoğraf + alınmış KVKK/görsel kullanım onayı."""
+    foto = db().execute("SELECT COUNT(*) c FROM photos WHERE user_id=? AND kind='photo' AND deleted=0",
+                        (uid,)).fetchone()["c"]
+    if not foto:
+        return "Bu üyenin hiç fotoğrafı yok — katalogda boş kart görünmemesi için önce fotoğraf ekleyin."
+    pr = db().execute("SELECT consent_kvkk FROM profiles WHERE user_id=?", (uid,)).fetchone()
+    if not pr or pr["consent_kvkk"] != "1":
+        return ("Bu üyenin KVKK / görsel kullanım onayı yok. Üye kartındaki "
+                "\"📲 Onay Linki Gönder\" düğmesiyle onay bağlantısını iletin; "
+                "üye onayladığında yayına alabilirsiniz.")
+    return None
 
 def public_name(fullname):
     """Gizlilik kuralı: sitede yalnızca ad + soyad baş harfi yayınlanır."""
@@ -492,6 +521,23 @@ class Handler(BaseHTTPRequestHandler):
             row = db().execute("SELECT v FROM settings WHERE k='maintenance'").fetchone()
             return self._json(200, {"maintenance": bool(row and row["v"] == "1")})
 
+        if p == "/api/onay":
+            # Onay sayfası (onay.html) bağlantıdaki anahtarla kimin onay vereceğini sorar.
+            # Yalnızca ad ve gerekli uyarılar döner; başka kişisel veri paylaşılmaz.
+            tok = qs.get("k", [""])[0]
+            if not tok:
+                return self._json(400, {"error": "Bağlantı eksik"})
+            row = db().execute(
+                "SELECT u.id, u.fullname, p.consent_kvkk, p.parent_name, p.age, p.category "
+                "FROM users u JOIN profiles p ON p.user_id=u.id "
+                "WHERE p.consent_token=? AND COALESCE(u.deleted,'')=''", (tok,)).fetchone()
+            if not row:
+                return self._json(404, {"error": "Bu bağlantı geçersiz veya daha önce kullanılmış. "
+                                                 "Ajanstan yeni bir onay bağlantısı isteyin."})
+            return self._json(200, {"ok": True, "fullname": row["fullname"],
+                                    "veli": bool(is_minor(row["id"])),
+                                    "veli_ad": row["parent_name"] or ""})
+
         if p == "/api/admin/pulse":
             adm = self._admin(qs)
             if not adm: return self._json(403, {"error": "Yetki yok"})
@@ -528,10 +574,12 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/me":
             uid = self._session_user()
             if not uid: return self._json(401, {"error": "Oturum yok"})
-            user = db().execute("SELECT id,email,fullname,phone FROM users WHERE id=?", (uid,)).fetchone()
+            user = db().execute("SELECT id,email,fullname,phone,COALESCE(must_change_pw,'') must_change_pw"
+                                " FROM users WHERE id=?", (uid,)).fetchone()
             prof = db().execute("SELECT * FROM profiles WHERE user_id=?", (uid,)).fetchone()
             prof = dict(prof) if prof else {}
             for c in ADMIN_COLS: prof.pop(c, None)   # iç notlar üyeye sızmaz
+            prof.pop("consent_token", None)          # onay bağlantısı anahtarı dışa verilmez
             media = db().execute(
                 "SELECT id,kind,album,orig,created,(thumb IS NOT NULL) AS kucuk"
                 " FROM photos WHERE user_id=? AND deleted=0 ORDER BY id",
@@ -601,7 +649,8 @@ class Handler(BaseHTTPRequestHandler):
             if not adm: return self._json(403, {"error": "Yetki yok"})
             # Çöp kutusundaki üyeler ayrı listede döner; normal listeye karışmaz
             users = [dict(r) for r in db().execute(
-                "SELECT id,email,fullname,phone,created,COALESCE(deleted,'') deleted FROM users"
+                "SELECT id,email,fullname,phone,created,COALESCE(deleted,'') deleted,"
+                "COALESCE(must_change_pw,'') must_change_pw FROM users"
                 " ORDER BY id DESC")]
             silinenler = [u for u in users if u["deleted"]]
             users = [u for u in users if not u["deleted"]]
@@ -744,7 +793,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(401, {"error": "E-posta veya şifre hatalı"})
             if (row["deleted"] or ""):
                 return self._json(403, {"error": "Bu üyelik kaldırılmış. Bilgi için ajansla iletişime geçin."})
-            return self._json(200, {"ok": True}, cookie=self._make_session(row["id"]))
+            return self._json(200, {"ok": True, "sifre_belirle": (row["must_change_pw"] or "") == "1"},
+                              cookie=self._make_session(row["id"]))
 
         if p == "/api/logout":
             raw = self.headers.get("Cookie") or ""
@@ -753,6 +803,43 @@ class Handler(BaseHTTPRequestHandler):
                 db().execute("DELETE FROM sessions WHERE token=?", (m.group(1),)); db().commit()
             return self._json(200, {"ok": True},
                 cookie="mow=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0")
+
+        if p == "/api/password-set":
+            # İlk giriş: şifreyi yönetici belirlediyse üye kendi şifresini seçmeden devam edemez.
+            # Eski şifre sorulmaz — üye zaten o şifreyle giriş yapmış durumdadır.
+            uid = self._session_user()
+            if not uid: return self._json(401, {"error": "Oturum yok"})
+            row = db().execute("SELECT COALESCE(must_change_pw,'') m FROM users WHERE id=?", (uid,)).fetchone()
+            if not row or row["m"] != "1":
+                return self._json(403, {"error": "Bu adım sizin için geçerli değil"})
+            yeni = jbody().get("new") or ""
+            if len(yeni) < 6:
+                return self._json(400, {"error": "Yeni şifre en az 6 karakter olmalı"})
+            salt = secrets.token_hex(16)
+            db().execute("UPDATE users SET pass_hash=?, salt=?, must_change_pw='' WHERE id=?",
+                         (hash_pw(yeni, salt), salt, uid))
+            audit("uye", "ilk-sifre-belirlendi", uid, "yönetici tarafından açılan hesap")
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/onay":
+            # Üye (veya veli) WhatsApp'tan gelen bağlantıdaki onayı verir.
+            # Bağlantı tek kullanımlıktır; onay tarihi ve IP delil olarak saklanır.
+            tok = str(jbody().get("k") or "")
+            if not tok:
+                return self._json(400, {"error": "Bağlantı eksik"})
+            row = db().execute(
+                "SELECT u.id, u.fullname FROM users u JOIN profiles p ON p.user_id=u.id "
+                "WHERE p.consent_token=? AND COALESCE(u.deleted,'')=''", (tok,)).fetchone()
+            if not row:
+                return self._json(404, {"error": "Bu bağlantı geçersiz veya daha önce kullanılmış. "
+                                                 "Ajanstan yeni bir onay bağlantısı isteyin."})
+            db().execute("UPDATE profiles SET consent_kvkk='1', consent_contract='1', "
+                         "consent_at=?, consent_ip=?, consent_token=NULL WHERE user_id=?",
+                         (now(), self._ip(), row["id"]))
+            audit("uye", "onay-verildi", row["id"], "KVKK + görsel kullanım onayı (bağlantı ile)")
+            db().commit()
+            return self._json(200, {"ok": True, "fullname": row["fullname"]})
 
         if p == "/api/password":
             # Üye kendi şifresini değiştirir (yöneticiden gelen geçici şifreyi de böyle değiştirir)
@@ -1031,6 +1118,112 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"ok": True})
 
         # ---- Yönetici uçları ----
+        if p == "/api/admin/user-new":
+            # Yönetici panelden elle üye kaydı açar (telefonla/ofiste gelen adaylar için).
+            # Şifreyi yönetici belirler; üye ilk girişte kendi şifresini seçmek zorundadır.
+            adm = self._admin(qs)
+            if not self._can(adm, "users"): return self._json(403, {"error": "Üye açmak için Yönetici rolü gerekir"})
+            d = jbody()
+            adsoyad = str(d.get("fullname") or "").strip()[:80]
+            email = str(d.get("email") or "").strip().lower()
+            pw = str(d.get("password") or "")
+            telefon = str(d.get("phone") or "").strip()
+            tel_sade = re.sub(r"\D", "", telefon)
+
+            if len(adsoyad.split()) < 2:
+                return self._json(400, {"error": "Ad ve soyadı birlikte yazın"})
+            if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+                return self._json(400, {"error": "Geçerli bir e-posta girin"})
+            if len(pw) < 6:
+                return self._json(400, {"error": "Şifre en az 6 karakter olmalı"})
+            if not re.match(r"^0[1-9]\d{9}$", tel_sade):
+                return self._json(400, {"error": "Telefon numarasını eksiksiz girin (örn. 0532 555 55 55)"})
+
+            kats = [c for c in str(d.get("category") or "").split(",") if c in CATEGORY_KEYS]
+            if not kats:
+                return self._json(400, {"error": "En az bir kategori seçin"})
+            cinsiyet = str(d.get("gender") or "")
+            if cinsiyet not in ("kadin", "erkek"):
+                return self._json(400, {"error": "Cinsiyet seçin"})
+            yas = _sayi(d.get("age")) or 0
+            if not 1 <= yas <= 50:
+                return self._json(400, {"error": "Yaş 1-50 arasında olmalı"})
+            sehir = str(d.get("city") or "").strip()[:40]
+            if not sehir:
+                return self._json(400, {"error": "Şehir girin"})
+
+            resit_degil = yas < 18 or "cocuk" in kats
+            if "nu" in kats and resit_degil:
+                return self._json(400, {"error": "Nü / sanatsal kategori yalnızca 18 yaş ve üzeri için seçilebilir"})
+            veli_ad = str(d.get("parent_name") or "").strip()[:80]
+            veli_tel = str(d.get("parent_phone") or "").strip()[:30]
+            if resit_degil and (len(veli_ad.split()) < 2 or len(re.sub(r"\D", "", veli_tel)) < 10):
+                return self._json(400, {"error": "18 yaş altı kayıtlarda veli ad soyad ve telefon zorunludur"})
+
+            # Mükerrer kayıt kontrolü — e-posta ve telefon
+            var = db().execute("SELECT id, COALESCE(deleted,'') d FROM users WHERE email=?", (email,)).fetchone()
+            if var and var["d"]:
+                return self._json(409, {"error": "Bu e-posta çöp kutusundaki bir üyeye ait — "
+                                                 "Silinenler sekmesinden geri alın veya kalıcı silin"})
+            if var:
+                return self._json(409, {"error": "Bu e-posta zaten üye #%d olarak kayıtlı" % var["id"]})
+            ayni_tel = db().execute(
+                "SELECT id, fullname FROM users WHERE REPLACE(REPLACE(REPLACE(phone,' ',''),'(',''),')','')=? "
+                "AND COALESCE(deleted,'')=''", (tel_sade,)).fetchone()
+            if ayni_tel and not d.get("tel_yoksay"):
+                return self._json(409, {"error": "Bu telefon zaten üye #%d (%s) kaydında var. "
+                                                 "Yine de yeni kayıt açmak istiyorsanız tekrar deneyin."
+                                                 % (ayni_tel["id"], ayni_tel["fullname"] or "isimsiz"),
+                                        "tel_cakisma": True})
+
+            salt = secrets.token_hex(16)
+            cur = db().execute(
+                "INSERT INTO users(email,pass_hash,salt,fullname,phone,created,must_change_pw) "
+                "VALUES(?,?,?,?,?,?,'1')",
+                (email, hash_pw(pw, salt), salt, adsoyad, telefon, now()))
+            uid = cur.lastrowid
+            # Yönetici bizzat kaydettiği için durum onaylı açılır; siteye çıkış ayrıca
+            # fotoğraf + onay şartına bağlıdır (bkz. yayin_engeli).
+            db().execute(
+                "INSERT INTO profiles(user_id, status, privacy, category, gender, age, city, "
+                "languages, instagram, about, parent_name, parent_phone, "
+                "consent_kvkk, consent_contract, admin_note) "
+                "VALUES(?, 'onaylandi', 'public', ?,?,?,?,?,?,?,?,?, '0','0', ?)",
+                (uid, ",".join(kats), cinsiyet, str(yas), sehir,
+                 str(d.get("languages") or "")[:200], str(d.get("instagram") or "").strip()[:60],
+                 str(d.get("about") or "")[:1500],
+                 veli_ad if resit_degil else "", veli_tel if resit_degil else "",
+                 "Kaydı panelden %s açtı." % adm["username"]))
+            tok = onay_token_uret(uid)
+            audit("admin:" + adm["username"], "uye-elle-eklendi", uid, "%s <%s>" % (adsoyad, email))
+            db().commit()
+            return self._json(200, {"ok": True, "user_id": uid, "onay_token": tok,
+                                    "veli": resit_degil, "veli_tel": veli_tel if resit_degil else ""})
+
+        if p == "/api/admin/consent":
+            # Onay bağlantısı üretir / yeniler. Eski bağlantı geçersiz olur.
+            adm = self._admin(qs)
+            if not self._can(adm, "review"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            d = jbody()
+            uid = int(d.get("user_id") or 0)
+            row = db().execute("SELECT u.fullname, u.phone, p.consent_kvkk, p.parent_phone "
+                               "FROM users u JOIN profiles p ON p.user_id=u.id "
+                               "WHERE u.id=? AND COALESCE(u.deleted,'')=''", (uid,)).fetchone()
+            if not row: return self._json(404, {"error": "Üye bulunamadı"})
+            if d.get("action") == "geri-al":
+                db().execute("UPDATE profiles SET consent_kvkk='0', consent_contract='0', "
+                             "consent_at=NULL, consent_ip=NULL, published='0' WHERE user_id=?", (uid,))
+                audit("admin:" + adm["username"], "onay-geri-alindi", uid, "onay iptal, yayından düşürüldü")
+                db().commit()
+                return self._json(200, {"ok": True})
+            tok = onay_token_uret(uid)
+            audit("admin:" + adm["username"], "onay-linki-uretildi", uid, "")
+            db().commit()
+            veli = is_minor(uid)
+            return self._json(200, {"ok": True, "onay_token": tok, "veli": veli,
+                                    "tel": (row["parent_phone"] if veli else row["phone"]) or row["phone"],
+                                    "fullname": row["fullname"], "onayli": row["consent_kvkk"] == "1"})
+
         if p == "/api/admin/login":
             d = jbody()
             uname = (d.get("username") or "admin").strip().lower()
@@ -1248,6 +1441,9 @@ class Handler(BaseHTTPRequestHandler):
                 yayin = "1" if d.get("published") else "0"
                 if yayin == "1" and (pr["status"] or "") != "onaylandi":
                     return self._json(400, {"error": "Siteye çıkarmak için üyeyi önce onaylamalısınız"})
+                if yayin == "1":
+                    engel = yayin_engeli(uid)
+                    if engel: return self._json(400, {"error": engel})
                 db().execute("UPDATE profiles SET published=? WHERE user_id=?", (yayin, uid))
                 audit("admin:" + adm["username"], "yayin-" + ("acildi" if yayin == "1" else "kaldirildi"), uid, "")
                 if yayin == "1" and (pr["privacy"] or "private") != "public":
@@ -1359,8 +1555,10 @@ class Handler(BaseHTTPRequestHandler):
 
                 gecici = secrets.token_urlsafe(9)
                 salt = secrets.token_hex(16)
+                # Şifreyi ajans ürettiği için üye ilk girişte kendi şifresini belirler
                 cur = db().execute(
-                    "INSERT INTO users(email,pass_hash,salt,fullname,phone,created) VALUES(?,?,?,?,?,?)",
+                    "INSERT INTO users(email,pass_hash,salt,fullname,phone,created,must_change_pw) "
+                    "VALUES(?,?,?,?,?,?,'1')",
                     (email, hash_pw(gecici, salt), salt, adsoyad[:120],
                      str(veri.get("phone") or "").strip()[:30], now()))
                 uid = cur.lastrowid

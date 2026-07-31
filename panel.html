@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=c612654">
+  <link rel="stylesheet" href="assets/css/style.css?v=185a445">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -49,7 +49,7 @@
     .crop-controls { display:flex; gap:10px; align-items:center; margin:14px 0; }
     .crop-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
 
-    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=c612654 */
+    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=185a445 */
 
     /* Profil tamamlanma ölçeri */
     .tamam-kart { border:1px solid var(--gold); border-radius:14px; padding:18px 20px; margin-bottom:24px;
@@ -71,12 +71,42 @@
     .offer-state { font-size:.72rem; text-transform:uppercase; letter-spacing:.16em; padding:5px 12px; border-radius:999px; border:1px solid var(--line); }
     .offer-state.kabul { color:#20744c; border-color:#4da878; }
     .offer-state.red { color:#a33; border-color:#d95a5a; }
+
+    /* İlk giriş şifre penceresi — kapatılamaz, şifre belirlenmeden panel kullanılamaz */
+    #ilkSifreKatman { position:fixed; inset:0; z-index:500; background:rgba(20,8,14,.75); backdrop-filter:blur(8px);
+      display:none; align-items:center; justify-content:center; padding:20px; }
+    #ilkSifreKatman.open { display:flex; }
+    #ilkSifreKutu { background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);
+      width:min(430px,100%); padding:26px 28px; }
+    #ilkSifreKutu h3 { font-family:var(--font-serif); font-size:1.4rem; margin-bottom:8px; }
+    #ilkSifreKutu p { font-size:.88rem; color:var(--text-2); line-height:1.7; margin-bottom:16px; }
+    #ilkSifreKutu label { display:block; font-size:.62rem; letter-spacing:.14em; text-transform:uppercase;
+      color:var(--text-2); margin:12px 0 5px; }
+    #ilkSifreKutu input { width:100%; padding:11px 13px; border-radius:9px; background:var(--bg-2);
+      border:1px solid var(--line); color:var(--text); font:inherit; font-size:.9rem; }
+    #ilkSifreKutu input:focus { outline:none; border-color:var(--gold); }
+    #ilkSifreHata { color:var(--danger); font-size:.83rem; margin-top:10px; min-height:1em; line-height:1.6; }
   </style>
-  <meta name="mow-surum" content="c612654">
-  <script src="assets/js/surum-kontrol.js?v=c612654"></script>
+  <meta name="mow-surum" content="185a445">
+  <script src="assets/js/surum-kontrol.js?v=185a445"></script>
 </head>
 <body data-page="panel">
   <div id="site-header"></div>
+
+  <!-- İlk giriş: şifreyi yönetici belirlediyse üye kendi şifresini seçmeden devam edemez -->
+  <div id="ilkSifreKatman">
+    <div id="ilkSifreKutu" role="dialog" aria-modal="true" aria-labelledby="ilkSifreBaslik">
+      <h3 id="ilkSifreBaslik">Şifrenizi Belirleyin</h3>
+      <p>Hesabınız ajans tarafından açıldı. Güvenliğiniz için devam etmeden önce
+         yalnızca sizin bileceğiniz bir şifre belirlemeniz gerekiyor.</p>
+      <label for="ilkSifre1">Yeni şifre</label>
+      <input type="password" id="ilkSifre1" placeholder="En az 6 karakter" autocomplete="new-password">
+      <label for="ilkSifre2">Yeni şifre (tekrar)</label>
+      <input type="password" id="ilkSifre2" placeholder="Şifrenizi tekrar yazın" autocomplete="new-password">
+      <div id="ilkSifreHata"></div>
+      <button class="btn btn-gold full mt-2" id="ilkSifreKaydet">Şifremi Belirle ve Devam Et</button>
+    </div>
+  </div>
 
   <div class="page-head">
     <div class="container" style="display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:16px">
@@ -477,8 +507,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=c612654"></script>
-  <script src="assets/js/main.js?v=c612654"></script>
+  <script src="assets/js/data.js?v=185a445"></script>
+  <script src="assets/js/main.js?v=185a445"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -487,8 +517,40 @@
       const field = n => document.querySelector(`[name="${n}"]`);
       const val = n => { const el = field(n); return el ? (el.type === "checkbox" ? (el.checked ? "1" : "") : el.value) : ""; };
 
+      /* ============ İlk giriş: şifre belirleme ============
+         Hesabı ajans açtıysa üye kendi şifresini seçmeden panele devam edemez. */
+      function ilkSifreAc() {
+        $("ilkSifreKatman").classList.add("open");
+        setTimeout(() => $("ilkSifre1").focus(), 80);
+      }
+      $("ilkSifreKaydet").addEventListener("click", async () => {
+        const btn = $("ilkSifreKaydet"), hata = $("ilkSifreHata");
+        const s1 = $("ilkSifre1").value, s2 = $("ilkSifre2").value;
+        hata.textContent = "";
+        if (s1.length < 6) { hata.textContent = "Şifre en az 6 karakter olmalı."; $("ilkSifre1").focus(); return; }
+        if (s1 !== s2) { hata.textContent = "İki şifre birbirinden farklı."; $("ilkSifre2").focus(); return; }
+        btn.disabled = true; btn.textContent = "Kaydediliyor…";
+        let sonuc = null;
+        try {
+          const r = await fetch("/api/password-set", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ new: s1 }),
+          });
+          sonuc = { ok: r.ok, d: await r.json().catch(() => ({})) };
+        } catch { sonuc = null; }
+        btn.disabled = false; btn.textContent = "Şifremi Belirle ve Devam Et";
+        if (!sonuc || !sonuc.ok) {
+          hata.textContent = (sonuc && sonuc.d.error) || "Şifre kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.";
+          return;
+        }
+        $("ilkSifre1").value = $("ilkSifre2").value = "";
+        $("ilkSifreKatman").classList.remove("open");
+        if (ME?.user) ME.user.must_change_pw = "";
+      });
+      $("ilkSifre2").addEventListener("keydown", e => { if (e.key === "Enter") $("ilkSifreKaydet").click(); });
+
       const yasHesap = b => { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); };
-      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=c612654) */
+      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=185a445) */
       const makeMsel = window.VERA.makeMsel;
       const catSel = makeMsel($("catSel"),
         Object.entries(window.VERA.CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
@@ -982,6 +1044,8 @@
         const r = await fetch("/api/me").catch(() => null);
         if (!r || !r.ok) { location.href = "uye"; return; }
         ME = await r.json();
+        /* Hesabı yönetici açtıysa: kendi şifresini belirlemeden panel kullanılamaz */
+        if (ME.user?.must_change_pw === "1") ilkSifreAc();
         $("userName").textContent = (ME.user?.fullname || ME.user?.email || "").split(" ")[0];
         const st = ME.profile?.status || "inceleniyor";
         $("statusPill").textContent =

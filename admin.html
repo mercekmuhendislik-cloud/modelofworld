@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=c612654">
+  <link rel="stylesheet" href="assets/css/style.css?v=185a445">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -151,6 +151,38 @@
     #onayKutu .onay-eylem { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; flex-wrap:wrap; }
     #onayHata { color:#c33; font-size:.8rem; margin-top:8px; min-height:1em; }
 
+    /* Yeni üye penceresi */
+    #yeniKatman { position:fixed; inset:0; z-index:390; background:rgba(20,8,14,.6); backdrop-filter:blur(6px);
+      display:none; align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto; }
+    #yeniKatman.open { display:flex; }
+    #yeniKutu { background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);
+      width:min(680px,100%); margin:auto; padding:24px 26px; animation:fadeUp .25s ease both; }
+    #yeniKutu h3 { font-family:var(--font-serif); font-size:1.35rem; margin-bottom:4px; }
+    #yeniKutu .yeni-alt { font-size:.82rem; color:var(--text-2); line-height:1.6; margin-bottom:16px; }
+    .yeni-baslik { font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--gold);
+      margin:18px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+    .yeni-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:10px; }
+    .yeni-grid label, .yeni-tam label { display:block; font-size:.62rem; text-transform:uppercase; letter-spacing:.12em;
+      color:var(--text-2); margin-bottom:3px; }
+    .yeni-grid .adm-input, .yeni-grid select, .yeni-tam .adm-input { width:100%; }
+    .yeni-tam { margin-top:10px; }
+    .yeni-kat { display:flex; flex-wrap:wrap; gap:6px; }
+    .yeni-kat label { display:inline-flex; align-items:center; gap:5px; margin:0; padding:6px 11px; cursor:pointer;
+      border:1px solid var(--line); border-radius:999px; font-size:.78rem; letter-spacing:0; text-transform:none;
+      color:var(--text); }
+    .yeni-kat label:has(input:checked) { border-color:var(--gold); background:rgba(211,79,110,.09); color:var(--gold); }
+    .yeni-kat input { accent-color:var(--gold); }
+    #yeniVeli { display:none; }
+    #yeniVeli.open { display:block; }
+    #yeniHata { color:#c33; font-size:.84rem; margin-top:12px; min-height:1em; line-height:1.6; }
+    .yeni-eylem { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; flex-wrap:wrap; }
+    .yeni-sonuc { border:1px solid #4da878; background:rgba(77,168,120,.08); border-radius:12px; padding:16px 18px;
+      font-size:.86rem; line-height:1.8; }
+    .yeni-sonuc code { background:var(--bg-2); border:1px solid var(--line); border-radius:6px; padding:2px 7px;
+      font-size:.84rem; }
+    .yeni-fotolar { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .yeni-fotolar img { width:74px; height:98px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
+
     /* Komut paleti */
     #palette { position:fixed; inset:0; z-index:250; background:rgba(20,8,14,.55); backdrop-filter:blur(6px);
       display:none; align-items:flex-start; justify-content:center; padding-top:14vh; }
@@ -202,8 +234,8 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
-  <meta name="mow-surum" content="c612654">
-  <script src="assets/js/surum-kontrol.js?v=c612654"></script>
+  <meta name="mow-surum" content="185a445">
+  <script src="assets/js/surum-kontrol.js?v=185a445"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -314,6 +346,7 @@
 
         <!-- ARAÇLAR -->
         <div class="adm-row" style="margin-bottom:10px" id="toolsRow">
+          <button class="btn btn-gold btn-sm" id="yeniUyeBtn" hidden>➕ Yeni Üye Ekle</button>
           <button class="btn btn-ghost btn-sm" id="csvBtn">⬇ Excel/CSV İndir</button>
           <button class="btn btn-ghost btn-sm" id="backupBtn" hidden>💾 Yedek Al (.db)</button>
           <button class="btn btn-ghost btn-sm" id="maintBtn" hidden></button>
@@ -457,6 +490,103 @@
   </section>
 
   <div id="toasts"></div>
+
+  <!-- Yeni üye penceresi: yönetici elle kayıt açar -->
+  <div id="yeniKatman">
+    <div id="yeniKutu" role="dialog" aria-modal="true" aria-labelledby="yeniBaslik">
+      <h3 id="yeniBaslik">Yeni Üye Ekle</h3>
+      <p class="yeni-alt">Telefonla veya yüz yüze görüştüğünüz adayı buradan kaydedin. Ölçüler ve diğer
+        bilgiler sonradan üye kartından tamamlanır. Kayıt açıldıktan sonra KVKK onay bağlantısını
+        WhatsApp'tan gönderirsiniz — onay gelmeden üye siteye çıkarılamaz.</p>
+
+      <div id="yeniForm">
+        <div class="yeni-baslik">Hesap</div>
+        <div class="yeni-grid">
+          <div><label>Ad Soyad *</label><input class="adm-input" id="yAd" placeholder="Ad Soyad" autocomplete="off"></div>
+          <div><label>Telefon *</label><input class="adm-input" id="yTel" type="tel" inputmode="numeric" maxlength="14" placeholder="0532 555 55 55"></div>
+          <div><label>E-posta *</label><input class="adm-input" id="yMail" type="email" placeholder="ornek@mail.com" autocomplete="off"></div>
+          <div>
+            <label>Şifre * <span class="mini" style="text-transform:none;letter-spacing:0">(üye ilk girişte değiştirir)</span></label>
+            <div style="display:flex;gap:6px">
+              <input class="adm-input" id="ySifre" style="flex:1" placeholder="En az 6 karakter" autocomplete="off">
+              <button class="btn btn-ghost btn-sm" id="ySifreUret" type="button" title="Rastgele şifre üret">🎲</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="yeni-baslik">Profil</div>
+        <div class="yeni-grid">
+          <div><label>Cinsiyet *</label>
+            <select class="adm-input" id="yCins">
+              <option value="">Seçiniz…</option>
+              <option value="kadin">Kadın</option>
+              <option value="erkek">Erkek</option>
+            </select>
+          </div>
+          <div><label>Yaş *</label><input class="adm-input" id="yYas" type="number" min="1" max="50" placeholder="24"></div>
+          <div><label>Şehir *</label><input class="adm-input" id="ySehir" placeholder="İstanbul" list="yIlListe"></div>
+          <div><label>Diller</label><input class="adm-input" id="yDil" placeholder="Türkçe, İngilizce"></div>
+        </div>
+        <datalist id="yIlListe"></datalist>
+
+        <div class="yeni-tam">
+          <label>Kategori * <span class="mini" style="text-transform:none;letter-spacing:0">(birden fazla seçebilirsiniz)</span></label>
+          <div class="yeni-kat" id="yKatlar"></div>
+        </div>
+
+        <div class="yeni-tam" id="yeniVeli">
+          <div class="yeni-baslik" style="color:var(--danger)">18 Yaş Altı — Veli Bilgisi Zorunlu</div>
+          <div class="yeni-grid">
+            <div><label>Veli Ad Soyad *</label><input class="adm-input" id="yVeliAd" placeholder="Veli Ad Soyad"></div>
+            <div><label>Veli Telefon *</label><input class="adm-input" id="yVeliTel" type="tel" inputmode="numeric" maxlength="14" placeholder="0532 555 55 55"></div>
+          </div>
+          <p class="mini" style="margin-top:6px">Onay bağlantısı veli numarasına gönderilir.</p>
+        </div>
+
+        <div class="yeni-tam">
+          <label>Not <span class="mini" style="text-transform:none;letter-spacing:0">(profil açıklaması — sitede görünür)</span></label>
+          <textarea class="adm-input" id="yNot" rows="2" style="width:100%" placeholder="Deneyim, öne çıkan özellikler…"></textarea>
+        </div>
+
+        <div id="yeniHata"></div>
+        <div class="yeni-eylem">
+          <button class="btn btn-ghost btn-sm" id="yeniVazgec">Vazgeç</button>
+          <button class="btn btn-gold btn-sm" id="yeniKaydet">✓ Üyeyi Oluştur</button>
+        </div>
+      </div>
+
+      <!-- Kayıt açıldıktan sonra: fotoğraf + onay linki -->
+      <div id="yeniSonrasi" hidden>
+        <div class="yeni-sonuc" id="yeniOzet"></div>
+
+        <div class="yeni-baslik">Fotoğraf Ekle</div>
+        <p class="mini">WhatsApp'tan gelen fotoğrafları buradan yükleyebilirsiniz. Filigran ve küçültme otomatik uygulanır.</p>
+        <div class="adm-row">
+          <select class="adm-input" id="yFotoAlbum">
+            <option value="polaroid">Polaroid</option>
+            <option value="studio">Stüdyo</option>
+            <option value="podium">Podyum</option>
+            <option value="genel">Genel</option>
+          </select>
+          <input type="file" accept="image/*" multiple id="yFotoInput">
+          <span class="mini" id="yFotoMsg"></span>
+        </div>
+        <div class="yeni-fotolar" id="yFotoOnizleme"></div>
+
+        <div class="yeni-baslik">Onay Bağlantısı</div>
+        <p class="mini" id="yOnayAciklama"></p>
+        <div class="adm-row">
+          <a class="btn btn-gold btn-sm" id="yOnayWa" target="_blank" rel="noopener">📲 WhatsApp'tan Gönder</a>
+          <button class="btn btn-ghost btn-sm" id="yOnayKopya">🔗 Bağlantıyı Kopyala</button>
+        </div>
+
+        <div class="yeni-eylem">
+          <button class="btn btn-ghost btn-sm" id="yeniBaska">➕ Bir Üye Daha Ekle</button>
+          <button class="btn btn-gold btn-sm" id="yeniBitir">Bitir</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Kalıcı silme onay penceresi (tarayıcı iletişim kutularından bağımsız) -->
   <div id="onayKatman">
@@ -724,6 +854,7 @@
       const admin = DATA.me?.role === "admin";
       $("backupBtn").hidden = !admin;
       $("maintBtn").hidden = !admin;
+      $("yeniUyeBtn").hidden = !admin;   /* elle üye açmak yönetici rolüne özel */
       $("maintBtn").textContent = DATA.maintenance ? "🟢 Bakım Modunu Kapat (site kapalı!)" : "🔧 Bakım Modu";
       $("maintBtn").style.borderColor = DATA.maintenance ? "#c62828" : "";
       const cats = new Set();
@@ -732,6 +863,155 @@
       $("bulkRed").innerHTML = '<option value="">Red gerekçesi…</option>' + RED_SABLON.map(t => `<option>${t}</option>`).join("");
       $("tplText").value = RED_SABLON.join("\n");
     }
+    /* =========================================================
+       Yeni üye penceresi — yönetici elle kayıt açar
+       Akış: bilgiler → üye oluşur → fotoğraf + WhatsApp onay linki
+       ========================================================= */
+    const ILLER_KISA = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya", "Adana", "Konya", "Gaziantep",
+      "Kocaeli", "Mersin", "Eskişehir", "Kayseri", "Samsun", "Denizli", "Trabzon", "Muğla"];
+    let YENI_UID = 0, YENI_LINK = "", YENI_TEL = "";
+
+    function telBicim(inp) {
+      inp.addEventListener("input", () => {
+        let d = inp.value.replace(/\D/g, "");
+        if (d.startsWith("90")) d = d.slice(2);
+        if (d && d[0] !== "0") d = "0" + d;
+        d = d.slice(0, 11);
+        inp.value = [d.slice(0, 4), d.slice(4, 7), d.slice(7, 9), d.slice(9, 11)].filter(Boolean).join(" ");
+      });
+    }
+    telBicim($("yTel")); telBicim($("yVeliTel"));
+
+    function yeniSifreUret() {
+      const harf = "abcdefghijkmnpqrstuvwxyz", buyuk = "ABCDEFGHJKLMNPQRSTUVWXYZ", rakam = "23456789";
+      const havuz = harf + buyuk + rakam;
+      const r = n => Array.from(crypto.getRandomValues(new Uint32Array(n)));
+      let s = harf[r(1)[0] % harf.length] + buyuk[r(1)[0] % buyuk.length] + rakam[r(1)[0] % rakam.length];
+      r(6).forEach(x => s += havuz[x % havuz.length]);
+      return s;
+    }
+
+    function yeniAc() {
+      YENI_UID = 0; YENI_LINK = ""; YENI_TEL = "";
+      ["yAd", "yTel", "yMail", "yYas", "ySehir", "yDil", "yVeliAd", "yVeliTel", "yNot"].forEach(id => $(id).value = "");
+      $("yCins").value = "";
+      $("ySifre").value = yeniSifreUret();
+      $("yeniHata").textContent = "";
+      $("yFotoOnizleme").innerHTML = "";
+      $("yFotoMsg").textContent = "";
+      $("yeniVeli").classList.remove("open");
+      $("yeniForm").hidden = false;
+      $("yeniSonrasi").hidden = true;
+      $("yIlListe").innerHTML = ILLER_KISA.map(i => `<option value="${i}">`).join("");
+      $("yKatlar").innerHTML = Object.entries(KATLAR).map(([k, ad]) =>
+        `<label><input type="checkbox" value="${k}"> ${ad}</label>`).join("");
+      $("yeniKatman").classList.add("open");
+      setTimeout(() => $("yAd").focus(), 60);
+    }
+    function yeniKapat() { $("yeniKatman").classList.remove("open"); }
+
+    $("yeniUyeBtn").addEventListener("click", yeniAc);
+    $("yeniVazgec").addEventListener("click", yeniKapat);
+    $("yeniBitir").addEventListener("click", () => { yeniKapat(); load(); });
+    $("yeniBaska").addEventListener("click", () => { load(); yeniAc(); });
+    $("ySifreUret").addEventListener("click", () => $("ySifre").value = yeniSifreUret());
+    $("yeniKatman").addEventListener("click", e => { if (e.target.id === "yeniKatman" && $("yeniSonrasi").hidden) yeniKapat(); });
+
+    /* 18 yaş altı veya çocuk kategorisi → veli alanları açılır */
+    function veliKontrol() {
+      const yas = +$("yYas").value || 0;
+      const cocuk = [...$("yKatlar").querySelectorAll("input:checked")].some(i => i.value === "cocuk");
+      $("yeniVeli").classList.toggle("open", (yas > 0 && yas < 18) || cocuk);
+    }
+    $("yYas").addEventListener("input", veliKontrol);
+    $("yKatlar").addEventListener("change", veliKontrol);
+
+    $("yeniKaydet").addEventListener("click", async () => {
+      const btn = $("yeniKaydet"), hata = $("yeniHata");
+      const kats = [...$("yKatlar").querySelectorAll("input:checked")].map(i => i.value);
+      const govde = {
+        fullname: $("yAd").value.trim(), phone: $("yTel").value.trim(),
+        email: $("yMail").value.trim(), password: $("ySifre").value,
+        gender: $("yCins").value, age: $("yYas").value, city: $("ySehir").value.trim(),
+        category: kats.join(","), languages: $("yDil").value.trim(), about: $("yNot").value.trim(),
+        parent_name: $("yVeliAd").value.trim(), parent_phone: $("yVeliTel").value.trim(),
+      };
+      hata.textContent = "";
+      btn.disabled = true; btn.textContent = "Oluşturuluyor…";
+      let r = await api("/api/admin/user-new", govde);
+      /* Aynı telefon başka üyede varsa sunucu bir kez uyarır; yönetici onaylarsa devam edilir */
+      if (!r.ok && r.data?.tel_cakisma) {
+        btn.disabled = false; btn.textContent = "✓ Üyeyi Oluştur";
+        if (!(await onayIste(r.err, "Yine de Oluştur", "Telefon Zaten Kayıtlı",
+              "Aynı kişinin ikinci kez kaydedilmesi kadroda mükerrer profil oluşturur.", true))) return;
+        btn.disabled = true; btn.textContent = "Oluşturuluyor…";
+        r = await api("/api/admin/user-new", { ...govde, tel_yoksay: 1 });
+      }
+      btn.disabled = false; btn.textContent = "✓ Üyeyi Oluştur";
+      if (!r.ok) { hata.textContent = "⚠️ " + (r.err || "Üye oluşturulamadı"); return; }
+
+      YENI_UID = r.data.user_id;
+      YENI_LINK = location.origin + "/onay?k=" + r.data.onay_token;
+      YENI_TEL = (r.data.veli && r.data.veli_tel ? r.data.veli_tel : govde.phone).replace(/\D/g, "");
+      toast("✓ Üye #" + YENI_UID + " oluşturuldu");
+
+      $("yeniForm").hidden = true;
+      $("yeniSonrasi").hidden = false;
+      $("yeniOzet").innerHTML =
+        `<strong>Üye #${YENI_UID} oluşturuldu — ${esc(govde.fullname)}</strong><br>
+         Adaya iletilecek giriş bilgileri:<br>
+         E-posta: <code>${esc(govde.email)}</code> · Şifre: <code>${esc(govde.password)}</code><br>
+         <span class="mini">Üye ilk girişte kendi şifresini belirleyecek — bu şifre tek seferliktir.</span>`;
+      $("yOnayAciklama").innerHTML = r.data.veli
+        ? `Aday 18 yaş altında. Onay bağlantısı <strong>veli numarasına</strong> gönderilir: ${esc(govde.parent_phone)}`
+        : `Onay bağlantısı adayın numarasına gönderilir: ${esc(govde.phone)}. Onay gelmeden üye siteye çıkarılamaz.`;
+      $("yOnayWa").href = onayWaLink(YENI_TEL, govde.fullname, YENI_LINK);
+    });
+
+    /* Onay bağlantısı için hazır WhatsApp mesajı */
+    function onayWaLink(telSade, ad, link) {
+      let d = String(telSade || "").replace(/\D/g, "");
+      if (d.startsWith("0")) d = d.slice(1);
+      if (!d.startsWith("90")) d = "90" + d;
+      const mesaj = `Merhaba ${ad}, Model of World ajansındanız. Kaydınızı oluşturduk. ` +
+        `Kaydın tamamlanması için aşağıdaki bağlantıdan KVKK ve görsel kullanım onayını vermeniz gerekiyor:\n${link}\n\n` +
+        `Onayınız gelmeden profiliniz sitede yayınlanmaz. Ajansımız hiçbir aşamada ücret talep etmez.`;
+      return `https://wa.me/${d}?text=${encodeURIComponent(mesaj)}`;
+    }
+
+    $("yOnayKopya").addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(YENI_LINK); toast("🔗 Onay bağlantısı kopyalandı"); }
+      catch { metinIste("Bağlantıyı seçip kopyalayın", "Onay Bağlantısı", YENI_LINK, "Kapat"); }
+    });
+
+    /* Yeni üyeye fotoğraf yükleme (üye kartındaki mantığın aynısı) */
+    $("yFotoInput").addEventListener("change", async e => {
+      if (!YENI_UID || !e.target.files?.length) return;
+      const dosyalar = [...e.target.files], msg = $("yFotoMsg");
+      let ok = 0, son = "";
+      for (let i = 0; i < dosyalar.length; i++) {
+        msg.textContent = `Yükleniyor… (${i + 1}/${dosyalar.length})`;
+        const fd = new FormData();
+        fd.append("user_id", YENI_UID);
+        fd.append("kind", "photo");
+        fd.append("album", $("yFotoAlbum").value);
+        fd.append("file", dosyalar[i]);
+        const kucuk = await kucukKopya(dosyalar[i]);
+        if (kucuk) fd.append("thumb", kucuk, "thumb.webp");
+        const r = await fetch("/api/admin/upload", { method: "POST", body: fd }).catch(() => null);
+        const d = r ? await r.json().catch(() => ({})) : {};
+        if (r && r.ok) {
+          ok++;
+          const img = document.createElement("img");
+          img.src = URL.createObjectURL(dosyalar[i]);
+          $("yFotoOnizleme").appendChild(img);
+        } else son = d.error || "Yüklenemedi";
+      }
+      e.target.value = "";
+      msg.textContent = ok ? `✓ ${ok} fotoğraf yüklendi` : "";
+      if (son) toast(son, "hata");
+    });
+
     $("backupBtn").addEventListener("click", () => { toast("💾 Yedek indiriliyor…"); location.href = "/api/admin/backup"; });
     $("maintBtn").addEventListener("click", async () => {
       const yeni = !DATA.maintenance;
@@ -1314,7 +1594,8 @@
             ${fotolar.length ? `<span class="adm-badge">📷 ${fotolar.length}</span>`
                              : '<span class="adm-badge eksik" title="Fotoğrafı olmayan üye katalogda boş görünür">📷 fotoğraf yok</span>'}
             ${(p.height && p.weight) ? "" : '<span class="adm-badge eksik" title="Boy/kilo girilmemiş">📏 ölçü yok</span>'}
-            ${p.consent_kvkk === "1" ? "" : '<span class="adm-badge eksik" title="Başvuru sırasında KVKK onayı kaydedilmemiş (eski kayıt)">📋 onay yok</span>'}
+            ${p.consent_kvkk === "1" ? "" : '<span class="adm-badge eksik" title="KVKK / görsel kullanım onayı yok — üye siteye çıkarılamaz">📋 onay yok</span>'}
+            ${u.must_change_pw === "1" ? '<span class="adm-badge" title="Panelden açılan hesap — üye henüz ilk girişini yapıp kendi şifresini belirlemedi">🔑 ilk giriş bekliyor</span>' : ""}
             <div class="adm-actions">
               ${st !== "onaylandi"
                 ? `<button class="btn btn-gold" data-act="onaylandi">✓ ${st === "reddedildi" ? "Yeniden Onayla" : "Onayla"}</button>` : ""}
@@ -1325,6 +1606,9 @@
                    ${(p.published === "1" && p.privacy !== "public")
                      ? `<button class="btn btn-gold" data-act="gizlilikac" title="Profil özel olduğu için katalogda görünmüyor — tek tıkla herkese açık yapın">🌍 Katalogda Göster</button>` : ""}
                    <button class="btn btn-ghost" data-act="one">${p.featured === "1" ? "☆ Öne Çıkarma" : "⭐ Öne Çıkar"}</button>` : ""}
+              ${p.consent_kvkk === "1"
+                ? ""
+                : '<button class="btn btn-ghost" data-act="onaylink" title="KVKK / görsel kullanım onay bağlantısını WhatsApp\'tan gönderin">📲 Onay Linki Gönder</button>'}
               <button class="btn btn-ghost" data-act="edit">✏️ Düzenle</button>
               ${(st === "onaylandi" && p.published === "1" && p.privacy === "public")
                 ? `<a class="btn btn-ghost" href="model-detay?id=u${u.id}" target="_blank" title="Üyenin sitedeki herkese açık sayfası">🔗 Sitedeki Sayfası</a>` : ""}
@@ -1565,6 +1849,22 @@
               "🗑 Çöp Kutusuna Taşı", "Üyeyi Kaldır",
               "Silinenler sekmesinden geri alabilir veya kalıcı olarak silebilirsiniz.", true))) return;
         await uyeleriSil([uid]);
+        return;
+      }
+
+      /* --- KVKK / görsel kullanım onay bağlantısı --- */
+      if (act === "onaylink") {
+        const uye = uyeBul(uid);
+        const r = await api("/api/admin/consent", { user_id: uid, action: "link" });
+        if (!r.ok) { toast(r.err || "Bağlantı üretilemedi", "hata"); return; }
+        const link = location.origin + "/onay?k=" + r.data.onay_token;
+        const wa = onayWaLink(r.data.tel || uye.phone, uye.fullname || "", link);
+        window.open(wa, "_blank", "noopener");
+        toast(r.data.veli
+          ? "📲 Onay bağlantısı veli numarasına hazırlandı"
+          : "📲 Onay bağlantısı WhatsApp'ta hazırlandı");
+        /* Bağlantı elde kalsın: pencere engellenirse yönetici kopyalayabilsin */
+        try { await navigator.clipboard.writeText(link); } catch {}
         return;
       }
 
