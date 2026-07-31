@@ -528,24 +528,22 @@ function formatLanguages(t) {
 }
 
 /* ---------------------------------------------------------
-   Panelden yayınlanan gerçek kadro (/api/cast.js ile gelir).
+   Sitede görünen kadro = YALNIZCA panelden yayına alınan gerçek
+   üyeler (/api/cast.js ile gelir).
 
-   Geçiş dönemi: gerçek üye sayısı DEMO_ESIK'e ulaşana kadar
-   gerçek üyeler örnek profillerle birlikte gösterilir (site tek
-   kişiyle boş görünmesin). Eşiğe ulaşıldığında örnek profiller
-   kendiliğinden devreden çıkar — kod değişikliği gerekmez.
-   Örnek profilleri hemen kaldırmak için DEMO_ESIK = 1 yapın.
+   Yukarıdaki TALENTS listesi yalnızca örnek/şablon veridir; artık
+   hiçbir sayfada gösterilmez, referans olarak TALENTS_DEMO adıyla
+   dışa verilir. Kadro boşsa (henüz yayında üye yok ya da servise
+   ulaşılamıyor) sayfalar uydurma profil yerine açıklayıcı mesaj
+   gösterir — bkz. catalog.js ve index.html.
    --------------------------------------------------------- */
-const DEMO_ESIK = 10;
 const CAST_CANLI = Array.isArray(window.VERA_CAST) ? window.VERA_CAST : [];
-const KADRO = CAST_CANLI.length >= DEMO_ESIK
-  ? CAST_CANLI                        /* yeterli gerçek üye var — örnekler kalksın */
-  : [...CAST_CANLI, ...TALENTS];      /* gerçek üyeler önce, örnekler arkada */
+const KADRO = CAST_CANLI;
 
 /* Diğer scriptlerin erişimi için global */
 window.VERA = {
   TALENTS: KADRO, TALENTS_DEMO: TALENTS, CANLI_KADRO: CAST_CANLI.length > 0,
-  DEMO_ESIK, GERCEK_SAYI: CAST_CANLI.length,
+  GERCEK_SAYI: CAST_CANLI.length,
   AGENCY, CATEGORIES, LABELS, SERVICES, ILLER, ILLER_POPULER, DILLER,
   RATES, HEADCOUNT_MID, DURATION_DAYS, FAQ_CANDIDATES, FAQ_CLIENTS,
   PROJECTS, COUNTERS, BRANDS, TESTIMONIALS, BLOG_POSTS, ONAY_MADDELERI,

@@ -108,6 +108,15 @@
     const empty = document.getElementById("emptyState");
     grid.innerHTML = list.map(renderTalentCard).join("");
     empty.classList.toggle("hidden", list.length > 0);
+    /* Kadro hiç yoksa (yayında üye yok ya da servise ulaşılamıyor) filtre
+       mesajı yanıltıcı olur — durumu açıkça yaz. */
+    if (!TALENTS.length) {
+      empty.innerHTML =
+        '<div class="serif">Kadromuz yayına hazırlanıyor</div>' +
+        '<p>Profiller ajans onayından geçtikçe burada yayınlanır. Aradığınız profili bize iletirseniz ' +
+        'uygun adayları doğrudan sunalım.</p>' +
+        '<a class="btn btn-gold btn-sm mt-2" href="teklif">Profil Talebi Gönder</a>';
+    }
     document.getElementById("resultCount").innerHTML =
       `<strong>${list.length}</strong> profil listeleniyor`;
     observeNew(grid);
