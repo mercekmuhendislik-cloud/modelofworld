@@ -783,7 +783,9 @@ class Handler(BaseHTTPRequestHandler):
             tc = str(d.get("parent_tc") or "").strip()
             if tc and not re.match(r"^\d{11}$", tc):
                 return self._json(400, {"error": "Veli TC kimlik no 11 haneli olmalı"})
-            sent = [c for c in PROFILE_COLS if c in d]
+            # Yönetici düzeltmeleri: üyenin alanları + onay tarihi (eski kayıtları tamamlamak için)
+            YONETICI_EK = ["consent_at"]
+            sent = [c for c in PROFILE_COLS + YONETICI_EK if c in d]
             if sent:
                 sets = ", ".join(f"{c}=?" for c in sent)
                 vals = [str(d.get(c) or "")[:LONG_COLS.get(c, 500)] for c in sent] + [uid]
