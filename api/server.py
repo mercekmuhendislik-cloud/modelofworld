@@ -208,6 +208,11 @@ def system_health():
         out["media_mb"] = round(toplam / 1024**2, 1)
     except Exception:
         pass
+    # Nöbetçi görevinin API'yi doğru komutla yeniden başlatabilmesi için
+    # (system_health yalnızca yönetici uçlarından döndürülür)
+    out["python"] = sys.executable
+    out["script"] = os.path.abspath(__file__)
+    out["data_dir"] = DATA_DIR
     return out
 
 # Rol izinleri: hangi rol hangi işlemi yapabilir

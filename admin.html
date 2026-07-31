@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=39797e7">
+  <link rel="stylesheet" href="assets/css/style.css?v=3cbe930">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -197,8 +197,8 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
-  <meta name="mow-surum" content="39797e7">
-  <script src="assets/js/surum-kontrol.js?v=39797e7"></script>
+  <meta name="mow-surum" content="3cbe930">
+  <script src="assets/js/surum-kontrol.js?v=3cbe930"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -514,25 +514,49 @@
       return { ok: !!(r && r.ok), err: d.error, data: d };
     }
 
-    /* ---------- Giriş (kullanıcı adı + şifre + 2FA) ---------- */
-    $("adminLoginForm").addEventListener("submit", async e => {
-      e.preventDefault();
-      $("loginErr").textContent = "Kontrol ediliyor…";
-      const r = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: $("adminUser").value, password: $("adminPass").value, code: $("adminCode").value }) }).catch(() => null);
+    /* ---------- Giriş (kullanıcı adı + şifre + 2FA) ----------
+       Sunucu kapalıyken (502/503/504) eskiden "Giriş başarısız" yazıyordu ve
+       şifre hatalı sanılıyordu. Artık neden açıkça yazılıyor ve sunucu geri
+       gelene kadar 10 saniyede bir kendiliğinden yeniden deniyor. */
+    let girisTekrar = null;
+    async function yoneticiGiris(otomatik = false) {
+      const hata = $("loginErr");
+      hata.innerHTML = otomatik ? "Sunucu bekleniyor, yeniden deneniyor…" : "Kontrol ediliyor…";
+      const r = await fetch("/api/admin/login", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: $("adminUser").value, password: $("adminPass").value, code: $("adminCode").value }),
+      }).catch(() => null);
       const d = r ? await r.json().catch(() => ({})) : {};
-      if (!r || !r.ok) {
-        if (d.need_totp) $("totpField").hidden = false;
-        $("loginErr").innerHTML = (d.error || "Giriş başarısız") +
-        (r && r.status === 401
+
+      if (r && r.ok) {
+        if (girisTekrar) { clearInterval(girisTekrar); girisTekrar = null; }
+        hata.textContent = "";
+        load();
+        return;
+      }
+      if (d.need_totp) $("totpField").hidden = false;
+
+      const kod = r ? r.status : 0;
+      /* Sunucu erişilemiyor: şifre suçlanmasın, kendiliğinden tekrar denenelim */
+      if (kod === 0 || kod === 502 || kod === 503 || kod === 504) {
+        hata.innerHTML = '<span style="color:var(--danger)">Şifreniz doğru olabilir — sorun sunucuda.</span><br>' +
+          (kod === 0
+            ? "İnternet bağlantısına ulaşılamıyor."
+            : "Yönetim servisi şu anda yanıt vermiyor (hata " + kod + ").") +
+          '<br><span style="opacity:.85">Sayfayı kapatmayın; sunucu ayağa kalkınca <strong>otomatik olarak ' +
+          'giriş yapılacak</strong>. 10 saniyede bir denenecek.</span>';
+        if (!girisTekrar) girisTekrar = setInterval(() => yoneticiGiris(true), 10000);
+        return;
+      }
+      if (girisTekrar) { clearInterval(girisTekrar); girisTekrar = null; }
+      hata.innerHTML = (d.error || "Giriş yapılamadı (hata " + kod + ")") +
+        (kod === 401
           ? '<br><span style="opacity:.85">Şifre alanındaki göz simgesine basıp ne yazdığınızı kontrol edin. '
             + 'Tarayıcınız eski şifreyi doldurmuş olabilir.</span>'
           : "");
-        return;
-      }
-      $("loginErr").textContent = "";
-      load();
-    });
+    }
+    $("adminLoginForm").addEventListener("submit", e => { e.preventDefault(); yoneticiGiris(); });
     $("admLogout").addEventListener("click", async () => { await api("/api/admin/logout"); location.reload(); });
     $("pwBtn").addEventListener("click", () => showAtab("ayarlar"));
     $("pwSave").addEventListener("click", async () => {
