@@ -252,8 +252,14 @@ def parse_multipart(body, ctype):
     return fields, files
 
 def webp_mi(veri):
-    """Küçük kopya gerçekten WebP mi? (RIFF....WEBP imzası)"""
-    return len(veri) > 16 and veri[:4] == b"RIFF" and veri[8:12] == b"WEBP"
+    """Küçük kopya geçerli bir görsel mi? WebP veya JPEG kabul edilir.
+    (Eski Safari sürümleri canvas'tan WebP üretemiyor, JPEG'e düşüyor.)
+    PNG kabul edilmez: aynı görsel için 10-20 kat daha büyük dosya demek."""
+    if len(veri) <= 16:
+        return False
+    webp = veri[:4] == b"RIFF" and veri[8:12] == b"WEBP"
+    jpeg = veri[:2] == b"\xff\xd8"
+    return webp or jpeg
 
 
 def foto_yolu(row, kucuk):
@@ -934,7 +940,7 @@ class Handler(BaseHTTPRequestHandler):
             kucuk_fn = None
             for ad, kad, kdata in files[1:]:
                 if ad == "thumb" and 100 < len(kdata) <= 900 * 1024 and webp_mi(kdata):
-                    kucuk_fn = os.path.splitext(fn)[0] + "_k.webp"
+                    kucuk_fn = os.path.splitext(fn)[0] + ("_k.webp" if kdata[:4] == b"RIFF" else "_k.jpg")
                     with open(os.path.join(UPLOAD_DIR, kucuk_fn), "wb") as f:
                         f.write(kdata)
                     break
@@ -1034,8 +1040,8 @@ class Handler(BaseHTTPRequestHandler):
             if not row: return self._json(404, {"error": "Fotoğraf bulunamadı"})
             _, _, kdata = files[0]
             if not (100 < len(kdata) <= 900 * 1024) or not webp_mi(kdata):
-                return self._json(400, {"error": "Küçük kopya geçersiz (WebP bekleniyor)"})
-            kucuk_fn = os.path.splitext(row["filename"])[0] + "_k.webp"
+                return self._json(400, {"error": "Küçük kopya geçersiz (WebP veya JPEG bekleniyor)"})
+            kucuk_fn = os.path.splitext(row["filename"])[0] + ("_k.webp" if kdata[:4] == b"RIFF" else "_k.jpg")
             with open(os.path.join(UPLOAD_DIR, kucuk_fn), "wb") as f:
                 f.write(kdata)
             db().execute("UPDATE photos SET thumb=? WHERE id=?", (kucuk_fn, pid))

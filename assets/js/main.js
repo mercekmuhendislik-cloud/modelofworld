@@ -539,6 +539,18 @@
      Listelerde/kartlarda bu kullanılır; orijinal dosyaya dokunulmaz.
      640px uzun kenar · WebP q0.75 → tipik 40-80 KB (orijinalin ~1/8'i)
      ========================================================= */
+  /* Tuvali sıkıştır: WebP dene, tarayıcı desteklemiyorsa JPEG'e düş.
+     ÖNEMLİ: toBlob desteklenmeyen türde sessizce PNG döndürür (3 MB!),
+     bu yüzden dönen blob'un gerçek türü kontrol edilir. */
+  window.VERA.tuvalSikistir = async function (c, kalite = 0.85) {
+    const dene = tur => new Promise(res => c.toBlob(b => res(b), tur, kalite));
+    let b = await dene("image/webp");
+    if (b && String(b.type).includes("webp")) return { blob: b, uzanti: ".webp" };
+    b = await dene("image/jpeg");
+    if (b && String(b.type).includes("jpeg")) return { blob: b, uzanti: ".jpg" };
+    return null;                                  /* sıkıştırılamadı */
+  };
+
   window.VERA.kucukKopya = async function (kaynak, kenar = 640) {
     let bmp = null;
     try {
@@ -549,7 +561,8 @@
     c.width = Math.max(1, Math.round(bmp.width * k));
     c.height = Math.max(1, Math.round(bmp.height * k));
     c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
-    return await new Promise(res => c.toBlob(b => res(b), "image/webp", 0.75));
+    const sonuc = await window.VERA.tuvalSikistir(c, 0.75);
+    return sonuc ? sonuc.blob : null;
   };
 
   /* Fotoğrafı küçült + WebP'ye çevir + filigran bas (başvuru formu) */
@@ -571,11 +584,11 @@
     x.shadowBlur = fs / 2;
     x.fillStyle = "rgba(255,255,255,.86)";
     x.fillText("MODEL OF WORLD ©", c.width - fs * 0.6, c.height - fs * 0.55);
-    const blob = await new Promise(res =>
-      c.toBlob(b => b ? res(b) : c.toBlob(j => res(j), "image/jpeg", 0.85), "image/webp", 0.85));
+    const sikistirilmis = await window.VERA.tuvalSikistir(c, 0.85);
     const temiz = (file.name || "foto").replace(/\.[^.]+$/, "").replace(/[^\w\-]+/g, "-").slice(0, 40) || "foto";
-    const uzanti = blob && String(blob.type).includes("webp") ? ".webp" : ".jpg";
-    const kucuk = await window.VERA.kucukKopya(blob || file);
-    return { blob: blob || file, ad: temiz + uzanti, kucuk };
+    const blob = sikistirilmis ? sikistirilmis.blob : file;
+    const uzanti = sikistirilmis ? sikistirilmis.uzanti : (file.name.match(/\.[^.]+$/) || [".jpg"])[0];
+    const kucuk = await window.VERA.kucukKopya(blob);
+    return { blob, ad: temiz + uzanti, kucuk };
   };
 })();
