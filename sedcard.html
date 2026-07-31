@@ -6,7 +6,7 @@
   <title>Sedcard — Model of World</title>
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=74c8b78">
+  <link rel="stylesheet" href="assets/css/style.css?v=472f7da">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     body { background: #f2f2f2; }
@@ -43,8 +43,8 @@
       .no-print-bar, .site-header, .wa-float { display: none !important; }
     }
   </style>
-  <meta name="mow-surum" content="74c8b78">
-  <script src="assets/js/surum-kontrol.js?v=74c8b78"></script>
+  <meta name="mow-surum" content="472f7da">
+  <script src="assets/js/surum-kontrol.js?v=472f7da"></script>
 </head>
 <body data-page="sedcard">
   <div class="no-print-bar">
@@ -68,45 +68,82 @@
     </div>
   </div>
 
+  <script src="assets/js/data.js?v=472f7da"></script>
   <script>
     (async function () {
       const $ = id => document.getElementById(id);
-      const uid = +(new URLSearchParams(location.search).get("id") || 0);
+      const hata = metin => { $("scErr").innerHTML = metin; };
+
+      /* Kimlik: yönetici paneli "9", model detay sayfası "u9" gönderir — ikisi de kabul edilir.
+         ÖNEMLİ: profil bulunamazsa BAŞKA bir üyenin sedcard'ı gösterilmez. */
+      const ham = (new URLSearchParams(location.search).get("id") || "").trim();
+      const uid = parseInt(ham.replace(/^u/i, ""), 10);
+      if (!uid) { hata("Sedcard bağlantısı eksik — profil kimliği bulunamadı."); return; }
+
+      const { CATEGORIES, LABELS } = window.VERA;
+      /* Sedcard müşteriyle paylaşılır: yalnızca ad + soyadın baş harfi yazılır */
+      const kisaAd = tam => {
+        const p = String(tam || "").trim().split(/\s+/).filter(Boolean);
+        if (!p.length) return "—";
+        if (p.length === 1) return p[0];
+        return p.slice(0, -1).join(" ") + " " + p[p.length - 1][0].toLocaleUpperCase("tr") + ".";
+      };
+      const etiket = (grup, deger) => (LABELS[grup] && LABELS[grup][deger]) || deger || "";
+
+      let ad = "", katlar = [], p = {}, fotolar = [], diller = "";
+
+      /* 1) Yönetici oturumu varsa tam veri */
       const r = await fetch("/api/admin/list").catch(() => null);
-      if (!r || !r.ok) {
-        $("scErr").innerHTML = 'Oturum gerekli — önce <a class="gold" href="admin">yönetici girişi</a> yapın, sonra bu sayfayı yenileyin.';
-        return;
+      if (r && r.ok) {
+        const d = await r.json();
+        const u = (d.users || []).find(x => x.id === uid);
+        if (!u) { hata("Bu profil bulunamadı (#" + uid + "). Bağlantı hatalı ya da üye silinmiş olabilir."); return; }
+        p = u.profile || {};
+        ad = kisaAd(u.fullname);
+        katlar = (p.category || "").split(",").filter(Boolean);
+        diller = p.languages || "";
+        const havuz = (u.media || []).filter(m => m.kind === "photo" && !m.deleted);
+        const sira = ["studio", "podium", "polaroid", "genel"];
+        havuz.sort((a, b) => sira.indexOf(a.album || "genel") - sira.indexOf(b.album || "genel"));
+        fotolar = havuz.map(m => "/api/photo/" + m.id);
+      } else {
+        /* 2) Oturum yoksa: yalnızca sitede yayında olan profiller (müşteriyle paylaşılabilir) */
+        const c = await fetch("/api/cast").catch(() => null);
+        const liste = c && c.ok ? (await c.json()).cast || [] : [];
+        const t = liste.find(x => x.id === "u" + uid);
+        if (!t) {
+          hata('Bu sedcard herkese açık değil. Yönetici olarak görüntülemek için ' +
+               '<a class="gold" href="admin">panele giriş yapın</a>, sonra bu sayfayı yenileyin.');
+          return;
+        }
+        ad = t.name;                       /* sunucu zaten baş harfe indirmiş olarak verir */
+        katlar = (t.categories && t.categories.length) ? t.categories : [t.category];
+        diller = (t.languages || []).join(", ");
+        p = { age: t.age, height: t.height, weight: t.weight, bust: t.bust, waist: t.waist,
+              hip: t.hip, shoe: t.shoe, size: t.size, hair: t.hair, eye: t.eye, skin: t.skin };
+        fotolar = [...(t.photos?.studio || []), ...(t.photos?.podium || []), ...(t.photos?.polaroid || [])];
       }
-      const d = await r.json();
-      const u = d.users.find(x => x.id === uid) || d.users[0];
-      if (!u) { $("scErr").textContent = "Üye bulunamadı."; return; }
-      const p = u.profile || {};
 
-      $("scName").textContent = u.fullname || "—";
-      const CATS = { model: "Manken / Model", hostes: "Fuar & Kongre Hostesi", yuz: "Yüz Modeli", cocuk: "Çocuk Model", oyuncu: "Oyuncu / Cast", nu: "Nü / Sanatsal Model", fitness: "Fitness / Spor Modeli", plus: "Büyük Beden Model", dans: "Dansçı / Performans", promo: "Tanıtım / Promosyon" };
-      $("scCat").textContent = (p.category || "").split(",").filter(Boolean).map(c => CATS[c] || c).join(" · ");
+      $("scName").textContent = ad;
+      $("scCat").textContent = katlar.map(k => (CATEGORIES[k] || {}).label || k).join(" · ");
 
-      /* En iyi 4 fotoğraf: önce stüdyo, sonra podyum, sonra diğerleri (arşiv hariç) */
-      const pool = (u.media || []).filter(m => m.kind === "photo" && !m.deleted);
-      const order = ["studio", "podium", "polaroid", "genel"];
-      pool.sort((a, b) => order.indexOf(a.album || "genel") - order.indexOf(b.album || "genel"));
-      const secilen = pool.slice(0, 8);
-      /* 1-4 fotoğrafta 2 kolon (büyük görünsün), 5+ fotoğrafta 4 kolon */
+      /* En fazla 8 fotoğraf: 1-4 arasında 2 kolon (büyük), 5+ ise 4 kolon */
+      const secilen = fotolar.slice(0, 8);
       $("scPhotos").classList.toggle("az", secilen.length <= 4);
       $("scPhotos").innerHTML = secilen.length
-        ? secilen.map(m => `<div class="ph2"><img src="/api/photo/${m.id}"></div>`).join("")
-        : '<p style="grid-column:1/-1;color:#96707c">Onaylı fotoğraf yok.</p>';
+        ? secilen.map(src => `<div class="ph2"><img src="${src}" alt=""></div>`).join("")
+        : '<p style="grid-column:1/-1;color:#96707c">Yayınlanabilir fotoğraf yok.</p>';
 
-      const rows = [
+      const satirlar = [
         ["Yaş", p.age], ["Boy", p.height && p.height + " cm"], ["Kilo", p.weight && p.weight + " kg"],
         ["Göğüs", p.bust], ["Bel", p.waist], ["Basen", p.hip],
         ["Ayakkabı", p.shoe], ["Beden", p.size],
-        ["Saç", p.hair], ["Göz", p.eye], ["Ten", p.skin],
+        ["Saç", etiket("hair", p.hair)], ["Göz", etiket("eye", p.eye)], ["Ten", p.skin],
       ].filter(([, v]) => v);
-      $("scMea").innerHTML = rows.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join("");
-      $("scLang").textContent = p.languages || "";
+      $("scMea").innerHTML = satirlar.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join("");
+      $("scLang").textContent = diller;
       $("sheet").style.display = "";
-      document.title = (u.fullname || "Sedcard") + " — Sedcard | Model of World";
+      document.title = ad + " — Sedcard | Model of World";
     })();
   </script>
 </body>

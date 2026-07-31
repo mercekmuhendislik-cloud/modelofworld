@@ -48,6 +48,7 @@ const CATEGORIES = {
   model:   { label: "Manken / Model",           short: "Model",        icon: "◆" },
   hostes:  { label: "Fuar / Kongre Hostesi",    short: "Hostes",       icon: "◈" },
   yuz:     { label: "Yüz Modeli",               short: "Yüz Modeli",   icon: "◇" },
+  el_ayak: { label: "El / Ayak Modeli",         short: "El / Ayak",    icon: "✋" },
   cocuk:   { label: "Çocuk Model",              short: "Çocuk Model",  icon: "✦" },
   nu:      { label: "Nü / Sanatsal Model (18+)", short: "Nü / Sanatsal", icon: "●" },
   fitness: { label: "Fitness / Spor Modeli",    short: "Fitness",      icon: "▲" },

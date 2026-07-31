@@ -32,7 +32,8 @@ UPLOAD_RULES = {
 }
 ALBUMS = {"studio", "podium", "polaroid", "sanatsal", "genel"}
 # Geçerli başvuru kategorileri — assets/js/data.js içindeki CATEGORIES ile aynı kalmalı
-CATEGORY_KEYS = {"model", "hostes", "yuz", "cocuk", "nu", "fitness", "plus", "oyuncu", "dans", "promo"}
+CATEGORY_KEYS = {"model", "hostes", "yuz", "el_ayak", "cocuk", "nu",
+                 "fitness", "plus", "oyuncu", "dans", "promo"}
 MAX_BODY = 85 * 1024 * 1024
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
