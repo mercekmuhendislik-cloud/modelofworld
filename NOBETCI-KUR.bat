@@ -32,7 +32,7 @@ if errorlevel 1 (
 )
 
 echo Once mevcut durumu ogreniyorum...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%HEDEF%\api-nobetci.ps1" -SadeceKontrol
+powershell -NoProfile -ExecutionPolicy Bypass -File "%HEDEF%\api-nobetci.ps1" -SadeceKontrol -Site "%~dp0."
 echo.
 
 echo Zamanlanmis gorev olusturuluyor...
