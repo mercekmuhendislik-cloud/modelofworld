@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=c5a1b48">
+  <link rel="stylesheet" href="assets/css/style.css?v=db80e07">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -234,8 +234,8 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
-  <meta name="mow-surum" content="c5a1b48">
-  <script src="assets/js/surum-kontrol.js?v=c5a1b48"></script>
+  <meta name="mow-surum" content="db80e07">
+  <script src="assets/js/surum-kontrol.js?v=db80e07"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -735,8 +735,28 @@
 
     async function load() {
       const r = await fetch("/api/admin/list").catch(() => null);
-      if (!r || !r.ok) { $("loginView").hidden = false; $("panelView").hidden = true; return; }
-      DATA = await r.json();
+      if (!r || !r.ok) {
+        $("loginView").hidden = false; $("panelView").hidden = true;
+        /* Oturum yoksa (401/403) sessizce giriş ekranı; sunucu sorunuysa nedenini yaz */
+        const kod = r ? r.status : 0;
+        if (kod !== 401 && kod !== 403) {
+          $("loginErr").innerHTML = kod === 0
+            ? "Sunucuya ulaşılamadı — internet bağlantınızı kontrol edin."
+            : "Panel verisi alınamadı (hata " + kod + "). Servis yeniden başlıyor olabilir; " +
+              "birkaç saniye sonra tekrar giriş yapın.";
+        }
+        return;
+      }
+      try {
+        DATA = await r.json();
+      } catch (e) {
+        /* Yanıt bozuk geldiyse eskiden hiçbir şey olmuyordu: kullanıcı giriş
+           ekranında kalıyor, sebep görünmüyordu. Artık açıkça yazılıyor. */
+        $("loginView").hidden = false; $("panelView").hidden = true;
+        $("loginErr").innerHTML = "Panel verisi okunamadı (bozuk yanıt). " +
+          "Sayfayı yenileyip tekrar deneyin; sorun sürerse servis yeniden başlatılmalı.";
+        return;
+      }
       $("loginView").hidden = true; $("panelView").hidden = false;
       const me = DATA.me || { username: "?", role: "admin" };
       const ROL_AD = { admin: "Yönetici", editor: "Editör", muhasebe: "Muhasebe" };
@@ -750,8 +770,23 @@
         const jc = $("jTitle"); if (jc) jc.closest(".form-card").style.display = "none";
       }
       RED_SABLON = (DATA.templates && DATA.templates.length) ? DATA.templates : RED_SABLON_VARSAYILAN.slice();
-      renderSos(); renderDash(); renderUsers(); renderJobForm(); renderJobs(); renderSubs(); renderLogs(); renderShares();
-      renderAdmins(); renderSessions(); renderTotp(); renderTasks(); renderTools(); syncBulk(); updateTabCounts();
+      /* Her bölüm ayrı ayrı çiziliyor: birinde beklenmeyen veri olsa bile
+         panelin tamamı boş kalmasın, hatalı bölüm rapor edilsin. */
+      const bolumler = [
+        ["Genel bakış", renderDash], ["SOS", renderSos], ["Üyeler", renderUsers],
+        ["İş formu", renderJobForm], ["İşler", renderJobs], ["Gelen formlar", renderSubs],
+        ["Günlük", renderLogs], ["Paylaşımlar", renderShares], ["Yetkililer", renderAdmins],
+        ["Oturumlar", renderSessions], ["2FA", renderTotp], ["Görevler", renderTasks],
+        ["Araçlar", renderTools], ["Seçim", syncBulk], ["Sekme sayaçları", updateTabCounts],
+      ];
+      const patlayan = [];
+      for (const [ad, fn] of bolumler) {
+        try { fn(); } catch (e) { patlayan.push(ad + ": " + e.message); console.error(ad, e); }
+      }
+      if (patlayan.length) {
+        toast("⚠️ Bazı bölümler yüklenemedi: " + patlayan.map(x => x.split(":")[0]).join(", "), "hata");
+        console.warn("Yüklenemeyen bölümler:", patlayan);
+      }
 
       const canFin = DATA.me && (DATA.me.role === "admin" || DATA.me.role === "muhasebe");
       const btnFin = document.querySelector('[data-tab="finance"]');

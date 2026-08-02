@@ -1745,8 +1745,45 @@ class Handler(BaseHTTPRequestHandler):
         db().commit()
         return self._json(200, {"ok": True})
 
+class MowSunucu(ThreadingHTTPServer):
+    """Dayanıklı sunucu ayarları.
+
+    allow_reuse_address: yeniden başlatmalarda "port kullanımda" hatasını önler.
+    Windows'ta önceki süreç kapandıktan sonra soket bir süre TIME_WAIT'te kalır;
+    bu bayrak olmadan yeniden başlatma başarısız oluyor ve servis ölü kalıyordu.
+    daemon_threads: takılan bir istek kapanışı engellemesin.
+    """
+    # Windows'ta SO_REUSEADDR canli bir portun baska surec tarafindan ele
+    # gecirilmesine izin verir; orada varsayilan davranis zaten hemen yeniden
+    # baglanmaya olanak tanidigi icin yalnizca Unix'te aciyoruz.
+    allow_reuse_address = (os.name != "nt")
+    daemon_threads = True
+    request_queue_size = 64
+
+
+def hata_kaydet(metin):
+    """Çökme nedenini dosyaya yaz — sonradan teşhis edebilmek için."""
+    try:
+        with open(os.path.join(DATA_DIR, "api-hata.log"), "a", encoding="utf-8") as f:
+            f.write("%s  %s\n" % (now(), metin))
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
     # Canlıda 8010; testlerde MOW_PORT ile başka bir port verilebilir
     PORT = int(os.environ.get("MOW_PORT", "8010"))
     print(f"MOW API v3 127.0.0.1:{PORT} — veri: {DATA_DIR}")
-    ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
+    # Gözetmen döngüsü: beklenmeyen bir hata servisi düşürürse süreç ölmez,
+    # nedeni kaydedip 3 saniye sonra yeniden dinlemeye başlar. Boylece panel ve
+    # uye girisi "sunucu kapali" durumuna dusmez.
+    while True:
+        try:
+            MowSunucu(("127.0.0.1", PORT), Handler).serve_forever()
+        except KeyboardInterrupt:
+            print("kapatiliyor")
+            break
+        except Exception as e:
+            hata_kaydet("SUNUCU DUSTU: %s: %s\n%s" % (type(e).__name__, e, traceback.format_exc()))
+            print("Sunucu dustu, 3 sn icinde yeniden baslatiliyor:", e)
+            _time.sleep(3)

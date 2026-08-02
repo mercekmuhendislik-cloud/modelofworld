@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=c5a1b48">
+  <link rel="stylesheet" href="assets/css/style.css?v=db80e07">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -49,7 +49,7 @@
     .crop-controls { display:flex; gap:10px; align-items:center; margin:14px 0; }
     .crop-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
 
-    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=c5a1b48 */
+    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=db80e07 */
 
     /* Profil tamamlanma ölçeri */
     .tamam-kart { border:1px solid var(--gold); border-radius:14px; padding:18px 20px; margin-bottom:24px;
@@ -87,8 +87,8 @@
     #ilkSifreKutu input:focus { outline:none; border-color:var(--gold); }
     #ilkSifreHata { color:var(--danger); font-size:.83rem; margin-top:10px; min-height:1em; line-height:1.6; }
   </style>
-  <meta name="mow-surum" content="c5a1b48">
-  <script src="assets/js/surum-kontrol.js?v=c5a1b48"></script>
+  <meta name="mow-surum" content="db80e07">
+  <script src="assets/js/surum-kontrol.js?v=db80e07"></script>
 </head>
 <body data-page="panel">
   <div id="site-header"></div>
@@ -507,8 +507,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=c5a1b48"></script>
-  <script src="assets/js/main.js?v=c5a1b48"></script>
+  <script src="assets/js/data.js?v=db80e07"></script>
+  <script src="assets/js/main.js?v=db80e07"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -550,7 +550,7 @@
       $("ilkSifre2").addEventListener("keydown", e => { if (e.key === "Enter") $("ilkSifreKaydet").click(); });
 
       const yasHesap = b => { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); };
-      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=c5a1b48) */
+      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=db80e07) */
       const makeMsel = window.VERA.makeMsel;
       const catSel = makeMsel($("catSel"),
         Object.entries(window.VERA.CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
@@ -1039,9 +1039,33 @@
       });
 
       /* ============ Yükle ============ */
+      let sunucuBekleme = 0;
       async function load(navigate = true) {
         const r = await fetch("/api/me").catch(() => null);
-        if (!r || !r.ok) { location.href = "uye"; return; }
+        if (!r || !r.ok) {
+          const kod = r ? r.status : 0;
+          /* Oturum gerçekten yoksa (401) giriş sayfasına git. Sunucu geçici
+             olarak yanıt vermiyorsa (502/503/504 veya bağlantı yok) kullanıcıyı
+             dışarı atma — bekleyip yeniden dene, yoksa "giriş yapamıyorum"
+             görünümü oluşuyor. */
+          if (kod === 401 || kod === 403) { location.href = "uye"; return; }
+          sunucuBekleme++;
+          const uyari = document.getElementById("sunucuUyari") || (() => {
+            const d = document.createElement("div");
+            d.id = "sunucuUyari";
+            d.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);top:14px;z-index:300;" +
+              "background:var(--surface);border:1px solid var(--danger);color:var(--danger);" +
+              "padding:12px 18px;border-radius:12px;font-size:.9rem;box-shadow:var(--shadow);max-width:92vw;text-align:center";
+            document.body.appendChild(d);
+            return d;
+          })();
+          uyari.innerHTML = "Sunucu şu anda yanıt vermiyor (hata " + kod + "). " +
+            "Oturumunuz kapanmadı — bağlantı gelince sayfa kendiliğinden yüklenecek. (" + sunucuBekleme + ". deneme)";
+          setTimeout(() => load(navigate), 8000);
+          return;
+        }
+        document.getElementById("sunucuUyari")?.remove();
+        sunucuBekleme = 0;
         ME = await r.json();
         /* Hesabı yönetici açtıysa: kendi şifresini belirlemeden panel kullanılamaz */
         if (ME.user?.must_change_pw === "1") ilkSifreAc();
