@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=b10795b">
+  <link rel="stylesheet" href="assets/css/style.css?v=ce846f1">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -183,6 +183,63 @@
     .yeni-fotolar { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
     .yeni-fotolar img { width:74px; height:98px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
 
+    /* Karşılaştırma / WhatsApp listesi penceresi (ortak kabuk) */
+    .genis-katman { position:fixed; inset:0; z-index:395; background:rgba(20,8,14,.62); backdrop-filter:blur(6px);
+      display:none; align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto; }
+    .genis-katman.open { display:flex; }
+    .genis-kutu { background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);
+      width:min(1040px,100%); margin:auto; padding:22px 24px; animation:fadeUp .25s ease both; }
+    .genis-kutu h3 { font-family:var(--font-serif); font-size:1.3rem; margin-bottom:4px; }
+    .genis-kapat { float:right; background:none; border:1px solid var(--line); color:var(--text-2); cursor:pointer;
+      width:30px; height:30px; border-radius:50%; font-size:1rem; line-height:1; }
+    .genis-kapat:hover { color:var(--text); border-color:var(--gold); }
+
+    /* Yan yana karşılaştırma */
+    .kars-grid { display:grid; gap:12px; margin-top:16px; }
+    .kars-kisi { border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--bg-2); }
+    .kars-kisi img { width:100%; aspect-ratio:3/4; object-fit:cover; display:block; background:var(--surface); }
+    .kars-kisi .kars-ad { padding:10px 12px 4px; font-family:var(--font-serif); font-size:1.05rem; }
+    .kars-sat { display:flex; justify-content:space-between; gap:8px; padding:5px 12px; font-size:.8rem;
+      border-top:1px dashed var(--line); }
+    .kars-sat span:first-child { color:var(--text-2); }
+    .kars-sat.fark { background:rgba(211,79,110,.09); }
+    .kars-sat b { font-weight:600; }
+
+    /* WhatsApp toplu liste */
+    .wa-liste { margin-top:14px; max-height:52vh; overflow-y:auto; border:1px solid var(--line); border-radius:12px; }
+    .wa-satir { display:flex; align-items:center; gap:10px; padding:9px 13px; border-bottom:1px solid var(--line);
+      font-size:.86rem; }
+    .wa-satir:last-child { border-bottom:0; }
+    .wa-satir.gitti { opacity:.5; }
+    .wa-satir .wa-ad { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .wa-satir .wa-tel { color:var(--text-2); font-size:.8rem; }
+
+    /* İş takvimi */
+    .tak-ust { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+    .tak-ay { font-family:var(--font-serif); font-size:1.25rem; min-width:190px; }
+    .tak-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+    .tak-baslik { font-size:.66rem; text-transform:uppercase; letter-spacing:.12em; color:var(--text-2);
+      text-align:center; padding:4px 0; }
+    .tak-gun { min-height:96px; border:1px solid var(--line); border-radius:10px; padding:6px 7px; background:var(--surface);
+      font-size:.75rem; display:flex; flex-direction:column; gap:4px; }
+    .tak-gun.bos { background:transparent; border-style:dashed; opacity:.45; min-height:60px; }
+    .tak-gun.bugun { border-color:var(--gold); box-shadow:0 0 0 2px rgba(211,79,110,.16); }
+    .tak-gun .tak-no { font-weight:600; color:var(--text-2); }
+    .tak-is { background:var(--bg-2); border-left:3px solid var(--gold); border-radius:6px; padding:4px 6px;
+      cursor:pointer; overflow:hidden; }
+    .tak-is:hover { background:rgba(211,79,110,.1); }
+    .tak-is b { display:block; font-size:.76rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .tak-is span { color:var(--text-2); font-size:.7rem; }
+    .tak-is.cakisma { border-left-color:#c62828; background:rgba(198,40,40,.1); }
+    .tak-uyari { border:1px solid #c62828; background:rgba(198,40,40,.08); border-radius:10px; padding:10px 14px;
+      font-size:.84rem; margin-bottom:12px; line-height:1.7; }
+    @media (max-width:760px) {
+      .tak-grid { grid-template-columns:1fr; }
+      .tak-baslik { display:none; }
+      .tak-gun.bos { display:none; }
+      .tak-gun { min-height:0; }
+    }
+
     /* Komut paleti */
     #palette { position:fixed; inset:0; z-index:250; background:rgba(20,8,14,.55); backdrop-filter:blur(6px);
       display:none; align-items:flex-start; justify-content:center; padding-top:14vh; }
@@ -234,8 +291,8 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
-  <meta name="mow-surum" content="b10795b">
-  <script src="assets/js/surum-kontrol.js?v=b10795b"></script>
+  <meta name="mow-surum" content="ce846f1">
+  <script src="assets/js/surum-kontrol.js?v=ce846f1"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -367,6 +424,9 @@
           <select class="adm-input" id="bulkRed" style="max-width:240px"><option value="">Red gerekçesi…</option></select>
           <button class="btn btn-ghost btn-sm" data-bulk="reddedildi">✕ Toplu Reddet</button>
           <button class="btn btn-ghost btn-sm" data-bulk="inceleniyor">↺ Beklet</button>
+          <button class="btn btn-ghost btn-sm" id="bulkKars" title="2–4 üyeyi ölçü ve fotoğraflarıyla yan yana görün">⚖ Karşılaştır</button>
+          <button class="btn btn-gold btn-sm" id="bulkSunum" title="Seçili kadroyu tek dosyada müşteriye sunun (PDF olarak kaydedilebilir)">📄 Cast Sunumu</button>
+          <button class="btn btn-ghost btn-sm" id="bulkWa" title="Seçili kadroya WhatsApp'tan tek tek hazır mesaj gönderin">💬 WhatsApp Listesi</button>
           <button class="btn btn-tehlike btn-sm" id="bulkDel" title="Seçili üyeleri çöp kutusuna taşır — Silinenler sekmesinden geri alınabilir">🗑 Toplu Sil</button>
           <button class="btn btn-ghost btn-sm" id="bulkClear">Seçimi Bırak</button>
         </div>
@@ -391,6 +451,12 @@
           <select class="adm-input" id="fCat"><option value="">Tüm kategoriler</option></select>
           <input class="adm-input" id="fFrom" type="date" title="Kayıt tarihi: başlangıç">
           <input class="adm-input" id="fTo" type="date" title="Kayıt tarihi: bitiş">
+          <span class="mini" title="Üyenin panelindeki müsaitlik takvimine göre süzer">📅 müsait</span>
+          <input class="adm-input" id="fMusait" type="date" title="Bu tarihte müsait olan üyeler">
+          <select class="adm-input" id="fMusaitMod" title="Müsaitlik ölçütü">
+            <option value="musait">müsait işaretli</option>
+            <option value="bos">dolu olmayan (takvimi boş olanlar dahil)</option>
+          </select>
           <select class="adm-input" id="fSort">
             <option value="yeni">En yeni</option>
             <option value="eski">En eski</option>
@@ -410,6 +476,20 @@
             <button class="btn btn-gold btn-sm" id="tAdd">+ Görev</button>
           </div>
           <div id="taskList" class="mini" style="margin-top:10px"></div>
+        </div>
+
+        <h2 class="adm-section-title" id="takH2">🗓 İş Takvimi</h2>
+        <div class="form-card" id="takCard">
+          <div class="tak-ust">
+            <button class="btn btn-ghost btn-sm" id="takGeri">‹</button>
+            <span class="tak-ay" id="takAy">—</span>
+            <button class="btn btn-ghost btn-sm" id="takIleri">›</button>
+            <button class="btn btn-ghost btn-sm" id="takBugun">Bugüne dön</button>
+            <span class="mini" id="takOzet" style="margin-left:auto"></span>
+          </div>
+          <div id="takCakismaKutu"></div>
+          <div class="tak-grid" id="takBasliklar"></div>
+          <div class="tak-grid" id="takGrid"></div>
         </div>
 
         <h2 class="adm-section-title" id="jobH2">📋 İş Teklifi Oluştur</h2>
@@ -490,6 +570,35 @@
   </section>
 
   <div id="toasts"></div>
+
+  <!-- Yan yana profil karşılaştırma -->
+  <div class="genis-katman" id="karsKatman">
+    <div class="genis-kutu" role="dialog" aria-modal="true" aria-label="Profil karşılaştırma">
+      <button class="genis-kapat" data-genis-kapat="karsKatman" aria-label="Kapat">×</button>
+      <h3>Yan Yana Karşılaştırma</h3>
+      <p class="mini">Farklı olan satırlar renkli gösterilir. Karar verdikten sonra kartlardan işlem yapabilirsiniz.</p>
+      <div class="kars-grid" id="karsGrid"></div>
+    </div>
+  </div>
+
+  <!-- WhatsApp toplu mesaj listesi -->
+  <div class="genis-katman" id="waKatman">
+    <div class="genis-kutu" style="width:min(620px,100%)" role="dialog" aria-modal="true" aria-label="WhatsApp listesi">
+      <button class="genis-kapat" data-genis-kapat="waKatman" aria-label="Kapat">×</button>
+      <h3>WhatsApp Mesaj Listesi</h3>
+      <p class="mini">Mesajı yazın, sonra sırayla her satıra tıklayın — o kişinin WhatsApp sohbeti hazır metinle açılır.
+        Gönderdiğiniz satır soluklaşır, kaldığınız yeri kaybetmezsiniz.</p>
+      <label class="mini" style="display:block;margin:12px 0 4px">Mesaj — <code>{ad}</code> yazarsanız kişinin adıyla değişir</label>
+      <textarea class="adm-input" id="waMetin" rows="4" style="width:100%"></textarea>
+      <div class="adm-row">
+        <select class="adm-input" id="waSablon" style="flex:1;min-width:200px">
+          <option value="">Hazır mesaj seç…</option>
+        </select>
+        <span class="mini" id="waSayac"></span>
+      </div>
+      <div class="wa-liste" id="waListe"></div>
+    </div>
+  </div>
 
   <!-- Yeni üye penceresi: yönetici elle kayıt açar -->
   <div id="yeniKatman">
@@ -708,7 +817,7 @@
     });
     syncThemeBtn();
 
-    ["fText","fCat","fFrom","fTo","fSort"].forEach(i =>
+    ["fText","fCat","fFrom","fTo","fSort","fMusait","fMusaitMod"].forEach(i =>
       $(i).addEventListener(i === "fText" ? "input" : "change", renderUsers));
 
     /* Duruma göre sekmeler: bekleyen / onaylı / sitede / reddedilen / tümü */
@@ -774,7 +883,8 @@
          panelin tamamı boş kalmasın, hatalı bölüm rapor edilsin. */
       const bolumler = [
         ["Genel bakış", renderDash], ["SOS", renderSos], ["Üyeler", renderUsers],
-        ["İş formu", renderJobForm], ["İşler", renderJobs], ["Gelen formlar", renderSubs],
+        ["İş formu", renderJobForm], ["İşler", renderJobs], ["Takvim", renderTakvim],
+        ["Gelen formlar", renderSubs],
         ["Günlük", renderLogs], ["Paylaşımlar", renderShares], ["Yetkililer", renderAdmins],
         ["Oturumlar", renderSessions], ["2FA", renderTotp], ["Görevler", renderTasks],
         ["Araçlar", renderTools], ["Seçim", syncBulk], ["Sekme sayaçları", updateTabCounts],
@@ -1201,6 +1311,125 @@
     }});
     $("bulkClear").addEventListener("click", () => { document.querySelectorAll(".uSel,#selAll").forEach(c => c.checked = false); syncBulk(); });
 
+    /* =========================================================
+       Cast hazırlama araçları
+       ⚖ Karşılaştır · 📄 Cast Sunumu · 💬 WhatsApp listesi
+       ========================================================= */
+    document.querySelectorAll("[data-genis-kapat]").forEach(b =>
+      b.addEventListener("click", () => $(b.dataset.genisKapat).classList.remove("open")));
+    document.querySelectorAll(".genis-katman").forEach(k =>
+      k.addEventListener("click", e => { if (e.target === k) k.classList.remove("open"); }));
+    document.addEventListener("keydown", e => {
+      if (e.key !== "Escape") return;
+      document.querySelectorAll(".genis-katman.open").forEach(k => k.classList.remove("open"));
+    });
+
+    /* --- Yan yana karşılaştırma --- */
+    const KARS_SATIR = [
+      ["Kategori", u => catAd(u.profile?.category)],
+      ["Şehir", u => u.profile?.city],
+      ["Yaş", u => u.profile?.age],
+      ["Boy", u => u.profile?.height && u.profile.height + " cm"],
+      ["Kilo", u => u.profile?.weight && u.profile.weight + " kg"],
+      ["Göğüs / Bel / Kalça", u => [u.profile?.bust, u.profile?.waist, u.profile?.hip].filter(Boolean).join(" / ")],
+      ["Beden", u => u.profile?.size],
+      ["Ayakkabı", u => u.profile?.shoe],
+      ["Saç / Göz", u => [u.profile?.hair, u.profile?.eye].filter(Boolean).join(" / ")],
+      ["Diller", u => u.profile?.languages],
+      ["Deneyim", u => u.profile?.experience],
+      ["İç puan", u => u.profile?.admin_rating ? "★".repeat(+u.profile.admin_rating) : ""],
+      ["Etiket", u => u.profile?.admin_tags],
+      ["Fotoğraf", u => (u.media || []).filter(m => m.kind === "photo" && !m.deleted).length + " adet"],
+      ["Durum", u => ({ onaylandi: "✓ onaylı", reddedildi: "✕ reddedildi" }[u.profile?.status] || "⏳ bekliyor")],
+    ];
+    $("bulkKars").addEventListener("click", () => {
+      const ids = seciliIds();
+      if (ids.length < 2 || ids.length > 4)
+        return toast("Karşılaştırma için 2–4 üye seçin (şu an " + ids.length + ")", "hata");
+      const kisiler = ids.map(id => uyeBul(id)).filter(Boolean);
+      $("karsGrid").style.gridTemplateColumns = `repeat(${kisiler.length},1fr)`;
+      $("karsGrid").innerHTML = kisiler.map(u => {
+        const foto = (u.media || []).find(m => m.kind === "photo" && !m.deleted && m.album !== "sanatsal");
+        const satirlar = KARS_SATIR.map(([et, f]) => {
+          const degerler = kisiler.map(k => String(f(k) || "—"));
+          const fark = new Set(degerler).size > 1;
+          const benim = String(f(u) || "—");
+          return `<div class="kars-sat ${fark ? "fark" : ""}"><span>${et}</span><b>${esc(benim)}</b></div>`;
+        }).join("");
+        return `<div class="kars-kisi">
+          ${foto ? `<img src="/api/photo/${foto.id}?k=1" loading="lazy" alt="">`
+                 : '<div style="aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;color:var(--text-2);font-size:.8rem">fotoğraf yok</div>'}
+          <div class="kars-ad">${esc(u.fullname || "#" + u.id)}<div class="mini">#${u.id}</div></div>
+          ${satirlar}
+        </div>`;
+      }).join("");
+      $("karsKatman").classList.add("open");
+    });
+
+    /* --- Cast sunumu: seçili kadro tek sayfada, yazdırılabilir --- */
+    $("bulkSunum").addEventListener("click", () => {
+      const ids = seciliIds();
+      if (!ids.length) return toast("Önce sunuma girecek üyeleri seçin", "hata");
+      if (ids.length > 30) return toast("Tek sunumda en fazla 30 profil olabilir", "hata");
+      window.open("sunum?ids=" + ids.join(","), "_blank", "noopener");
+    });
+
+    /* --- WhatsApp toplu mesaj listesi --- */
+    const WA_SABLON = [
+      ["Casting daveti", "Merhaba {ad}, Model of World'den yazıyoruz. Yarın için bir casting davetimiz var — müsait misiniz?"],
+      ["İş daveti", "Merhaba {ad}, size uygun bir iş teklifimiz var. Detayları panelinizde görebilirsiniz: https://www.modelofworld.com/uye"],
+      ["Profil güncelleme", "Merhaba {ad}, profilinizdeki ölçü ve fotoğrafları güncellerseniz castinglerde daha çok öne çıkarsınız: https://www.modelofworld.com/uye"],
+      ["Müsaitlik sorusu", "Merhaba {ad}, önümüzdeki hafta için müsaitlik durumunuzu panelinizdeki takvimden işaretler misiniz?"],
+      ["Genel duyuru", "Merhaba {ad}, Model of World'den bilgilendirme:"],
+    ];
+    function waTelSade(t) {
+      let d = String(t || "").replace(/\D/g, "");
+      if (d.startsWith("0")) d = d.slice(1);
+      if (!d.startsWith("90")) d = "90" + d;
+      return d.length >= 12 ? d : "";
+    }
+    function waListeCiz(kisiler) {
+      const metin = $("waMetin").value;
+      const gidenler = new Set([...$("waListe").querySelectorAll(".wa-satir.gitti")].map(s => +s.dataset.uid));
+      $("waListe").innerHTML = kisiler.map(u => {
+        const tel = waTelSade(u.phone);
+        const ad = (u.fullname || "").split(" ")[0] || "";
+        const mesaj = metin.replace(/\{ad\}/g, ad);
+        return `<div class="wa-satir ${gidenler.has(u.id) ? "gitti" : ""}" data-uid="${u.id}">
+          <span class="wa-ad">${esc(u.fullname || "#" + u.id)}</span>
+          <span class="wa-tel">${esc(u.phone) || "telefon yok"}</span>
+          ${tel ? `<a class="btn btn-gold btn-sm" href="https://wa.me/${tel}?text=${encodeURIComponent(mesaj)}"
+                     target="_blank" rel="noopener" data-wa-gonder>Gönder →</a>`
+                : '<span class="adm-badge eksik">numara yok</span>'}
+        </div>`;
+      }).join("");
+      const gonderilebilir = kisiler.filter(u => waTelSade(u.phone)).length;
+      $("waSayac").textContent = `${gonderilebilir}/${kisiler.length} kişiye gönderilebilir · ${gidenler.size} gönderildi`;
+    }
+    $("bulkWa").addEventListener("click", () => {
+      const ids = seciliIds();
+      if (!ids.length) return toast("Önce mesaj gidecek üyeleri seçin", "hata");
+      const kisiler = ids.map(id => uyeBul(id)).filter(Boolean);
+      $("waSablon").innerHTML = '<option value="">Hazır mesaj seç…</option>' +
+        WA_SABLON.map(([ad], i) => `<option value="${i}">${ad}</option>`).join("");
+      if (!$("waMetin").value) $("waMetin").value = WA_SABLON[0][1];
+      $("waListe")._kisiler = kisiler;
+      waListeCiz(kisiler);
+      $("waKatman").classList.add("open");
+    });
+    $("waSablon").addEventListener("change", e => {
+      const s = WA_SABLON[+e.target.value];
+      if (s) { $("waMetin").value = s[1]; waListeCiz($("waListe")._kisiler || []); }
+    });
+    $("waMetin").addEventListener("input", () => waListeCiz($("waListe")._kisiler || []));
+    $("waListe").addEventListener("click", e => {
+      const b = e.target.closest("[data-wa-gonder]");
+      if (!b) return;
+      b.closest(".wa-satir").classList.add("gitti");
+      const kalan = $("waListe").querySelectorAll(".wa-satir:not(.gitti)").length;
+      $("waSayac").textContent = kalan ? `${kalan} kişi kaldı` : "✓ liste tamamlandı";
+    });
+
     /* --- Toplu silme: çöp kutusuna taşır --- */
     $("bulkDel").addEventListener("click", async () => {
       const ids = seciliIds();
@@ -1289,7 +1518,7 @@
     const ATABS = [
       ["genel",   "📊", "Genel Bakış",        ["sosBand","dashRoot","logTitle","logs"]],
       ["uyeler",  "👥", "Üyeler & Onaylar",   ["toolsRow","tplCard","bulkBar","durumSekme","hizlandirRow","filterRow2","results"]],
-      ["isler",   "💼", "İşler & Paylaşım",   ["jobH2","jobCard","jobsList","shareH2","shareCard"]],
+      ["isler",   "💼", "İşler & Paylaşım",   ["takH2","takCard","jobH2","jobCard","jobsList","shareH2","shareCard"]],
       ["finance", "💰", "Finansal Takip",      ["financeH2","financeTab"]],
       ["formlar", "✉️", "Gelen Formlar",      ["subTitle","subInfo","frmSekme","subFiltre","subs"]],
       ["ekip",    "📌", "Ekip & Görevler",    ["tasksH2","tasksCard","usersCard"]],
@@ -1570,11 +1799,19 @@
       const from = $("fFrom").value, to = $("fTo").value;
       sekmeSayaclari();
       if (DURUM === "silinen") { renderSilinenler(q); return; }
+      const musaitGun = $("fMusait").value, musaitMod = $("fMusaitMod").value;
       let users = DATA.users.filter(u => {
         const p = u.profile || {};
         if (DURUM === "yayinda") { if (p.published !== "1") return false; }
         else if (DURUM && (p.status || "inceleniyor") !== DURUM) return false;
         if (catF && !(p.category || "").split(",").includes(catF)) return false;
+        /* Müsaitlik: üyenin panelindeki takvim ({"2026-08-05":"musait"|"dolu"}) */
+        if (musaitGun) {
+          let tak = {};
+          try { tak = JSON.parse(p.availability || "{}") || {}; } catch { tak = {}; }
+          const durum = tak[musaitGun];
+          if (musaitMod === "musait" ? durum !== "musait" : durum === "dolu") return false;
+        }
         const d = (u.created || "").slice(0, 10);
         if (from && d < from) return false;
         if (to && d > to) return false;
@@ -2194,6 +2431,84 @@
           ).join(" · ") || "—"}
         </div></div>`).join("");
     }
+    /* =========================================================
+       İş takvimi — ay görünümü + çakışan model uyarısı
+       ========================================================= */
+    const TAK_GUN_AD = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+    const TAK_AY_AD = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+      "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    let takY = new Date().getFullYear(), takM = new Date().getMonth();
+
+    function cakismalariBul() {
+      /* Aynı güne kabul edilmiş birden fazla iş = model çakışması */
+      const gunKisi = {};
+      (DATA.jobs || []).forEach(j => {
+        if (!j.date) return;
+        (j.offers || []).filter(o => o.status === "kabul").forEach(o => {
+          const k = j.date + "|" + o.user_id;
+          (gunKisi[k] = gunKisi[k] || { ad: o.fullname, tarih: j.date, isler: [] }).isler.push(j.title);
+        });
+      });
+      return Object.values(gunKisi).filter(x => x.isler.length > 1);
+    }
+
+    function renderTakvim() {
+      if (!$("takGrid")) return;
+      $("takBasliklar").innerHTML = TAK_GUN_AD.map(g => `<div class="tak-baslik">${g}</div>`).join("");
+      $("takAy").textContent = TAK_AY_AD[takM] + " " + takY;
+
+      const isler = (DATA.jobs || []).filter(j => j.date);
+      const cakismalar = cakismalariBul();
+      const cakisikTarih = new Set(cakismalar.map(c => c.tarih));
+
+      $("takCakismaKutu").innerHTML = cakismalar.length
+        ? `<div class="tak-uyari"><strong>⚠️ ${cakismalar.length} çakışma:</strong> aynı gün birden fazla işe kabul verilmiş.<br>` +
+          cakismalar.map(c => `· <strong>${esc(c.ad)}</strong> — ${c.tarih}: ${c.isler.map(esc).join(" + ")}`).join("<br>") + "</div>"
+        : "";
+
+      const ilk = new Date(takY, takM, 1);
+      const bosluk = (ilk.getDay() + 6) % 7;            /* hafta pazartesi başlar */
+      const gunSayisi = new Date(takY, takM + 1, 0).getDate();
+      const bugun = new Date().toISOString().slice(0, 10);
+      let html = "";
+      for (let i = 0; i < bosluk; i++) html += '<div class="tak-gun bos"></div>';
+      let ayToplam = 0;
+      for (let d = 1; d <= gunSayisi; d++) {
+        const tarih = `${takY}-${String(takM + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        const gununIsleri = isler.filter(j => j.date === tarih);
+        ayToplam += gununIsleri.length;
+        html += `<div class="tak-gun ${tarih === bugun ? "bugun" : ""}">
+          <span class="tak-no">${d}${tarih === bugun ? " · bugün" : ""}</span>
+          ${gununIsleri.map(j => {
+            const kabul = (j.offers || []).filter(o => o.status === "kabul").length;
+            const bekleyen = (j.offers || []).filter(o => o.status === "beklemede").length;
+            return `<div class="tak-is ${cakisikTarih.has(tarih) ? "cakisma" : ""}" data-tak-is="${j.id}"
+                      title="${esc(j.title)} — ${esc(j.location) || "lokasyon yok"} · ${kabul} kabul, ${bekleyen} bekliyor">
+              <b>${esc(j.title)}</b>
+              <span>${kabul} kişi${bekleyen ? " · " + bekleyen + " bekliyor" : ""}${j.location ? " · " + esc(j.location) : ""}</span>
+            </div>`;
+          }).join("")}
+        </div>`;
+      }
+      $("takGrid").innerHTML = html;
+      $("takOzet").textContent = `${TAK_AY_AD[takM]}: ${ayToplam} iş · toplam ${isler.length} planlı iş`;
+    }
+    $("takGeri").addEventListener("click", () => { if (--takM < 0) { takM = 11; takY--; } renderTakvim(); });
+    $("takIleri").addEventListener("click", () => { if (++takM > 11) { takM = 0; takY++; } renderTakvim(); });
+    $("takBugun").addEventListener("click", () => {
+      takY = new Date().getFullYear(); takM = new Date().getMonth(); renderTakvim();
+    });
+    $("takGrid").addEventListener("click", e => {
+      const el = e.target.closest("[data-tak-is]");
+      if (!el) return;
+      const j = (DATA.jobs || []).find(x => x.id === +el.dataset.takIs);
+      if (!j) return;
+      const satir = (j.offers || []).map(o =>
+        `· ${o.fullname}: ${o.status === "kabul" ? "✓ kabul" : o.status === "red" ? "✕ red" : "⏳ bekliyor"}`).join("\n") || "· henüz teklif yok";
+      onayIste(`${j.title}\n${j.date || ""} ${j.hours || ""}\n${j.location || ""}\n${j.fee ? "Kaşe: " + j.fee : ""}\n\nKadro:\n${satir}`,
+        "Kapat", "İş Detayı");
+    });
+
     /* Gelen formlarda düzenlenebilir alanlar (eski başvuru formunun alanları) */
     const FRM_ALAN = [
       ["fullname", "Ad Soyad"], ["email", "E-posta"], ["phone", "Telefon"],
@@ -2291,7 +2606,8 @@
         const v = frmVeri(s);
         const sos = String(s.kind).toUpperCase() === "SOS";
         /* Site içi mesaj kutusu ve iletişim formu: üyeye dönüştürülmez, yanıtlanır */
-        const mesajKaydi = ["mesaj", "iletisim"].includes(String(s.kind).toLowerCase());
+        const mesajKaydi = ["mesaj", "iletisim", "sifre-sifirlama"].includes(String(s.kind).toLowerCase());
+        const sifreTalebi = String(s.kind).toLowerCase() === "sifre-sifirlama";
         const islendi = s.processed === "1";
         const ad = v.fullname || v.name || v.uye || "(isimsiz)";   /* iletişim formu "name" alanını kullanır */
         const yas = v.birthdate && /^\d{4}-/.test(v.birthdate)
@@ -2338,7 +2654,7 @@
         return `
         <div class="frm ${sos ? "sos" : ""} ${islendi ? "islendi" : ""}" data-sid="${s.id}">
           <div class="frm-ust">
-            <span class="frm-tur">${sos ? "🆘 SOS" : mesajKaydi ? "💬 mesaj" : "başvuru"}</span>
+            <span class="frm-tur">${sos ? "🆘 SOS" : sifreTalebi ? "🔑 şifre" : mesajKaydi ? "💬 mesaj" : "başvuru"}</span>
             <strong>${esc(ad)}</strong>
             ${mesajKaydi
               ? (islendi

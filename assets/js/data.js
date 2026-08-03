@@ -422,28 +422,77 @@ const FAQ_CLIENTS = [
   { q: "Üniforma / kıyafetleri kim sağlıyor?", a: "Kurumsal üniforma, konsept elbise veya markanıza özel kıyafet ajans tarafından tedarik edilebilir; kendi kıyafetinizin kullanılması da mümkündür." },
 ];
 
-/* Tamamlanan son projeler — ana sayfa "Son Projeler" alanı */
+/* Tamamlanan projeler — ana sayfa şeridi ve proje vaka sayfaları (proje.html?id=…)
+   ----------------------------------------------------------------------------
+   Her projeye vaka sayfası açmak için aşağıdaki alanları doldurun. Boş bıraktığınız
+   alanlar sayfada hiç görünmez, yani eksik bilgiyle de yayına alınabilir.
+
+     id        Adres kısmında görünen kısa ad (proje.html?id=moda-haftasi)
+     brand     Markanın adı. Gizlilik sözleşmesi varsa boş bırakın; sayfa
+               "Marka adı gizlilik gereği paylaşılmıyor" yazar.
+     need      Müşterinin talebi — tek paragraf, müşterinin ağzından.
+     work      Ajansın yaptığı işler — madde madde.
+     result    Ölçülebilir sonuç. Uydurma sayı yazmayın; elinizde yoksa boş kalsın.
+     team      Kadro özeti · city, days, quote (müşteri cümlesi), quoteBy
+     gallery   Ek görseller: ["assets/media/proje-x-1.jpg", …]
+
+   NOT: Aşağıdaki üç kayıt gerçek işlerinizin yerini tutan örneklerdir. Marka adı,
+   sonuç ve müşteri cümlesi alanları bilerek boş bırakıldı — kendi verinizle
+   doldurmadan bu alanlar sayfada görünmeyecek. */
 const PROJECTS = [
   {
-    title: "İstanbul Moda Haftası Defilesi", img: IMG("1509631179647-0177331693ae"),
+    id: "moda-haftasi", title: "İstanbul Moda Haftası Defilesi",
+    img: IMG("1509631179647-0177331693ae"),
     category: "Podyum / Cast",
     scope: "14 manken · styling · backstage yönetimi",
     date: "Haziran 2026",
     gradient: ["#2b1d34", "#7a5c8f"],
+    brand: "", city: "İstanbul", days: "2 gün", people: "14 manken",
+    need: "Koleksiyon defilesi için podyum deneyimi olan, prova disiplinine uyabilen " +
+          "bir manken kadrosu ve backstage'de akışı yönetecek bir ekip talep edildi.",
+    work: [
+      "Koleksiyon çizgisine uygun 14 mankenin seçkisi ve müşteri onayı",
+      "Prova takvimi, ölçü kontrolü ve kıyafet uyum denemeleri",
+      "Backstage'de sıra yönetimi, styling ve çıkış koordinasyonu",
+      "Defile sonrası basın çekimleri için kadronun hazır tutulması",
+    ],
+    result: "", quote: "", quoteBy: "", gallery: [],
   },
   {
-    title: "Uluslararası Turizm Fuarı Standı", img: IMG("1587825140708-dfaf72ae4b04"),
+    id: "turizm-fuari", title: "Uluslararası Turizm Fuarı Standı",
+    img: IMG("1587825140708-dfaf72ae4b04"),
     category: "Fuar Hostesi",
     scope: "8 çok dilli hostes · 4 gün",
     date: "Mayıs 2026",
     gradient: ["#332417", "#9c7a4a"],
+    brand: "", city: "İstanbul", days: "4 gün", people: "8 hostes",
+    need: "Yoğun ziyaretçi trafiği olan bir fuar standında, İngilizce ve Rusça " +
+          "konuşabilen, ürün anlatımı yapabilecek bir karşılama ekibi gerekiyordu.",
+    work: [
+      "Dil yeterliliği doğrulanmış 8 hostesin seçkisi",
+      "Marka ve ürün brief'i: stant öncesi eğitim toplantısı",
+      "Vardiya planı, mola düzeni ve günlük devam çizelgesi",
+      "Sahada ajans süpervizörü ve her gün için yedek profil planı",
+    ],
+    result: "", quote: "", quoteBy: "", gallery: [],
   },
   {
-    title: "Lüks Saat Markası Lansmanı", img: IMG("1519671482749-fd09be7ccebf"),
+    id: "saat-lansmani", title: "Lüks Saat Markası Lansmanı",
+    img: IMG("1519671482749-fd09be7ccebf"),
     category: "Etkinlik & Prodüksiyon",
     scope: "Lansman organizasyonu · çekim · 12 kişilik ekip",
     date: "Nisan 2026",
     gradient: ["#2e1520", "#8c4a63"],
+    brand: "", city: "İstanbul", days: "1 gece", people: "12 kişilik ekip",
+    need: "Davetli lansman gecesi için karşılama ekibi, ürün sunum modelleri ve " +
+          "gecenin görsel arşivini oluşturacak çekim ekibi tek elden istendi.",
+    work: [
+      "Karşılama ve ürün sunumu için 12 kişilik kadro",
+      "Konsept kıyafet tedariki ve styling",
+      "Gece akışının sahada koordinasyonu",
+      "Etkinlik fotoğraf çekimi ve seçilmiş karelerin teslimi",
+    ],
+    result: "", quote: "", quoteBy: "", gallery: [],
   },
 ];
 
@@ -455,32 +504,47 @@ const COUNTERS = [
   { value: 12,   suffix: "",  label: "Hizmet Verilen Şehir" },
 ];
 
-/* Çalışılan markalar — gerçek logolar gelene kadar stilize placeholder isimler.
-   Gerçek logo eklemek için: { name: "Marka", logo: "assets/media/logo-marka.svg" } */
+/* Çalışılan markalar
+   ------------------
+   ÖNEMLİ: Aşağıdaki isimler GERÇEK DEĞİL — gerçek müşteri isimleri gelene kadar
+   yerini tutan örneklerdir. İzniniz olmayan bir markayı burada göstermek yanıltıcı
+   olur; gerçek referansları eklerken markadan yazılı izin alın.
+
+   Gerçek logo eklemek:  { name: "Marka Adı", logo: "assets/media/marka-x.svg", href: "https://..." }
+   Logo dosyası verilirse şeritte görsel, verilmezse yazı olarak görünür.
+   Tek renk (beyaz veya siyah) SVG en temiz sonucu verir. */
 const BRANDS = [
-  { name: "MAISON NOIRE" },
-  { name: "AURELIA" },
-  { name: "PORTO YACHTS" },
-  { name: "LUMIÈRE" },
-  { name: "VESTA EXPO" },
-  { name: "ATLAS GROUP" },
-  { name: "RIVIERA CLUB" },
-  { name: "ORION MEDIA" },
+  { name: "MAISON NOIRE", ornek: true },
+  { name: "AURELIA", ornek: true },
+  { name: "PORTO YACHTS", ornek: true },
+  { name: "LUMIÈRE", ornek: true },
+  { name: "VESTA EXPO", ornek: true },
+  { name: "ATLAS GROUP", ornek: true },
+  { name: "RIVIERA CLUB", ornek: true },
+  { name: "ORION MEDIA", ornek: true },
 ];
 
-/* Müşteri / marka yorumları */
+/* Müşteri / marka yorumları
+   -------------------------
+   ÖNEMLİ: Bunlar da örnek metinlerdir, gerçek müşteri yorumu değildir.
+   Gerçeğini eklerken tam ad ve unvan kullanmak için müşteriden izin alın —
+   izinli ve isimli bir yorum, isimsiz on yorumdan daha ikna edicidir.
+
+   Alanlar:  quote (yorum) · name · role · company · logo (marka logosu, ops.)
+             photo (kişi fotoğrafı, ops.) · href (marka sitesi, ops.)
+             ornek: true  → "örnek metin" olduğunu belirtir, gerçeğini eklerken kaldırın */
 const TESTIMONIALS = [
   {
     quote: "Fuar boyunca standımızdaki hostes ekibi, markamızı bizden iyi anlattı. Ekip yönetimi kusursuzdu, tek bir aksaklık yaşamadık.",
-    name: "B. Aydın", role: "Pazarlama Direktörü", company: "Vesta Expo",
+    name: "B. Aydın", role: "Pazarlama Direktörü", company: "Vesta Expo", ornek: true,
   },
   {
     quote: "E-ticaret çekimlerimizde konsept, model ve retouch tek elden yönetildi; teslim süreleri sözleşmedekinden bile hızlıydı.",
-    name: "C. Demir", role: "E-Ticaret Müdürü", company: "Atlas Group",
+    name: "C. Demir", role: "E-Ticaret Müdürü", company: "Atlas Group", ornek: true,
   },
   {
     quote: "Lansman gecemizde cast, sahne akışı ve çekim tek elden yönetildi. Teklif aşamasından teslime kadar şeffaf ve hızlıydılar.",
-    name: "E. Kaya", role: "Marka Müdürü", company: "Lumière",
+    name: "E. Kaya", role: "Marka Müdürü", company: "Lumière", ornek: true,
   },
 ];
 

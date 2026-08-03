@@ -62,13 +62,16 @@ PROFILE_COLS = [
     "iban", "bank_name", "account_name", "invoice_type", "tax_no",
     "parent_name", "parent_tc", "parent_phone",
     "consent_kvkk", "consent_contract",
+    # Aday panelinden yonetilen ek alanlar
+    "frozen",          # "1" → hesap gecici dondurulmus: katalogda cikmaz, is teklifi almaz
+    "olcu_tarih",      # olculerin son guncellenme tarihi (tazelik hatirlatmasi)
 ]
 # Yalnızca yönetici alanları — /api/me bunları asla döndürmez
 ADMIN_COLS = ["admin_note", "admin_rating", "admin_tags"]
 # Yayın bayrakları: yalnızca yönetici değiştirir, üye görebilir
 FLAG_COLS = ["published", "featured"]
 # Üyeye görünen ama üyenin değiştiremediği alanlar
-READONLY_COLS = ["status", "review_note", "consent_at"]
+READONLY_COLS = ["status", "review_note", "consent_at", "status_at"]
 LONG_COLS = {"availability": 6000, "about": 2000, "admin_note": 2000, "review_note": 1000}
 
 def init_db():
@@ -127,6 +130,10 @@ def init_db():
         except sqlite3.OperationalError: pass
     try: c.execute("ALTER TABLE shares ADD COLUMN client_likes TEXT DEFAULT '[]'")
     except sqlite3.OperationalError: pass
+    # Oturum listesi için cihaz/IP/tarih bilgisi (üye kendi oturumlarını görebilsin)
+    for col in ["ua", "ip", "created"]:
+        try: c.execute(f"ALTER TABLE sessions ADD COLUMN {col} TEXT")
+        except sqlite3.OperationalError: pass
     # Gelen formlar: üyeye dönüştürülünce hangi üyeye bağlandığı işaretlenir
     for col, ddl in [("user_id", "INTEGER"), ("processed", "TEXT DEFAULT '0'")]:
         try: c.execute(f"ALTER TABLE submissions ADD COLUMN {col} {ddl}")
@@ -174,6 +181,75 @@ def now(): return datetime.now(timezone.utc).isoformat(timespec="seconds")
 def audit(who, action, user_id=None, detail=""):
     db().execute("INSERT INTO audit(who,action,user_id,detail,created,ip) VALUES(?,?,?,?,?,?)",
                  (who, action, user_id, str(detail)[:400], now(), getattr(_local, "ip", "")))
+
+# ---------------- Ayarlar (settings tablosu) ----------------
+def ayar_oku(k, varsayilan=None):
+    r = db().execute("SELECT v FROM settings WHERE k=?", (k,)).fetchone()
+    if not r or not r["v"]: return varsayilan
+    try: return json.loads(r["v"])
+    except Exception: return varsayilan
+
+def ayar_yaz(k, deger):
+    v = json.dumps(deger, ensure_ascii=False)
+    db().execute("INSERT INTO settings(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=?", (k, v, v))
+
+# ---------------- E-posta gönderimi ----------------
+# SMTP bilgileri panelden girilir (Ayarlar & Güvenlik). Bilgi girilmemişse gönderim
+# sessizce atlanır — site çalışmaya devam eder, yalnızca bildirim gitmez.
+MAIL_VARSAYILAN = {"host": "", "port": 587, "tls": True, "user": "", "pass": "",
+                   "from": "", "from_ad": "Model of World", "to": ""}
+
+def mail_ayari():
+    a = dict(MAIL_VARSAYILAN)
+    a.update(ayar_oku("smtp", {}) or {})
+    return a
+
+def mail_kurulu(a=None):
+    a = a or mail_ayari()
+    return bool(a.get("host") and a.get("from"))
+
+def _mail_gonder_senkron(a, alicilar, konu, govde, yanit_adresi=None):
+    """Tek SMTP oturumunda gönderir. Hata fırlatır — çağıran yakalar."""
+    import smtplib
+    from email.message import EmailMessage
+    from email.utils import formataddr
+    msg = EmailMessage()
+    msg["Subject"] = konu
+    msg["From"] = formataddr((a.get("from_ad") or "Model of World", a["from"]))
+    msg["To"] = ", ".join(alicilar)
+    if yanit_adresi: msg["Reply-To"] = yanit_adresi
+    msg.set_content(govde)
+    port = int(a.get("port") or 587)
+    if port == 465:
+        s = smtplib.SMTP_SSL(a["host"], port, timeout=20)
+    else:
+        s = smtplib.SMTP(a["host"], port, timeout=20)
+        if a.get("tls"): s.starttls()
+    with s:
+        if a.get("user"): s.login(a["user"], a.get("pass") or "")
+        s.send_message(msg)
+
+def mail_gonder(alici, konu, govde, yanit_adresi=None, kayit_adi="e-posta"):
+    """Arka planda gönderir; istek yanıtını bekletmez. Sonuç denetim günlüğüne yazılır."""
+    a = mail_ayari()
+    alicilar = [x.strip() for x in (alici if isinstance(alici, str) else ",".join(alici)).split(",") if x.strip()]
+    if not mail_kurulu(a) or not alicilar:
+        return False
+
+    def calis():
+        try:
+            _mail_gonder_senkron(a, alicilar, konu, govde, yanit_adresi)
+            sonuc = "gönderildi: " + ", ".join(alicilar)
+        except Exception as e:
+            sonuc = "HATA (%s): %s" % (", ".join(alicilar), str(e)[:160])
+        try:
+            audit("sistem", "eposta:" + kayit_adi, None, sonuc)
+            db().commit()
+        except Exception:
+            pass
+
+    threading.Thread(target=calis, daemon=True).start()
+    return True
 
 # ---- TOTP (Google Authenticator) — stdlib ----
 def totp_at(secret_b32, offset=0):
@@ -328,6 +404,7 @@ def cast_list():
           AND COALESCE(p.published,'0') = '1'
           AND COALESCE(p.status,'') = 'onaylandi'
           AND COALESCE(p.privacy,'private') = 'public'
+          AND COALESCE(p.frozen,'0') != '1'
         ORDER BY CASE WHEN COALESCE(p.featured,'0')='1' THEN 0 ELSE 1 END, p.user_id DESC
     """).fetchall()
     liste = []
@@ -369,9 +446,84 @@ def cast_list():
         })
     return liste
 
+def musaitlige_gore(liste, tarih):
+    """Belirli bir gün için kadroyu süzer:
+       · o gün 'dolu' işaretlenmiş üyeler çıkarılır,
+       · 'müsait' işaretleyenler başa alınır ve musait=True olarak işaretlenir.
+       Takvim bilgisinin tamamı dışa verilmez; yalnızca sorulan günün sonucu döner."""
+    durum = {}
+    for r in db().execute("SELECT user_id, availability FROM profiles"
+                          " WHERE availability IS NOT NULL AND availability != ''").fetchall():
+        try: takvim = json.loads(r["availability"] or "{}") or {}
+        except Exception: continue
+        d = takvim.get(tarih)
+        if d: durum["u%d" % r["user_id"]] = d
+    out = []
+    for t in liste:
+        d = durum.get(t.get("id"))
+        if d == "dolu": continue
+        t = dict(t)
+        t["musait"] = (d == "musait")
+        out.append(t)
+    out.sort(key=lambda x: 0 if x.get("musait") else 1)
+    return out
+
+# ---------------- Randevu (brief görüşmesi) ----------------
+# Panelden değiştirilebilir: hangi günler, hangi saat aralığı, kaç dakikalık dilim.
+RANDEVU_VARSAYILAN = {"gunler": [1, 2, 3, 4, 5], "bas": "10:00", "bit": "18:00",
+                      "dilim": 15, "mola_bas": "13:00", "mola_bit": "14:00",
+                      "en_erken_saat": 3, "en_gec_gun": 45}
+
+def randevu_ayari():
+    a = dict(RANDEVU_VARSAYILAN)
+    a.update(ayar_oku("randevu", {}) or {})
+    return a
+
+def randevu_saatleri(gun_iso):
+    """Verilen gün için seçilebilir saatler. Dolu, geçmiş ve mola saatleri düşülür."""
+    a = randevu_ayari()
+    try:
+        g = datetime.strptime(gun_iso, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return []
+    bugun = datetime.now(timezone.utc)
+    if (g.date() - bugun.date()).days > int(a["en_gec_gun"]): return []
+    if g.date() < bugun.date(): return []
+    if (g.isoweekday()) not in a["gunler"]: return []
+
+    def dk(hhmm):
+        s = str(hhmm).split(":")
+        return int(s[0]) * 60 + int(s[1])
+
+    dilim = max(10, int(a["dilim"]))
+    bas, bit = dk(a["bas"]), dk(a["bit"])
+    mola = (dk(a["mola_bas"]), dk(a["mola_bit"])) if a.get("mola_bas") else None
+    # Aynı güne alınmış randevular
+    dolu = set()
+    for r in db().execute("SELECT data FROM submissions WHERE kind='randevu'").fetchall():
+        try: v = json.loads(r["data"] or "{}")
+        except Exception: continue
+        if v.get("date") == gun_iso and v.get("time"): dolu.add(v["time"])
+
+    en_erken = None
+    if g.date() == bugun.date():
+        en_erken = bugun.hour * 60 + bugun.minute + int(a["en_erken_saat"]) * 60
+
+    out = []
+    t = bas
+    while t + dilim <= bit:
+        if mola and mola[0] <= t < mola[1]:
+            t += dilim; continue
+        if en_erken is not None and t < en_erken:
+            t += dilim; continue
+        s = "%02d:%02d" % (t // 60, t % 60)
+        if s not in dolu: out.append(s)
+        t += dilim
+    return out
+
 def offers_of(uid):
     rows = db().execute("""SELECT o.id, o.status, o.updated, o.consent_at,
-        o.checkin_at, o.checkout_at, o.feedback_rating,
+        o.checkin_at, o.checkout_at, o.feedback_rating, o.payment_status,
         j.title, j.date, j.location, j.hours, j.fee, j.note, j.sensitive, j.usage
         FROM job_offers o JOIN jobs j ON j.id=o.job_id
         WHERE o.user_id=? ORDER BY o.id DESC""", (uid,)).fetchall()
@@ -406,10 +558,16 @@ class Handler(BaseHTTPRequestHandler):
         if not u or u["d"]: return None
         return row["user_id"]
 
+    def _session_token(self):
+        raw = self.headers.get("Cookie") or ""
+        m = re.search(r'mow=([A-Za-z0-9_\-]+)', raw)
+        return m.group(1) if m else ""
+
     def _make_session(self, uid):
         tok = secrets.token_urlsafe(32)
         exp = (datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS)).isoformat(timespec="seconds")
-        db().execute("INSERT INTO sessions(token,user_id,expires) VALUES(?,?,?)", (tok, uid, exp))
+        db().execute("INSERT INTO sessions(token,user_id,expires,ua,ip,created) VALUES(?,?,?,?,?,?)",
+                     (tok, uid, exp, (self.headers.get("User-Agent") or "")[:200], self._ip(), now()))
         db().commit()
         return f"mow={tok}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age={SESSION_DAYS*86400}"
 
@@ -471,6 +629,53 @@ class Handler(BaseHTTPRequestHandler):
     def _can(self, adm, perm):
         return adm and perm in ROLE_PERMS.get(adm["role"], set())
 
+    # Formdan gelen kayıt için: gönderene otomatik yanıt + ajansa bildirim
+    FORM_YANIT = {
+        "teklif": ("Teklif talebiniz alındı — Model of World",
+                   "Merhaba{ad},\n\n"
+                   "Teklif talebinizi aldık. Ekibimiz aynı iş günü içinde size özel cast seçkisi ve "
+                   "fiyat çalışmasıyla dönüş yapacak.\n\n"
+                   "Bu arada aklınıza bir soru gelirse bu e-postayı yanıtlayabilir ya da "
+                   "+90 (212) 000 00 00 numaralı hattımızdan bize ulaşabilirsiniz.\n\n"
+                   "Model of World Ajans\nwww.modelofworld.com"),
+        "iletisim": ("Mesajınız alındı — Model of World",
+                     "Merhaba{ad},\n\nMesajınızı aldık, en kısa sürede dönüş yapacağız.\n\n"
+                     "Model of World Ajans\nwww.modelofworld.com"),
+        "randevu": ("Görüşme talebiniz alındı — Model of World",
+                    "Merhaba{ad},\n\nGörüşme talebinizi aldık. Randevu bilgileriniz:\n\n{detay}\n\n"
+                    "Saati değiştirmek isterseniz bu e-postayı yanıtlamanız yeterli.\n\n"
+                    "Model of World Ajans\nwww.modelofworld.com"),
+    }
+    FORM_AD = {"teklif": "Teklif talebi", "iletisim": "İletişim mesajı", "randevu": "Görüşme talebi"}
+
+    def _form_bildirimi(self, kind, veri, sid=None, detay=""):
+        if not mail_kurulu(): return
+        a = mail_ayari()
+        tur = (kind or "").lower()
+        gonderen = ""
+        for k in ("email", "eposta", "mail"):
+            if veri.get(k): gonderen = str(veri[k]).strip(); break
+        ad = ""
+        for k in ("contact", "fullname", "name", "adsoyad", "company"):
+            if veri.get(k): ad = str(veri[k]).strip(); break
+
+        # 1) Gönderene otomatik yanıt
+        sablon = self.FORM_YANIT.get(tur)
+        if sablon and gonderen and "@" in gonderen:
+            konu, govde = sablon
+            mail_gonder(gonderen, konu,
+                        govde.format(ad=(" " + ad.split()[0]) if ad else "", detay=detay),
+                        yanit_adresi=a.get("to") or a.get("from"), kayit_adi="otomatik-yanit")
+
+        # 2) Ajansa bildirim
+        hedef = a.get("to") or a.get("from")
+        if hedef:
+            satirlar = ["%s: %s" % (k, v) for k, v in veri.items() if v not in (None, "", [], {})]
+            mail_gonder(hedef, "Yeni %s — %s" % (self.FORM_AD.get(tur, "form kaydı"), ad or gonderen or "?"),
+                        "Panele yeni bir kayıt düştü.\n\n" + "\n".join(satirlar)[:3000] +
+                        "\n\nPanel: https://www.modelofworld.com/admin",
+                        yanit_adresi=gonderen if "@" in gonderen else None, kayit_adi="form-bildirimi")
+
     def log_message(self, fmt, *args):
         pass
 
@@ -504,7 +709,20 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"ok": True, "v": 7})
 
         if p == "/api/cast":
-            return self._json(200, {"cast": cast_list()})
+            # ?tarih=YYYY-MM-DD verilirse o gün dolu olanlar çıkarılır, müsait olanlar öne alınır.
+            # Takvimin tamamı dışa verilmez — yalnızca sorulan günün sonucu.
+            tarih = (qs.get("tarih", [""])[0] or "").strip()
+            liste = cast_list()
+            if re.match(r"^\d{4}-\d{2}-\d{2}$", tarih):
+                liste = musaitlige_gore(liste, tarih)
+            return self._json(200, {"cast": liste, "tarih": tarih})
+
+        if p == "/api/randevu-saatleri":
+            gun = (qs.get("tarih", [""])[0] or "").strip()
+            a = randevu_ayari()
+            return self._json(200, {"tarih": gun, "saatler": randevu_saatleri(gun),
+                                    "gunler": a["gunler"], "dilim": a["dilim"],
+                                    "en_gec_gun": a["en_gec_gun"]})
 
         if p == "/api/cast.js":
             raw = ("window.VERA_CAST = " + json.dumps(cast_list(), ensure_ascii=False) + ";").encode("utf-8")
@@ -705,7 +923,13 @@ class Handler(BaseHTTPRequestHandler):
             trow = db().execute("SELECT v FROM settings WHERE k='red_templates'").fetchone()
             templates = json.loads(trow["v"]) if trow else []
             mrow = db().execute("SELECT v FROM settings WHERE k='maintenance'").fetchone()
+            # E-posta ve randevu ayarları (şifre dışa verilmez, yalnızca kurulu mu bilgisi)
+            ma = mail_ayari()
+            eposta_ayar = {k: ma.get(k) for k in ("host", "port", "tls", "user", "from", "from_ad", "to")}
+            eposta_ayar["sifre_var"] = bool(ma.get("pass"))
+            eposta_ayar["kurulu"] = mail_kurulu(ma)
             out = {"users": users, "silinenler": silinenler,
+                   "eposta": eposta_ayar, "randevu_ayar": randevu_ayari(),
                    "jobs": jobs, "submissions": subs, "audit": logs,
                    "sos": sos, "shares": shares, "tasks": tasks, "templates": templates,
                    "maintenance": bool(mrow and mrow["v"] == "1"),
@@ -864,6 +1088,39 @@ class Handler(BaseHTTPRequestHandler):
             audit("uye", "onay-verildi", row["id"], "KVKK + görsel kullanım onayı (bağlantı ile)")
             db().commit()
             return self._json(200, {"ok": True, "fullname": row["fullname"]})
+
+        if p == "/api/oturumlar":
+            # Üye kendi açık oturumlarını görür (ortak bilgisayar güvenliği)
+            uid = self._session_user()
+            if not uid: return self._json(401, {"error": "Oturum yok"})
+            benim = self._session_token()
+            liste = []
+            for r in db().execute("SELECT token, expires, ua, ip, created FROM sessions"
+                                  " WHERE user_id=? ORDER BY created DESC", (uid,)):
+                liste.append({
+                    "kisa": (r["token"] or "")[:8],
+                    "bu_cihaz": r["token"] == benim,
+                    "expires": r["expires"], "created": r["created"],
+                    "ua": r["ua"] or "", "ip": r["ip"] or "",
+                })
+            return self._json(200, {"oturumlar": liste})
+
+        if p == "/api/oturum-kapat":
+            # Belirli bir oturumu (ya da diğerlerinin tümünü) kapat
+            uid = self._session_user()
+            if not uid: return self._json(401, {"error": "Oturum yok"})
+            d = jbody()
+            benim = self._session_token()
+            if d.get("digerleri"):
+                db().execute("DELETE FROM sessions WHERE user_id=? AND token<>?", (uid, benim))
+                audit("uye", "oturumlar-kapatildi", uid, "diğer tüm cihazlar")
+            else:
+                kisa = str(d.get("kisa") or "")[:16]
+                if not kisa: return self._json(400, {"error": "Oturum seçilmedi"})
+                db().execute("DELETE FROM sessions WHERE user_id=? AND token LIKE ?", (uid, kisa + "%"))
+                audit("uye", "oturum-kapatildi", uid, kisa)
+            db().commit()
+            return self._json(200, {"ok": True})
 
         if p == "/api/password":
             # Üye kendi şifresini değiştirir (yöneticiden gelen geçici şifreyi de böyle değiştirir)
@@ -1136,10 +1393,12 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/submit":
             d = jbody()
             kind = str(d.get("kind") or "genel")[:40]
-            db().execute("INSERT INTO submissions(kind,data,created) VALUES(?,?,?)",
-                         (kind, json.dumps(d.get("data") or {}, ensure_ascii=False)[:8000], now()))
+            veri = d.get("data") or {}
+            cur = db().execute("INSERT INTO submissions(kind,data,created) VALUES(?,?,?)",
+                               (kind, json.dumps(veri, ensure_ascii=False)[:8000], now()))
             db().commit()
-            return self._json(200, {"ok": True})
+            self._form_bildirimi(kind, veri, cur.lastrowid)
+            return self._json(200, {"ok": True, "eposta": mail_kurulu()})
 
         # ---- Yönetici uçları ----
         if p == "/api/admin/user-new":
@@ -1413,6 +1672,100 @@ class Handler(BaseHTTPRequestHandler):
             db().commit()
             return self._json(200, {"ok": True})
 
+        if p == "/api/admin/smtp":
+            # E-posta gönderim ayarları: kaydet ve/veya test e-postası gönder
+            adm = self._admin(qs)
+            if not self._can(adm, "users"): return self._json(403, {"error": "Bu ayar yalnızca yöneticide"})
+            d = jbody()
+            if d.get("kaydet"):
+                mevcut = mail_ayari()
+                yeni = {
+                    "host": str(d.get("host") or "").strip()[:200],
+                    "port": int(d.get("port") or 587),
+                    "tls": bool(d.get("tls")),
+                    "user": str(d.get("user") or "").strip()[:200],
+                    # Şifre alanı boş bırakılırsa mevcut şifre korunur
+                    "pass": str(d.get("pass") or "") or mevcut.get("pass") or "",
+                    "from": str(d.get("from") or "").strip()[:200],
+                    "from_ad": str(d.get("from_ad") or "Model of World").strip()[:100],
+                    "to": str(d.get("to") or "").strip()[:400],
+                }
+                ayar_yaz("smtp", yeni)
+                audit("admin:" + adm["username"], "eposta-ayari", None,
+                      "%s:%s · gönderen %s" % (yeni["host"] or "-", yeni["port"], yeni["from"] or "-"))
+                db().commit()
+            if d.get("test"):
+                a = mail_ayari()
+                if not mail_kurulu(a):
+                    return self._json(400, {"error": "Önce sunucu adresi ve gönderen adresini girip kaydedin"})
+                hedef = str(d.get("test_adres") or "").strip() or a.get("to") or a.get("from")
+                try:
+                    _mail_gonder_senkron(a, [hedef], "Model of World — test e-postası",
+                                         "Bu bir test mesajıdır. E-posta ayarlarınız çalışıyor.\n\n"
+                                         "Artık teklif formu, iletişim formu ve randevu talepleri için "
+                                         "otomatik yanıt ve bildirim gönderilecek.")
+                except Exception as e:
+                    audit("admin:" + adm["username"], "eposta-test", None, "HATA: " + str(e)[:200])
+                    db().commit()
+                    return self._json(400, {"error": "Gönderilemedi: " + str(e)[:200]})
+                audit("admin:" + adm["username"], "eposta-test", None, "test gönderildi: " + hedef)
+                db().commit()
+                return self._json(200, {"ok": True, "mesaj": "Test e-postası gönderildi: " + hedef})
+            return self._json(200, {"ok": True})
+
+        if p == "/api/admin/randevu-ayar":
+            adm = self._admin(qs)
+            if not self._can(adm, "users"): return self._json(403, {"error": "Bu ayar yalnızca yöneticide"})
+            d = jbody()
+            a = randevu_ayari()
+            gunler = [int(x) for x in (d.get("gunler") or []) if str(x).isdigit() and 1 <= int(x) <= 7]
+            yeni = {
+                "gunler": gunler or a["gunler"],
+                "bas": str(d.get("bas") or a["bas"])[:5],
+                "bit": str(d.get("bit") or a["bit"])[:5],
+                "dilim": max(10, min(120, int(d.get("dilim") or a["dilim"]))),
+                "mola_bas": str(d.get("mola_bas") or "")[:5],
+                "mola_bit": str(d.get("mola_bit") or "")[:5],
+                "en_erken_saat": max(0, min(72, int(d.get("en_erken_saat") or a["en_erken_saat"]))),
+                "en_gec_gun": max(1, min(180, int(d.get("en_gec_gun") or a["en_gec_gun"]))),
+            }
+            ayar_yaz("randevu", yeni)
+            audit("admin:" + adm["username"], "randevu-ayari", None,
+                  "%s-%s · %d dk" % (yeni["bas"], yeni["bit"], yeni["dilim"]))
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/randevu":
+            # Herkese açık: brief görüşmesi için saat seçimi
+            d = jbody()
+            ad = str(d.get("name") or "").strip()[:120]
+            firma = str(d.get("company") or "").strip()[:160]
+            eposta = str(d.get("email") or "").strip()[:160]
+            tel = str(d.get("phone") or "").strip()[:40]
+            gun = str(d.get("date") or "").strip()[:10]
+            saat = str(d.get("time") or "").strip()[:5]
+            konu = str(d.get("note") or "").strip()[:1000]
+            kanal = str(d.get("channel") or "telefon")[:20]
+            if len(ad.split()) < 2: return self._json(400, {"error": "Ad ve soyad gerekli"})
+            if "@" not in eposta or "." not in eposta: return self._json(400, {"error": "Geçerli bir e-posta girin"})
+            if len(re.sub(r"\D", "", tel)) < 10: return self._json(400, {"error": "Geçerli bir telefon girin"})
+            if not re.match(r"^\d{4}-\d{2}-\d{2}$", gun) or not re.match(r"^\d{2}:\d{2}$", saat):
+                return self._json(400, {"error": "Tarih ve saat seçin"})
+            uygun = randevu_saatleri(gun)
+            if saat not in uygun:
+                return self._json(409, {"error": "Bu saat artık uygun değil — lütfen başka bir saat seçin"})
+            veri = {"name": ad, "company": firma, "email": eposta, "phone": tel,
+                    "date": gun, "time": saat, "channel": kanal, "note": konu}
+            cur = db().execute("INSERT INTO submissions(kind,data,created) VALUES('randevu',?,?)",
+                               (json.dumps(veri, ensure_ascii=False), now()))
+            audit("ziyaretci", "randevu-talebi", None, "%s %s · %s" % (gun, saat, ad))
+            db().commit()
+            g = gun.split("-")
+            detay = "Tarih: %s.%s.%s\nSaat: %s (15 dakika)\nGörüşme: %s" % (
+                g[2], g[1], g[0], saat, "telefon" if kanal == "telefon" else kanal)
+            self._form_bildirimi("randevu", veri, cur.lastrowid, detay=detay)
+            return self._json(200, {"ok": True, "eposta": mail_kurulu()})
+
         if p == "/api/admin/revoke":
             adm = self._admin(qs)
             if not adm: return self._json(403, {"error": "Yetki yok"})
@@ -1491,7 +1844,8 @@ class Handler(BaseHTTPRequestHandler):
             if st not in ("onaylandi", "reddedildi", "inceleniyor"):
                 return self._json(400, {"error": "Geçersiz durum"})
             note = str(d.get("review_note") or "")[:1000]
-            db().execute("UPDATE profiles SET status=?, review_note=? WHERE user_id=?", (st, note, uid))
+            db().execute("UPDATE profiles SET status=?, review_note=?, status_at=? WHERE user_id=?",
+                         (st, note, now(), uid))
             if st != "onaylandi":   # onay kalkarsa siteden de düşsün
                 db().execute("UPDATE profiles SET published='0' WHERE user_id=?", (uid,))
             audit("admin:" + adm["username"], "durum-" + st, uid, note[:100])

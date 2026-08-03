@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cast Sunumu — Model of World</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
+  <style>
+    :root { --mor:#2b1620; --gold:#d34f6e; --gri:#7c6670; --cizgi:#e6dade; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:"Jost",system-ui,sans-serif; color:var(--mor); background:#f3eef0; line-height:1.6; }
+    .serif { font-family:"Cormorant Garamond",Georgia,serif; }
+
+    /* Araç çubuğu — yazdırırken görünmez */
+    .arac { position:sticky; top:0; z-index:5; background:#fff; border-bottom:1px solid var(--cizgi);
+      padding:12px 18px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; box-shadow:0 2px 14px rgba(0,0,0,.05); }
+    .arac input[type="text"] { padding:8px 12px; border:1px solid var(--cizgi); border-radius:8px; font:inherit; font-size:.86rem; }
+    .arac label { font-size:.82rem; display:inline-flex; gap:6px; align-items:center; cursor:pointer; }
+    .dg { padding:9px 16px; border:1px solid var(--cizgi); border-radius:999px; background:#fff; cursor:pointer;
+      font:inherit; font-size:.82rem; letter-spacing:.04em; }
+    .dg.ana { background:var(--gold); border-color:var(--gold); color:#fff; }
+    .dg:hover { border-color:var(--gold); }
+    .bilgi { font-size:.8rem; color:var(--gri); margin-left:auto; }
+
+    .sayfa { width:210mm; min-height:297mm; margin:18px auto; background:#fff; padding:16mm 15mm;
+      box-shadow:0 8px 34px rgba(0,0,0,.12); position:relative; }
+
+    /* Kapak */
+    .kapak { display:flex; flex-direction:column; }
+    .kapak .marka { font-size:.72rem; letter-spacing:.34em; text-transform:uppercase; color:var(--gold); }
+    .kapak h1 { font-size:2.9rem; font-weight:500; margin:10px 0 6px; }
+    .kapak .alt { color:var(--gri); font-size:.95rem; }
+    .kapak-bilgi { margin-top:26px; border-top:1px solid var(--cizgi); border-bottom:1px solid var(--cizgi);
+      padding:16px 0; display:grid; grid-template-columns:repeat(2,1fr); gap:10px 26px; font-size:.88rem; }
+    .kapak-bilgi span { color:var(--gri); }
+    .kapak-izgara { margin-top:22px; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    .kapak-izgara div { aspect-ratio:3/4; border-radius:8px; overflow:hidden; background:#f3eef0; }
+    .kapak-izgara img { width:100%; height:100%; object-fit:cover; display:block; }
+    .kapak-not { margin-top:auto; padding-top:20px; font-size:.82rem; color:var(--gri); line-height:1.8;
+      border-top:1px solid var(--cizgi); }
+
+    /* Profil sayfası */
+    .pbas { display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
+      border-bottom:2px solid var(--mor); padding-bottom:10px; }
+    .pbas h2 { font-size:2.1rem; font-weight:500; }
+    .pbas .pno { font-size:.72rem; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); }
+    .pkat { font-size:.82rem; letter-spacing:.14em; text-transform:uppercase; color:var(--gri); margin-top:8px; }
+    .pizgara { margin-top:14px; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .pizgara div { aspect-ratio:3/4; border-radius:8px; overflow:hidden; background:#f3eef0; }
+    .pizgara img { width:100%; height:100%; object-fit:cover; display:block; }
+    .polcu { margin-top:16px; display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }
+    .polcu div { border:1px solid var(--cizgi); border-radius:9px; padding:9px 11px; }
+    .polcu dt { font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; color:var(--gri); }
+    .polcu dd { font-size:1.02rem; font-family:"Cormorant Garamond",serif; }
+    .pmetin { margin-top:14px; font-size:.87rem; color:#4b3640; }
+    .pmetin b { font-weight:600; }
+    .pfiyat { margin-top:14px; border:1px solid var(--gold); border-radius:10px; padding:11px 14px;
+      font-size:.87rem; background:rgba(211,79,110,.05); }
+    .palt { position:absolute; left:15mm; right:15mm; bottom:10mm; display:flex; justify-content:space-between;
+      font-size:.68rem; color:var(--gri); border-top:1px solid var(--cizgi); padding-top:7px; }
+
+    .durum { max-width:640px; margin:60px auto; background:#fff; padding:30px; border-radius:14px; text-align:center; }
+    .durum a { color:var(--gold); }
+
+    @media print {
+      body { background:#fff; }
+      .arac { display:none !important; }
+      .sayfa { margin:0; box-shadow:none; width:auto; min-height:auto; padding:12mm 11mm;
+        page-break-after:always; break-after:page; }
+      .sayfa:last-child { page-break-after:auto; break-after:auto; }
+      @page { size:A4; margin:0; }
+    }
+    @media (max-width:820px) {
+      .sayfa { width:auto; min-height:0; padding:20px 16px; margin:12px; }
+      .kapak-izgara { grid-template-columns:repeat(3,1fr); }
+      .polcu { grid-template-columns:repeat(2,1fr); }
+      .palt { position:static; margin-top:20px; }
+    }
+  </style>
+  <meta name="mow-surum" content="ce846f1">
+  <script src="assets/js/surum-kontrol.js?v=ce846f1"></script>
+</head>
+<body>
+  <div class="arac">
+    <button class="dg ana" id="yazdir">🖨 PDF Olarak Kaydet / Yazdır</button>
+    <input type="text" id="musteri" placeholder="Müşteri / proje adı" style="min-width:200px">
+    <label><input type="checkbox" id="tamAd"> Tam isim göster</label>
+    <label><input type="checkbox" id="fiyatGoster"> Ücretleri göster</label>
+    <label><input type="checkbox" id="iletisimGoster"> İletişim bilgisi göster</label>
+    <span class="bilgi" id="bilgi">Yükleniyor…</span>
+  </div>
+
+  <div id="cikti"></div>
+
+  <script src="assets/js/data.js?v=ce846f1"></script>
+  <script>
+    (function () {
+      const $ = id => document.getElementById(id);
+      const { AGENCY, CATEGORIES, LABELS } = window.VERA;
+      const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      const ids = (new URLSearchParams(location.search).get("ids") || "")
+        .split(",").map(x => +x).filter(Boolean);
+
+      const kisaAd = tam => {
+        const p = String(tam || "").trim().split(/\s+/).filter(Boolean);
+        if (!p.length) return "—";
+        if (p.length === 1) return p[0];
+        return p.slice(0, -1).join(" ") + " " + p[p.length - 1][0].toLocaleUpperCase("tr") + ".";
+      };
+      const etiket = (grup, deger) => (LABELS?.[grup]?.[deger]) || deger || "";
+      const bugun = new Date().toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
+
+      const durum = html => { $("cikti").innerHTML = `<div class="durum">${html}</div>`; };
+
+      if (!ids.length) {
+        $("bilgi").textContent = "";
+        durum('Sunuma girecek profil seçilmemiş. Yönetici panelinde üyeleri seçip ' +
+              '<strong>📄 Cast Sunumu</strong> düğmesine basın.');
+        return;
+      }
+
+      let KISILER = [];
+
+      fetch("/api/admin/list")
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null)
+        .then(d => {
+          if (!d) {
+            $("bilgi").textContent = "";
+            durum('Bu sayfa yalnızca yönetici oturumuyla açılır. ' +
+                  '<a href="admin">Panele giriş yapın</a>, sonra bu sayfayı yenileyin.');
+            return;
+          }
+          KISILER = ids.map(id => (d.users || []).find(u => u.id === id)).filter(Boolean);
+          if (!KISILER.length) {
+            $("bilgi").textContent = "";
+            durum("Seçilen profiller bulunamadı. Üyeler silinmiş olabilir.");
+            return;
+          }
+          ciz();
+        });
+
+      function fotolariSirala(u) {
+        const sira = ["studio", "podium", "polaroid", "genel"];
+        return (u.media || [])
+          .filter(m => m.kind === "photo" && !m.deleted && m.album !== "sanatsal")
+          .sort((a, b) => sira.indexOf(a.album || "genel") - sira.indexOf(b.album || "genel"))
+          .map(m => "/api/photo/" + m.id);
+      }
+
+      function ciz() {
+        const tam = $("tamAd").checked;
+        const fiyat = $("fiyatGoster").checked;
+        const iletisim = $("iletisimGoster").checked;
+        const musteri = $("musteri").value.trim();
+
+        /* Kapak */
+        const kapakFoto = KISILER.map(u => fotolariSirala(u)[0]).filter(Boolean).slice(0, 8);
+        const kats = new Set();
+        KISILER.forEach(u => (u.profile?.category || "").split(",").filter(Boolean).forEach(c => kats.add(c)));
+        const sehirler = [...new Set(KISILER.map(u => u.profile?.city).filter(Boolean))];
+
+        let html = `
+        <div class="sayfa kapak">
+          <span class="marka">${esc(AGENCY.name)}</span>
+          <h1 class="serif">Cast Sunumu</h1>
+          <p class="alt">${musteri ? esc(musteri) + " · " : ""}${bugun}</p>
+          <div class="kapak-bilgi">
+            <div><span>Profil sayısı</span><br><strong>${KISILER.length} kişi</strong></div>
+            <div><span>Kategoriler</span><br><strong>${[...kats].map(k => (CATEGORIES[k] || {}).short || k).join(", ") || "—"}</strong></div>
+            <div><span>Şehirler</span><br><strong>${sehirler.map(esc).join(", ") || "—"}</strong></div>
+            <div><span>Hazırlayan</span><br><strong>${esc(AGENCY.name)}</strong></div>
+          </div>
+          <div class="kapak-izgara">
+            ${kapakFoto.map(src => `<div><img src="${src}" alt=""></div>`).join("")}
+          </div>
+          <div class="kapak-not">
+            Bu seçki ${musteri ? esc(musteri) + " projesi" : "projeniz"} için hazırlanmıştır.
+            Profiller ajans kadromuza aittir; görseller yalnızca değerlendirme amacıyla paylaşılır,
+            izinsiz çoğaltılamaz ve üçüncü kişilerle paylaşılamaz.<br>
+            İletişim: ${esc(AGENCY.phone)} · ${esc(AGENCY.email)} · ${esc(AGENCY.domain.replace(/^https?:\/\//, ""))}
+          </div>
+        </div>`;
+
+        /* Profil sayfaları */
+        KISILER.forEach((u, i) => {
+          const p = u.profile || {};
+          const fotolar = fotolariSirala(u).slice(0, 6);
+          const katAd = (p.category || "").split(",").filter(Boolean)
+            .map(k => (CATEGORIES[k] || {}).label || k).join(" · ");
+          const olculer = [
+            ["Yaş", p.age], ["Boy", p.height && p.height + " cm"], ["Kilo", p.weight && p.weight + " kg"],
+            ["Beden", p.size], ["Göğüs", p.bust], ["Bel", p.waist], ["Kalça", p.hip],
+            ["Ayakkabı", p.shoe], ["Saç", etiket("hair", p.hair)], ["Göz", etiket("eye", p.eye)],
+          ].filter(x => x[1]);
+          const ucret = [
+            p.rate_catalog && "Katalog / çekim: " + p.rate_catalog,
+            p.rate_runway && "Podyum / defile: " + p.rate_runway,
+          ].filter(Boolean);
+
+          html += `
+          <div class="sayfa">
+            <div class="pbas">
+              <div>
+                <h2 class="serif">${esc(tam ? (u.fullname || "—") : kisaAd(u.fullname))}</h2>
+                <div class="pkat">${esc(katAd) || "—"}${p.city ? " — " + esc(p.city) : ""}</div>
+              </div>
+              <span class="pno">${String(i + 1).padStart(2, "0")} / ${String(KISILER.length).padStart(2, "0")}</span>
+            </div>
+            <div class="pizgara">
+              ${fotolar.length ? fotolar.map(src => `<div><img src="${src}" alt=""></div>`).join("")
+                : '<div style="grid-column:1/-1;padding:26px;text-align:center;color:#7c6670">Fotoğraf yok</div>'}
+            </div>
+            <div class="polcu">
+              ${olculer.map(([et, d]) => `<div><dt>${et}</dt><dd>${esc(d)}</dd></div>`).join("")}
+            </div>
+            ${p.languages ? `<p class="pmetin"><b>Diller:</b> ${esc(p.languages)}</p>` : ""}
+            ${p.experience ? `<p class="pmetin"><b>Deneyim:</b> ${esc(p.experience)}</p>` : ""}
+            ${p.skills ? `<p class="pmetin"><b>Yetenekler:</b> ${esc(typeof p.skills === "string" && p.skills.startsWith("{") ? (JSON.parse(p.skills).text || "") : p.skills)}</p>` : ""}
+            ${p.about ? `<p class="pmetin">${esc(p.about)}</p>` : ""}
+            ${(fiyat && ucret.length) ? `<div class="pfiyat"><strong>Ücret:</strong> ${ucret.map(esc).join(" · ")}</div>` : ""}
+            ${iletisim ? `<p class="pmetin"><b>İletişim:</b> ${esc(u.phone) || "—"} · ${esc(u.email) || "—"}</p>` : ""}
+            <div class="palt">
+              <span>${esc(AGENCY.name)} · Cast Sunumu${musteri ? " — " + esc(musteri) : ""}</span>
+              <span>${bugun}</span>
+            </div>
+          </div>`;
+        });
+
+        $("cikti").innerHTML = html;
+        $("bilgi").textContent = `${KISILER.length} profil · ${KISILER.length + 1} sayfa`;
+      }
+
+      ["tamAd", "fiyatGoster", "iletisimGoster"].forEach(id =>
+        $(id).addEventListener("change", () => KISILER.length && ciz()));
+      $("musteri").addEventListener("input", () => KISILER.length && ciz());
+      $("yazdir").addEventListener("click", () => window.print());
+    })();
+  </script>
+</body>
+</html>

@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=b10795b">
+  <link rel="stylesheet" href="assets/css/style.css?v=ce846f1">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
-  <meta name="mow-surum" content="b10795b">
-  <script src="assets/js/surum-kontrol.js?v=b10795b"></script>
+  <meta name="mow-surum" content="ce846f1">
+  <script src="assets/js/surum-kontrol.js?v=ce846f1"></script>
 </head>
 <body data-page="uye">
   <div id="site-header"></div>
@@ -43,6 +43,27 @@
           <button class="btn btn-gold full" type="submit">Giriş Yap</button>
         </form>
 
+        <div class="center" style="margin-top:-6px">
+          <button type="button" class="btn btn-ghost btn-sm" id="unuttumBtn" style="font-size:.72rem">Şifremi unuttum</button>
+        </div>
+
+        <div id="unuttumKart" style="display:none;border-top:1px solid var(--line);margin-top:22px;padding-top:20px">
+          <h3 style="font-size:1.05rem;margin-bottom:6px">Şifre Sıfırlama Talebi</h3>
+          <p class="muted" style="font-size:.86rem;margin-bottom:14px">E-posta ve telefonunuzu bırakın; ajans kimliğinizi doğrulayıp size yeni bir geçici şifre iletsin. Talepler iş saatleri içinde yanıtlanır.</p>
+          <div class="form-grid" style="grid-template-columns:1fr">
+            <div class="field">
+              <label>Kayıtlı E-postanız</label>
+              <input type="email" id="unuttumMail" placeholder="ornek@mail.com">
+            </div>
+            <div class="field">
+              <label>Telefonunuz</label>
+              <input type="tel" id="unuttumTel" placeholder="0532 555 55 55" inputmode="numeric" maxlength="14">
+            </div>
+            <button class="btn btn-gold full" type="button" id="unuttumGonder">Talebimi Gönder</button>
+            <span class="muted center" id="unuttumMsg" style="font-size:.85rem"></span>
+          </div>
+        </div>
+
         <div style="border-top:1px solid var(--line);margin-top:24px;padding-top:22px;text-align:center">
           <p class="muted" style="font-size:.9rem;margin-bottom:14px">Henüz üye değil misiniz? Başvurunuz yalnızca 2 dakika sürer.</p>
           <a class="btn btn-ghost full" href="basvuru">Başvuru Yap →</a>
@@ -55,8 +76,8 @@
   <div id="site-footer"></div>
 
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=b10795b"></script>
-  <script src="assets/js/main.js?v=b10795b"></script>
+  <script src="assets/js/data.js?v=ce846f1"></script>
+  <script src="assets/js/main.js?v=ce846f1"></script>
   <script>
     (function () {
       /* Zaten girişliyse panele git (yalnızca kesin 200 yanıtında) */
@@ -75,6 +96,35 @@
         if (kod >= 500) return "Sunucuda beklenmeyen bir hata oluştu (hata " + kod + "). Birkaç dakika sonra tekrar deneyin.";
         return "Giriş yapılamadı (hata " + kod + ").";
       }
+
+      /* ---------- Şifremi unuttum: talep yönetici paneline düşer ---------- */
+      document.getElementById("unuttumBtn").addEventListener("click", () => {
+        const k = document.getElementById("unuttumKart");
+        k.style.display = k.style.display === "none" ? "" : "none";
+        if (k.style.display === "") document.getElementById("unuttumMail").focus();
+      });
+      document.getElementById("unuttumGonder").addEventListener("click", async () => {
+        const posta = document.getElementById("unuttumMail").value.trim().toLowerCase();
+        const tel = document.getElementById("unuttumTel").value.trim();
+        const msg = document.getElementById("unuttumMsg");
+        const gecerli = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(posta);
+        if (!gecerli) { msg.style.color = "var(--danger)"; msg.textContent = "Geçerli bir e-posta girin."; return; }
+        if (tel.replace(/\D/g, "").length < 10) { msg.style.color = "var(--danger)"; msg.textContent = "Telefonunuzu eksiksiz girin."; return; }
+        msg.style.color = ""; msg.textContent = "Gönderiliyor…";
+        const r = await fetch("/api/submit", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: "sifre-sifirlama", at: new Date().toISOString(),
+                                 data: { email: posta, phone: tel, sayfa: "/uye" } }),
+        }).catch(() => null);
+        if (r && r.ok) {
+          msg.style.color = "var(--ok)";
+          msg.innerHTML = "✓ Talebiniz alındı. Ajans kimliğinizi doğrulayıp yeni şifrenizi iletecek. " +
+            'Acele ediyorsanız <a class="gold" href="iletisim">iletişim sayfamızdan</a> da yazabilirsiniz.';
+        } else {
+          msg.style.color = "var(--danger)";
+          msg.textContent = "Talep gönderilemedi. Lütfen birkaç dakika sonra tekrar deneyin.";
+        }
+      });
 
       document.getElementById("loginForm").addEventListener("submit", async e => {
         e.preventDefault();

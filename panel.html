@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=b10795b">
+  <link rel="stylesheet" href="assets/css/style.css?v=ce846f1">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -49,7 +49,40 @@
     .crop-controls { display:flex; gap:10px; align-items:center; margin:14px 0; }
     .crop-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
 
-    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=b10795b */
+    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=ce846f1 */
+
+    /* Başvuru durumu zaman çizelgesi */
+    .cizelge { list-style:none; padding:0; margin:0 0 4px; }
+    .cizelge li { position:relative; padding:0 0 18px 30px; border-left:2px solid var(--line); }
+    .cizelge li:last-child { border-left-color:transparent; padding-bottom:0; }
+    .cizelge li::before { content:"○"; position:absolute; left:-9px; top:-2px; width:16px; height:16px;
+      background:var(--surface); color:var(--line); font-size:1rem; line-height:1; text-align:center; }
+    .cizelge li.tamam::before { content:"●"; color:var(--gold); }
+    .cizelge li.suan::before { content:"◉"; color:var(--gold); }
+    .cizelge b { display:block; font-size:.94rem; }
+    .cizelge span { font-size:.8rem; color:var(--text-2); }
+
+    /* Kazanç kutuları */
+    .kazanc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:18px; }
+    .kazanc-kutu { border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--surface); }
+    .kazanc-kutu strong { display:block; font-family:var(--font-serif); font-size:1.5rem; color:var(--gold); }
+    .kazanc-kutu span { font-size:.74rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-2); }
+    .odeme-satir { display:flex; justify-content:space-between; gap:10px; padding:10px 0;
+      border-bottom:1px solid var(--line); font-size:.88rem; flex-wrap:wrap; }
+    .odeme-satir:last-child { border-bottom:0; }
+    .odeme-durum { font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; padding:3px 9px;
+      border-radius:999px; border:1px solid var(--line); }
+    .odeme-durum.odendi { color:#20744c; border-color:#4da878; }
+
+    /* Paylaşım / araç satırları */
+    .arac-satir { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+    .link-kutu { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px;
+      padding:11px 14px; border:1px dashed var(--gold); border-radius:10px; font-size:.86rem; }
+    .link-kutu code { font-family:ui-monospace,monospace; font-size:.82rem; overflow-wrap:anywhere; }
+    .oturum-satir { display:flex; justify-content:space-between; gap:10px; padding:10px 0;
+      border-bottom:1px solid var(--line); font-size:.86rem; flex-wrap:wrap; align-items:center; }
+    .hatirlat { border:1px solid #e0a86a; background:color-mix(in srgb,#e0a86a 10%,transparent);
+      color:#8a5a1f; border-radius:10px; padding:12px 15px; font-size:.88rem; margin-bottom:16px; }
 
     /* Profil tamamlanma ölçeri */
     .tamam-kart { border:1px solid var(--gold); border-radius:14px; padding:18px 20px; margin-bottom:24px;
@@ -87,8 +120,8 @@
     #ilkSifreKutu input:focus { outline:none; border-color:var(--gold); }
     #ilkSifreHata { color:var(--danger); font-size:.83rem; margin-top:10px; min-height:1em; line-height:1.6; }
   </style>
-  <meta name="mow-surum" content="b10795b">
-  <script src="assets/js/surum-kontrol.js?v=b10795b"></script>
+  <meta name="mow-surum" content="ce846f1">
+  <script src="assets/js/surum-kontrol.js?v=ce846f1"></script>
 </head>
 <body data-page="panel">
   <div id="site-header"></div>
@@ -138,6 +171,12 @@
         </div>
         <div class="tamam-cubuk"><div class="tamam-dolu" id="tamamDolu"></div></div>
         <div class="tamam-eksik" id="tamamEksik"></div>
+      </div>
+
+      <div class="form-card no-print" id="cizelgeKart" style="margin-bottom:24px;display:none">
+        <h3 style="margin-bottom:14px">Başvurum Ne Aşamada?</h3>
+        <ul class="cizelge" id="cizelge"></ul>
+        <p class="muted" id="cizelgeNot" style="font-size:.84rem;margin-top:10px"></p>
       </div>
 
       <div class="tabs no-print" id="panelTabs" style="margin-bottom:24px">
@@ -379,6 +418,14 @@
       <div class="form-card tab-pane" id="tab-teklifler">
         <h3 style="margin-bottom:6px">İş Tekliflerim</h3>
         <p class="muted" style="font-size:.86rem;margin-bottom:18px">Ajans size uygun bir proje bulduğunda teklif buraya düşer. Detayları inceleyip kabul veya reddedebilirsiniz.</p>
+
+        <div class="kazanc-grid" id="kazancGrid"></div>
+        <div id="odemeKart" style="display:none;margin-bottom:22px">
+          <h4 style="font-size:1rem;margin-bottom:8px">Ödeme Geçmişi</h4>
+          <div id="odemeListe"></div>
+          <p class="muted" style="font-size:.78rem;margin-top:8px">Serbest çalışan olarak vergi beyanınızda bu dökümü kullanabilirsiniz. Tutarlar ajansın kaydettiği brüt iş bedelidir.</p>
+        </div>
+
         <div id="offersRoot"></div>
       </div>
 
@@ -392,6 +439,22 @@
           <button class="icon-btn" id="calNext">›</button>
         </div>
         <div class="cal-grid" id="calGrid"></div>
+        <div class="arac-satir" id="takvimAraclar">
+          <span class="muted" style="font-size:.8rem">Hızlı işaretleme:</span>
+          <button type="button" class="btn btn-ghost btn-sm" data-kural="haftaici-dolu">Hafta içi meşgul</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-kural="haftasonu-musait">Hafta sonu müsait</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-kural="ay-musait">Tüm ay müsait</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-kural="temizle">Bu ayı temizle</button>
+        </div>
+        <div class="arac-satir">
+          <span class="muted" style="font-size:.8rem">Tarih aralığı:</span>
+          <input type="date" class="adm-input" id="aralikBas" style="max-width:170px">
+          <span class="muted">–</span>
+          <input type="date" class="adm-input" id="aralikBit" style="max-width:170px">
+          <button type="button" class="btn btn-ghost btn-sm" data-aralik="musait">Müsait işaretle</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-aralik="dolu">Meşgul işaretle</button>
+        </div>
+
         <div class="cal-legend">
           <span class="l-musait">Müsaitim</span><span class="l-dolu">Doluyum</span><span class="l-bos">Belirtilmedi</span>
         </div>
@@ -477,6 +540,59 @@
             <button class="btn btn-ghost" type="button" id="sifreKaydet">Şifremi Değiştir</button>
           </div>
         </div>
+
+        <!-- 12-13) Sedcard ve herkese açık profil -->
+        <div style="border-top:1px solid var(--line);margin-top:28px;padding-top:22px">
+          <h3 style="margin-bottom:6px">Sedcard'ım &amp; Profil Bağlantım</h3>
+          <p class="muted" style="font-size:.86rem;margin-bottom:14px">Sedcard'ınızı castinglere götürebilir, profil bağlantınızı sosyal medyada paylaşabilirsiniz.</p>
+          <div class="arac-satir">
+            <a class="btn btn-gold btn-sm" id="sedcardBtn" href="#" target="_blank">🪪 Sedcard'ımı Aç / Yazdır</a>
+            <span class="muted" id="sedcardNot" style="font-size:.82rem"></span>
+          </div>
+          <div class="link-kutu" id="profilLinkKutu" style="display:none">
+            <span>🔗</span><code id="profilLink"></code>
+            <button type="button" class="btn btn-ghost btn-sm" id="linkKopyala">Kopyala</button>
+            <a class="btn btn-ghost btn-sm" id="linkWa" href="#" target="_blank">WhatsApp'ta paylaş</a>
+          </div>
+        </div>
+
+        <!-- 19) Açık oturumlar -->
+        <div style="border-top:1px solid var(--line);margin-top:28px;padding-top:22px">
+          <h3 style="margin-bottom:6px">Açık Oturumlarım</h3>
+          <p class="muted" style="font-size:.86rem;margin-bottom:12px">Hesabınıza hangi cihazlardan giriş yapıldığını görün. Ortak bir bilgisayardan girdiyseniz oradaki oturumu kapatın.</p>
+          <div id="oturumListe"></div>
+          <div class="arac-satir">
+            <button type="button" class="btn btn-ghost btn-sm" id="oturumTumKapat">Diğer tüm cihazlardan çıkış yap</button>
+            <span class="muted" id="msg-oturum" style="font-size:.84rem"></span>
+          </div>
+        </div>
+
+        <!-- 9-20) Onay kaydı ve verilerim -->
+        <div style="border-top:1px solid var(--line);margin-top:28px;padding-top:22px">
+          <h3 style="margin-bottom:6px">Onay Kaydım &amp; Verilerim</h3>
+          <p class="muted" style="font-size:.86rem;margin-bottom:12px">Hangi koşullara onay verdiğinizi görün, kaydınızı yazdırın veya tüm verilerinizi indirin (KVKK hakkınız).</p>
+          <div id="onayKaydi" class="link-kutu" style="display:block;border-style:solid"></div>
+          <div class="arac-satir">
+            <button type="button" class="btn btn-ghost btn-sm" id="onayYazdir">🖨 Onay Kaydımı Yazdır</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="veriIndir">⬇ Verilerimi İndir (JSON)</button>
+          </div>
+        </div>
+
+        <!-- 21) Hesabı geçici dondurma -->
+        <div style="border-top:1px solid var(--line);margin-top:28px;padding-top:22px">
+          <h3 style="margin-bottom:6px">Hesabımı Geçici Dondur</h3>
+          <p class="muted" style="font-size:.86rem;margin-bottom:12px">Bir süre iş teklifi almak istemiyorsanız hesabınızı dondurabilirsiniz: profiliniz katalogdan çıkar, yeni teklif gelmez. Bilgileriniz ve fotoğraflarınız silinmez; dilediğinizde tek tıkla geri açarsınız.</p>
+          <div class="checkbox-row">
+            <input type="checkbox" name="frozen" id="frozenChk">
+            <label for="frozenChk" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.9rem">
+              Hesabımı geçici olarak dondur (iş teklifi almak istemiyorum)
+            </label>
+          </div>
+          <div class="wizard-nav">
+            <span class="muted" id="msg-dondur" style="font-size:.85rem"></span>
+            <button class="btn btn-ghost" type="button" id="dondurKaydet">Kaydet</button>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -507,8 +623,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=b10795b"></script>
-  <script src="assets/js/main.js?v=b10795b"></script>
+  <script src="assets/js/data.js?v=ce846f1"></script>
+  <script src="assets/js/main.js?v=ce846f1"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -550,7 +666,7 @@
       $("ilkSifre2").addEventListener("keydown", e => { if (e.key === "Enter") $("ilkSifreKaydet").click(); });
 
       const yasHesap = b => { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); };
-      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=b10795b) */
+      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=ce846f1) */
       const makeMsel = window.VERA.makeMsel;
       const catSel = makeMsel($("catSel"),
         Object.entries(window.VERA.CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
@@ -794,6 +910,229 @@
         tamamlamaCiz();
         return firstOpen;
       }
+      /* ============ Yeni bölümler: çizelge, kazanç, paylaşım, oturumlar ============ */
+      const trGun = iso => {
+        if (!iso) return "";
+        const g = String(iso).slice(0, 10).split("-");
+        return g.length === 3 ? `${g[2]}.${g[1]}.${g[0]}` : String(iso).slice(0, 10);
+      };
+      const trSaat = iso => String(iso || "").slice(11, 16);
+      const paraBicim = ham => {
+        const n = parseFloat(String(ham || "").replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
+        return isNaN(n) ? null : n;
+      };
+
+      /* ---------- 2) Başvuru durumu zaman çizelgesi ---------- */
+      function cizelgeCiz() {
+        const p = ME.profile || {}, u = ME.user || {};
+        const durum = p.status || "inceleniyor";
+        const yayinda = p.published === "1";
+        const adimlar = [
+          { ad: "Başvurunuz alındı", tarih: u.created, tamam: true },
+          { ad: "Casting ekibi inceliyor", tarih: p.consent_at || u.created, tamam: true,
+            suan: durum === "inceleniyor" },
+          durum === "reddedildi"
+            ? { ad: "Değerlendirildi", tarih: p.status_at, tamam: true, suan: true,
+                not: p.review_note || "Bu sefer uygun bulunmadı. Yeni fotoğraflarla tekrar başvurabilirsiniz." }
+            : { ad: "Kadroya kabul", tarih: p.status_at, tamam: durum === "onaylandi",
+                suan: durum === "onaylandi" && !yayinda },
+          { ad: "Profilim sitede yayında", tarih: yayinda ? p.status_at : "", tamam: yayinda, suan: yayinda },
+        ];
+        $("cizelgeKart").style.display = "";
+        $("cizelge").innerHTML = adimlar.map(a => `
+          <li class="${a.tamam ? "tamam" : ""} ${a.suan ? "suan" : ""}">
+            <b>${a.ad}</b>
+            <span>${a.tarih ? trGun(a.tarih) + (trSaat(a.tarih) ? " · " + trSaat(a.tarih) : "") : "—"}</span>
+            ${a.not ? `<span style="display:block;margin-top:4px">${a.not}</span>` : ""}
+          </li>`).join("");
+        $("cizelgeNot").textContent = durum === "inceleniyor"
+          ? "Değerlendirme genellikle 5 iş günü sürer. Profilinizi tamamlamak sıranızı hızlandırır."
+          : durum === "onaylandi" && !yayinda
+            ? "Kadroya kabul edildiniz. Profilinizin sitede yayınlanmasına ajans karar verir."
+            : "";
+      }
+
+      /* ---------- 7-8) Kazanç özeti ve ödeme geçmişi ---------- */
+      function kazancCiz() {
+        const list = (ME.offers || []);
+        const kabul = list.filter(o => o.status === "kabul");
+        const yil = new Date().getFullYear();
+        const tutar = o => paraBicim(o.fee) || 0;
+        const buYil = kabul.filter(o => String(o.date || "").startsWith(String(yil)));
+        const odenen = kabul.filter(o => o.payment_status === "odendi");
+        const bekleyen = kabul.filter(o => o.payment_status !== "odendi");
+        const topla = d => d.reduce((t, o) => t + tutar(o), 0);
+        const yaz = n => n ? n.toLocaleString("tr-TR") + " ₺" : "—";
+
+        $("kazancGrid").innerHTML = kabul.length ? `
+          <div class="kazanc-kutu"><strong>${kabul.length}</strong><span>Kabul Ettiğim İş</span></div>
+          <div class="kazanc-kutu"><strong>${yaz(topla(buYil))}</strong><span>${yil} Toplam</span></div>
+          <div class="kazanc-kutu"><strong>${yaz(topla(odenen))}</strong><span>Ödenen</span></div>
+          <div class="kazanc-kutu"><strong style="color:${bekleyen.length ? "#c62828" : "var(--gold)"}">${yaz(topla(bekleyen))}</strong><span>Bekleyen Ödeme</span></div>` : "";
+
+        $("odemeKart").style.display = kabul.length ? "" : "none";
+        $("odemeListe").innerHTML = kabul.map(o => `
+          <div class="odeme-satir">
+            <span><strong>${o.title || "İş"}</strong><br>
+              <span class="muted" style="font-size:.8rem">${trGun(o.date) || "tarih yok"}${o.location ? " · " + o.location : ""}</span>
+            </span>
+            <span style="text-align:right">
+              <strong>${o.fee || "görüşülecek"}</strong><br>
+              <span class="odeme-durum ${o.payment_status === "odendi" ? "odendi" : ""}">${o.payment_status === "odendi" ? "✓ ödendi" : "ödenecek"}</span>
+            </span>
+          </div>`).join("");
+      }
+
+      /* ---------- 12-13) Sedcard ve herkese açık profil bağlantısı ---------- */
+      function paylasimCiz() {
+        const p = ME.profile || {}, uid = ME.user?.id;
+        $("sedcardBtn").href = "sedcard?id=u" + uid;
+        const foto = (ME.media || []).some(m => m.kind === "photo" && !m.deleted);
+        $("sedcardNot").textContent = foto
+          ? "Yazdır penceresinden PDF olarak da kaydedebilirsiniz."
+          : "Sedcard'ın dolu görünmesi için önce fotoğraf yükleyin.";
+        const acik = p.status === "onaylandi" && p.published === "1" && p.privacy === "public";
+        $("profilLinkKutu").style.display = acik ? "" : "none";
+        if (acik) {
+          const url = `https://www.modelofworld.com/model-detay?id=u${uid}`;
+          $("profilLink").textContent = url;
+          $("linkWa").href = "https://wa.me/?text=" + encodeURIComponent("Model of World profilim: " + url);
+          $("linkKopyala").onclick = async () => {
+            try { await navigator.clipboard.writeText(url); $("linkKopyala").textContent = "✓ Kopyalandı"; }
+            catch { $("profilLink").textContent = url; }
+            setTimeout(() => $("linkKopyala").textContent = "Kopyala", 2000);
+          };
+        }
+      }
+
+      /* ---------- 9) Onay kaydı ---------- */
+      function onayCiz() {
+        const p = ME.profile || {}, u = ME.user || {};
+        const tarih = p.consent_at ? trGun(p.consent_at) + " " + trSaat(p.consent_at) : "—";
+        $("onayKaydi").innerHTML = `
+          <div style="line-height:1.9">
+            <strong>${u.fullname || ""}</strong> · onay tarihi: <strong>${tarih}</strong><br>
+            ${p.consent_kvkk === "1" ? "✓" : "✕"} Kişisel verilerimin KVKK kapsamında işlenmesine açık rıza<br>
+            ${p.consent_contract === "1" ? "✓" : "✕"} Çalışma prensipleri ve şartlarını kabul<br>
+            ✓ Ajansın adaylardan hiçbir ücret talep etmediğini biliyorum<br>
+            <span class="muted" style="font-size:.82rem">Görsel kullanımı: profil fotoğraflarınız ajans kataloğunda ve müşteri sunumlarında kullanılır; sitede yalnızca adınız ve soyadınızın baş harfi görünür. Gizlilik tercihinizi bu sayfadan değiştirebilirsiniz.</span>
+          </div>`;
+        $("onayYazdir").onclick = () => {
+          const w = window.open("", "_blank");
+          w.document.write(`<title>Onay Kaydı — ${u.fullname || ""}</title>
+            <div style="font-family:Georgia,serif;max-width:700px;margin:40px auto;line-height:1.9">
+            <h2>Model of World — Üyelik Onay Kaydı</h2>${$("onayKaydi").innerHTML}
+            <p style="margin-top:24px;font-size:.8rem;color:#777">Bu belge ${trGun(new Date().toISOString())} tarihinde aday panelinden alınmıştır.</p></div>`);
+          w.document.close(); w.print();
+        };
+        $("veriIndir").onclick = () => {
+          const veri = { alindi: new Date().toISOString(), hesap: ME.user, profil: ME.profile,
+                         medya: (ME.media || []).map(m => ({ id: m.id, tur: m.kind, album: m.album, ad: m.orig, tarih: m.created })),
+                         is_teklifleri: ME.offers };
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob([JSON.stringify(veri, null, 2)], { type: "application/json" }));
+          a.download = "model-of-world-verilerim.json";
+          a.click();
+        };
+      }
+
+      /* ---------- 17) Ölçü tazeliği hatırlatması ---------- */
+      function olcuHatirlat() {
+        const p = ME.profile || {};
+        if (!p.height || !p.weight) return;
+        const son = p.olcu_tarih || p.consent_at || ME.user?.created;
+        if (!son) return;
+        const ay = (Date.now() - new Date(son).getTime()) / 86400000 / 30;
+        if (ay < 3) return;
+        const kart = $("tab-olculer");
+        if (!kart || kart.querySelector(".hatirlat")) return;
+        const uyari = document.createElement("div");
+        uyari.className = "hatirlat";
+        uyari.innerHTML = `⏰ Ölçüleriniz <strong>${Math.floor(ay)} aydır</strong> güncellenmedi. ` +
+          `Sahada sürpriz olmaması için kontrol edip <strong>Kaydet</strong>'e basmanız yeterli.`;
+        kart.insertBefore(uyari, kart.firstChild);
+      }
+
+      /* ---------- 19) Açık oturumlar ---------- */
+      async function oturumlariCiz() {
+        const r = await fetch("/api/oturumlar").catch(() => null);
+        if (!r || !r.ok) { $("oturumListe").innerHTML = '<span class="muted" style="font-size:.84rem">Oturum bilgisi alınamadı.</span>'; return; }
+        const d = await r.json().catch(() => ({}));
+        const liste = d.oturumlar || [];
+        $("oturumListe").innerHTML = liste.length ? liste.map(o => {
+          const cihaz = /iPhone|iPad/i.test(o.ua) ? "📱 iPhone / iPad"
+            : /Android/i.test(o.ua) ? "📱 Android"
+            : /Macintosh/i.test(o.ua) ? "💻 Mac"
+            : /Windows/i.test(o.ua) ? "💻 Windows" : "🖥 Cihaz";
+          return `<div class="oturum-satir">
+            <span>${cihaz}${o.bu_cihaz ? ' <strong style="color:var(--gold)">· bu cihaz</strong>' : ""}<br>
+              <span class="muted" style="font-size:.78rem">${o.created ? "giriş: " + trGun(o.created) + " " + trSaat(o.created) : ""}${o.ip ? " · " + o.ip : ""}</span>
+            </span>
+            ${o.bu_cihaz ? "" : `<button type="button" class="btn btn-ghost btn-sm" data-oturum="${o.kisa}">Çıkış yaptır</button>`}
+          </div>`;
+        }).join("") : '<span class="muted" style="font-size:.84rem">Başka açık oturum yok.</span>';
+      }
+      $("oturumListe").addEventListener("click", async e => {
+        const b = e.target.closest("[data-oturum]");
+        if (!b) return;
+        b.disabled = true;
+        const r = await fetch("/api/oturum-kapat", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kisa: b.dataset.oturum }) }).catch(() => null);
+        $("msg-oturum").textContent = r && r.ok ? "✓ Oturum kapatıldı" : "Kapatılamadı";
+        oturumlariCiz();
+      });
+      $("oturumTumKapat").addEventListener("click", async () => {
+        const r = await fetch("/api/oturum-kapat", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ digerleri: 1 }) }).catch(() => null);
+        $("msg-oturum").textContent = r && r.ok ? "✓ Diğer cihazlardan çıkış yapıldı" : "İşlem başarısız";
+        oturumlariCiz();
+      });
+
+      /* ---------- 21) Hesabı dondurma ---------- */
+      $("dondurKaydet").addEventListener("click", async () => {
+        const donduruldu = $("frozenChk").checked;
+        $("msg-dondur").textContent = "Kaydediliyor…";
+        const r = await fetch("/api/profile", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ frozen: donduruldu ? "1" : "0" }) }).catch(() => null);
+        if (!r || !r.ok) { $("msg-dondur").textContent = "Kaydedilemedi."; return; }
+        $("msg-dondur").textContent = donduruldu
+          ? "✓ Hesabınız donduruldu — katalogda görünmüyorsunuz."
+          : "✓ Hesabınız yeniden aktif.";
+        load(false);
+      });
+
+      /* ---------- 10) Müsaitlik hızlı kuralları ---------- */
+      function ayGunleri() {
+        const son = new Date(calY, calM + 1, 0).getDate();
+        return Array.from({ length: son }, (_, i) =>
+          `${calY}-${String(calM + 1).padStart(2, "0")}-${String(i + 1).padStart(2, "0")}`);
+      }
+      $("takvimAraclar").addEventListener("click", e => {
+        const b = e.target.closest("[data-kural]");
+        if (!b) return;
+        const k = b.dataset.kural;
+        ayGunleri().forEach(g => {
+          const gun = new Date(g + "T12:00:00").getDay();       /* 0 pazar, 6 cumartesi */
+          const haftaSonu = gun === 0 || gun === 6;
+          if (k === "temizle") delete AVAIL[g];
+          else if (k === "ay-musait") AVAIL[g] = "musait";
+          else if (k === "haftaici-dolu" && !haftaSonu) AVAIL[g] = "dolu";
+          else if (k === "haftasonu-musait" && haftaSonu) AVAIL[g] = "musait";
+        });
+        renderCal();
+        $("msg-takvim").textContent = "Değişiklikleri kaydetmeyi unutmayın.";
+      });
+      document.querySelectorAll("[data-aralik]").forEach(btn => btn.addEventListener("click", () => {
+        const bas = $("aralikBas").value, bit = $("aralikBit").value;
+        if (!bas || !bit || bas > bit) { $("msg-takvim").textContent = "Geçerli bir tarih aralığı seçin."; return; }
+        const durum = btn.dataset.aralik;
+        for (let d = new Date(bas + "T12:00:00"); d <= new Date(bit + "T12:00:00"); d.setDate(d.getDate() + 1)) {
+          AVAIL[d.toISOString().slice(0, 10)] = durum;
+        }
+        renderCal();
+        $("msg-takvim").textContent = "Aralık işaretlendi — kaydetmeyi unutmayın.";
+      }));
+
       /* ============ Profil tamamlanma ölçeri ============ */
       const TAMAM_MADDE = [
         { ad: "Temel bilgiler", puan: 20, tab: "genel",
@@ -897,7 +1236,10 @@
             msg.textContent = "18 yaş altı için veli bilgileri (ad, 11 haneli TC, telefon) zorunludur."; return;
           }
         }
-        if (key === "olculer" && (!payload.height || !payload.weight)) { msg.textContent = "Boy ve kilo zorunludur."; return; }
+        if (key === "olculer") {
+          if (!payload.height || !payload.weight) { msg.textContent = "Boy ve kilo zorunludur."; return; }
+          payload.olcu_tarih = new Date().toISOString();   /* tazelik hatırlatması sıfırlanır */
+        }
         msg.textContent = "Kaydediliyor…";
         const r = await fetch("/api/profile", {
           method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
@@ -958,10 +1300,16 @@
               <span class="offer-state ${o.status}">${o.status === "beklemede" ? "Yanıt bekliyor" : o.status === "kabul" ? "✓ Kabul ettiniz" : "Reddettiniz"}</span>
             </div>
             <div class="offer-meta">
-              📅 ${o.date || "-"} &nbsp; 📍 ${o.location || "-"} &nbsp; 🕐 ${o.hours || "-"} &nbsp; 💰 ${o.fee || "görüşülecek"}
+              📅 ${o.date || "-"} &nbsp; 📍 ${o.location
+                ? `<a class="gold" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.location)}" target="_blank" rel="noopener" title="Yol tarifi al">${o.location}</a>`
+                : "-"} &nbsp; 🕐 ${o.hours || "-"} &nbsp; 💰 ${o.fee || "görüşülecek"}
               ${o.note ? "<br>📝 " + o.note : ""}
               ${hassas && o.usage ? "<br>📜 <strong>Kullanım kapsamı:</strong> " + o.usage : ""}
               ${o.consent_at ? "<br>✍️ Ek muvafakat onayınız: " + o.consent_at.slice(0,16).replace("T"," ") : ""}
+            </div>
+            <div class="arac-satir">
+              <button type="button" class="btn btn-ghost btn-sm" data-ics="${o.id}">📅 Takvimime Ekle</button>
+              ${o.location ? `<a class="btn btn-ghost btn-sm" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.location)}" target="_blank" rel="noopener">🗺 Yol Tarifi</a>` : ""}
             </div>
             ${o.status === "beklemede" ? `
             ${hassas ? `<label class="checkbox-row mt-2" style="font-size:.84rem">
@@ -1131,6 +1479,16 @@
         const t = new Date(); calY = t.getFullYear(); calM = t.getMonth();
         renderCal(); syncParentFields(); renderMedia(); renderOffers();
 
+        /* Yeni bölümler */
+        cizelgeCiz();
+        kazancCiz();
+        paylasimCiz();
+        onayCiz();
+        olcuHatirlat();
+        oturumlariCiz();
+        const fz = field("frozen");
+        if (fz) fz.checked = ME.profile?.frozen === "1";
+
         const open = refreshSteps();
         if (navigate) showTab(open ? TAB_ORDER[open - 1] : ((ME.offers || []).some(o => o.status === "beklemede") ? "teklifler" : "genel"));
       }
@@ -1156,6 +1514,39 @@
         if (!r || !r.ok) return yaz(d.error || "Şifre değiştirilemedi.", false);
         ["sifre_eski", "sifre_yeni", "sifre_yeni2"].forEach(n => { const f = field(n); if (f) f.value = ""; });
         yaz("✓ Şifreniz değiştirildi.", true);
+      });
+
+      /* ---------- 6) İş teklifini telefon takvimine ekle (.ics) ---------- */
+      $("offersRoot").addEventListener("click", e => {
+        const b = e.target.closest("[data-ics]");
+        if (!b) return;
+        const o = (ME.offers || []).find(x => String(x.id) === b.dataset.ics);
+        if (!o) return;
+        const gun = String(o.date || "").slice(0, 10).replace(/-/g, "");
+        if (!/^\d{8}$/.test(gun)) { alert("Bu teklifin tarihi henüz netleşmemiş."); return; }
+        /* Saat aralığı "09:00-18:00" biçiminde verilmişse kullan */
+        const saatler = String(o.hours || "").match(/(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})/);
+        const bas = saatler ? `${gun}T${saatler[1].padStart(2, "0")}${saatler[2]}00` : gun;
+        const bit = saatler ? `${gun}T${saatler[3].padStart(2, "0")}${saatler[4]}00` : gun;
+        const satirlar = [
+          "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Model of World//Aday Paneli//TR",
+          "BEGIN:VEVENT",
+          "UID:mow-is-" + o.id + "@modelofworld.com",
+          "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z",
+          saatler ? "DTSTART:" + bas : "DTSTART;VALUE=DATE:" + bas,
+          saatler ? "DTEND:" + bit : "DTEND;VALUE=DATE:" + bit,
+          "SUMMARY:" + (o.title || "Model of World işi"),
+          "LOCATION:" + (o.location || ""),
+          "DESCRIPTION:" + [o.fee ? "Ücret: " + o.fee : "", o.hours ? "Saat: " + o.hours : "", o.note || ""]
+            .filter(Boolean).join(" | ").replace(/\n/g, " "),
+          "BEGIN:VALARM", "TRIGGER:-PT12H", "ACTION:DISPLAY",
+          "DESCRIPTION:Yarın Model of World işiniz var", "END:VALARM",
+          "END:VEVENT", "END:VCALENDAR",
+        ];
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([satirlar.join("\r\n")], { type: "text/calendar" }));
+        a.download = "mow-is-" + o.id + ".ics";
+        a.click();
       });
 
       $("logoutBtn").addEventListener("click", async () => {
