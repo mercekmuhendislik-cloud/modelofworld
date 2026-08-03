@@ -523,6 +523,25 @@ section { padding: clamp(64px, 9vw, 120px) 0; }
   letter-spacing: 0.22em; color: var(--text-2); margin-bottom: 12px;
 }
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---------- Çoklu seçim: dil modu anahtarı ve seçili özet ---------- */
+.dil-mod { display: flex; gap: 6px; margin-top: 8px; }
+.mini-chip { font-size: 0.68rem !important; padding: 5px 11px !important; opacity: 0.75; }
+.mini-chip.active { opacity: 1; }
+.secili-ozet { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-top: 10px; }
+.secili-ozet:empty { display: none; }
+.ozet-baslik { font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-2); }
+.ozet-etiket {
+  font: inherit; font-size: 0.74rem; padding: 5px 11px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--gold); color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+}
+.ozet-etiket:hover { background: color-mix(in srgb, var(--gold) 22%, transparent); }
+.ozet-not { font-size: 0.72rem; color: var(--text-2); font-style: italic; }
+
+/* ---------- Model detay: video book listesi ---------- */
+.video-liste { display: grid; gap: 16px; }
+.video-liste video, .video-liste iframe { width: 100%; max-width: 720px; }
 .chip {
   padding: 7px 14px; border-radius: 999px; font-size: 0.78rem;
   border: 1px solid var(--line); color: var(--text-2);

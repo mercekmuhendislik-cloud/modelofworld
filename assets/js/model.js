@@ -249,8 +249,27 @@
   }
   sekmeler.forEach(fillPane);
 
-  $("pane-video").innerHTML = t.video
-    ? `<video controls playsinline style="width:100%;max-width:720px;border-radius:14px" src="${esc(t.video)}"></video>`
+  /* Video Book: panelden YÜKLENEN dosyalar + varsa yapıştırılan bağlantı */
+  const videolar = Array.isArray(t.videos) ? t.videos : [];
+  const gomulu = ham => {
+    /* YouTube / Vimeo bağlantısını gömülebilir adrese çevir */
+    const yt = String(ham).match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/);
+    if (yt) return `<iframe src="https://www.youtube.com/embed/${yt[1]}" title="Video book" allowfullscreen
+      style="width:100%;aspect-ratio:16/9;border:0;border-radius:14px"></iframe>`;
+    const vm = String(ham).match(/vimeo\.com\/(\d+)/);
+    if (vm) return `<iframe src="https://player.vimeo.com/video/${vm[1]}" title="Video book" allowfullscreen
+      style="width:100%;aspect-ratio:16/9;border:0;border-radius:14px"></iframe>`;
+    return `<video controls playsinline preload="metadata"
+      style="width:100%;max-width:720px;border-radius:14px" src="${esc(ham)}"></video>`;
+  };
+  $("pane-video").innerHTML = (videolar.length || t.video)
+    ? '<div class="video-liste">' +
+        videolar.map(v => `<video controls playsinline preload="metadata"
+          style="width:100%;border-radius:14px;background:#000" src="${esc(v)}">
+          Tarayıcınız bu videoyu oynatamadı — <a class="gold" href="${esc(v)}" download>indirerek izleyin</a>.
+        </video>`).join("") +
+        (t.video ? gomulu(t.video) : "") +
+      '</div>'
     : `<div class="video-slot">
          <div class="play">▶</div>
          <strong style="color:var(--text)">Video book hazırlanıyor</strong>

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=cfeb9e0">
+  <link rel="stylesheet" href="assets/css/style.css?v=b10795b">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -49,7 +49,7 @@
     .crop-controls { display:flex; gap:10px; align-items:center; margin:14px 0; }
     .crop-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
 
-    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=cfeb9e0 */
+    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=b10795b */
 
     /* Profil tamamlanma ölçeri */
     .tamam-kart { border:1px solid var(--gold); border-radius:14px; padding:18px 20px; margin-bottom:24px;
@@ -87,8 +87,8 @@
     #ilkSifreKutu input:focus { outline:none; border-color:var(--gold); }
     #ilkSifreHata { color:var(--danger); font-size:.83rem; margin-top:10px; min-height:1em; line-height:1.6; }
   </style>
-  <meta name="mow-surum" content="cfeb9e0">
-  <script src="assets/js/surum-kontrol.js?v=cfeb9e0"></script>
+  <meta name="mow-surum" content="b10795b">
+  <script src="assets/js/surum-kontrol.js?v=b10795b"></script>
 </head>
 <body data-page="panel">
   <div id="site-header"></div>
@@ -507,8 +507,8 @@
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=cfeb9e0"></script>
-  <script src="assets/js/main.js?v=cfeb9e0"></script>
+  <script src="assets/js/data.js?v=b10795b"></script>
+  <script src="assets/js/main.js?v=b10795b"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -550,7 +550,7 @@
       $("ilkSifre2").addEventListener("keydown", e => { if (e.key === "Enter") $("ilkSifreKaydet").click(); });
 
       const yasHesap = b => { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); };
-      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=cfeb9e0) */
+      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=b10795b) */
       const makeMsel = window.VERA.makeMsel;
       const catSel = makeMsel($("catSel"),
         Object.entries(window.VERA.CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
@@ -705,6 +705,21 @@
         e.target.value = ""; load(false);
       }));
       $("videoInput").addEventListener("change", async e => {
+        /* Yukleme oncesi boyut/format kontrolu — sunucuya bosuna 80 MB gonderilmesin */
+        const dosya = e.target.files[0];
+        if (dosya) {
+          const mb = dosya.size / 1024 / 1024;
+          if (mb > 80) {
+            $("uploadStatus").textContent =
+              `Video ${mb.toFixed(0)} MB — en fazla 80 MB yükleyebilirsiniz. Telefonunuzdan gönderirken ` +
+              `"düşük kalite / daha küçük boyut" seçeneğini kullanın ya da videoyu kısaltın.`;
+            e.target.value = ""; return;
+          }
+          if (/\.(mov|m4v)$/i.test(dosya.name)) {
+            $("uploadStatus").textContent =
+              "Not: .MOV dosyaları bazı tarayıcılarda oynatılamıyor. Mümkünse MP4 yükleyin — yükleme sürüyor…";
+          }
+        }
         const f = e.target.files[0]; if (!f) return;
         const st = $("videoStatus");
         try { st.textContent = "Video yükleniyor… (boyuta göre sürebilir)"; await upload("video", "genel", f, f.name); st.textContent = "✓ Yüklendi"; }

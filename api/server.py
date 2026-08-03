@@ -24,7 +24,7 @@ SESSION_DAYS = 30
 
 UPLOAD_RULES = {
     "photo": ({".jpg", ".jpeg", ".png", ".webp", ".heic"}, 12 * 1024 * 1024, 30),
-    "video": ({".mp4", ".mov", ".webm"}, 80 * 1024 * 1024, 3),
+    "video": ({".mp4", ".mov", ".webm", ".m4v"}, 80 * 1024 * 1024, 6),
     "belge": ({".pdf", ".jpg", ".jpeg", ".png"}, 10 * 1024 * 1024, 3),
     "imza":  ({".png", ".jpg", ".jpeg"}, 2 * 1024 * 1024, 3),
     "kimlik": ({".pdf", ".jpg", ".jpeg", ".png"}, 8 * 1024 * 1024, 2),
@@ -358,7 +358,13 @@ def cast_list():
             "tags": yetenekler,
             "gradient": ["#2b1d34", "#7a5c8f"],
             "photo": tumFoto[0] if tumFoto else "",
-            "photos": gruplar, "video": r["video_link"] or "",
+            "photos": gruplar,
+            "video": r["video_link"] or "",          # yapistirilan baglanti (YouTube vb.)
+            "videos": [                              # panelden yuklenen video dosyalari
+                "/api/cast-video/%d" % f["id"]
+                for f in db().execute("SELECT id FROM photos WHERE user_id=? AND kind='video'"
+                                      " AND deleted=0 ORDER BY id", (uid,))
+            ],
             "bio": r["about"] or "",
         })
     return liste
@@ -509,6 +515,18 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(raw)
             return
+
+        m = re.match(r"^/api/cast-video/(\d+)$", p)
+        if m:
+            row = db().execute("""SELECT ph.filename, ph.thumb FROM photos ph JOIN profiles pr ON pr.user_id = ph.user_id
+                WHERE ph.id=? AND ph.deleted=0 AND ph.kind='video'
+                  AND COALESCE(pr.published,'0') = '1'
+                  AND COALESCE(pr.status,'') = 'onaylandi'
+                  AND COALESCE(pr.privacy,'private') = 'public'""", (int(m.group(1)),)).fetchone()
+            if not row: return self._json(404, {"error": "Yok"})
+            fp = os.path.join(UPLOAD_DIR, row["filename"])
+            if not os.path.exists(fp): return self._json(404, {"error": "Dosya yok"})
+            return self._dosya_gonder(fp, "public")
 
         m = re.match(r"^/api/cast-photo/(\d+)$", p)
         if m:
