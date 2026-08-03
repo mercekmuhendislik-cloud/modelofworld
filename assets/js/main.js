@@ -105,7 +105,11 @@
           </div>
           <div>
             <h4>Menü</h4>
-            <ul>${NAV.map(n => `<li><a href="${n.href}">${n.label}</a></li>`).join("")}</ul>
+            <ul>${NAV.map(n => `<li><a href="${n.href}">${n.label}</a></li>`).join("")}
+              <li><a href="proje">Projeler</a></li>
+              <li><a href="randevu">Görüşme Ayarla</a></li>
+              <li><a href="basin">Basın Kiti</a></li>
+            </ul>
           </div>
           <div>
             <h4>Hizmetler</h4>
@@ -439,6 +443,7 @@
       <a class="talent-card reveal" href="model-detay?id=${t.id}" data-cursor="İncele">
         <div class="talent-media">
           <span class="talent-badge">${cat.short || cat.label}</span>
+          ${t.musait ? '<span class="talent-badge musait" title="Seçtiğiniz tarihte müsait olduğunu bildirdi">O gün müsait</span>' : ""}
           <button class="fav-btn${fav ? " active" : ""}" data-fav="${t.id}" aria-label="Cast listeme ekle" title="Cast Listem'e ekle/çıkar">
             <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.8-10-9.3C.6 8.4 2.4 4.5 6 4.5c2.2 0 3.6 1.2 6 3.8 2.4-2.6 3.8-3.8 6-3.8 3.6 0 5.4 3.9 4 7.2C19.5 16.2 12 21 12 21Z"/></svg>
           </button>

@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=c09136c">
+  <link rel="stylesheet" href="assets/css/style.css?v=7c8c741">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -312,8 +312,8 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
-  <meta name="mow-surum" content="c09136c">
-  <script src="assets/js/surum-kontrol.js?v=c09136c"></script>
+  <meta name="mow-surum" content="7c8c741">
+  <script src="assets/js/surum-kontrol.js?v=7c8c741"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -362,6 +362,45 @@
           </div>
         </div>
 
+        <div class="form-card" id="epostaCard" hidden style="margin-bottom:18px;max-width:640px">
+          <h3 style="font-size:1.05rem;margin-bottom:6px">✉️ E-posta Gönderim Ayarları</h3>
+          <p class="mini" style="margin-bottom:12px">Bu bilgiler girilene kadar sistem e-posta göndermez.
+            Kullandığınız posta hesabının SMTP bilgilerini yazın (kurumsal posta ya da Gmail uygulama şifresi).
+            <strong id="epostaDurum"></strong></p>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr">
+            <div class="field"><label>SMTP Sunucusu</label><input type="text" id="smHost" placeholder="mail.modelofworld.com"></div>
+            <div class="field"><label>Port</label><input type="number" id="smPort" placeholder="587"></div>
+            <div class="field"><label>Kullanıcı adı</label><input type="text" id="smUser" placeholder="info@modelofworld.com" autocomplete="off"></div>
+            <div class="field"><label>Şifre</label><input type="password" id="smPass" placeholder="(değiştirmeyecekseniz boş bırakın)" autocomplete="new-password"></div>
+            <div class="field"><label>Gönderen adresi</label><input type="text" id="smFrom" placeholder="info@modelofworld.com"></div>
+            <div class="field"><label>Gönderen adı</label><input type="text" id="smFromAd" placeholder="Model of World"></div>
+            <div class="field full"><label>Bildirim adresi (form/teklif bildirimleri buraya düşer)</label>
+              <input type="text" id="smTo" placeholder="info@modelofworld.com, satis@modelofworld.com"></div>
+            <div class="field full">
+              <div class="checkbox-row"><input type="checkbox" id="smTls" checked>
+                <label for="smTls" style="margin:0;text-transform:none;letter-spacing:.02em;font-size:.86rem">TLS kullan (587 için işaretli olmalı; 465 kullanıyorsanız kaldırın)</label>
+              </div>
+            </div>
+            <div class="full adm-row">
+              <button class="btn btn-gold btn-sm" id="smKaydet">Kaydet</button>
+              <input class="adm-input" id="smTestAdres" placeholder="test gönderilecek adres" style="min-width:200px">
+              <button class="btn btn-ghost btn-sm" id="smTest">📨 Test E-postası Gönder</button>
+              <span class="mini" id="smMsg"></span>
+            </div>
+          </div>
+
+          <h3 style="font-size:1.05rem;margin:22px 0 6px">💾 Yedekleme</h3>
+          <p class="mini" id="yedekBilgi">—</p>
+          <div class="adm-row">
+            <button class="btn btn-gold btn-sm" id="yedekSimdi">💾 Şimdi Yedek Al</button>
+            <button class="btn btn-ghost btn-sm" id="backupBtn2">⬇ Yedeği Bilgisayarıma İndir</button>
+            <span class="mini" id="yedekMsg"></span>
+          </div>
+          <p class="mini" style="margin-top:8px">Sunucu her gün kendiliğinden yedek alır ve son 14 kopyayı saklar.
+            Yedeklerin ikinci bir yere (bulut klasörü / harici disk) kopyalanması için sunucuda
+            <code>MOW_YEDEK_KOPYA</code> ortam değişkenine hedef klasörü yazın.</p>
+        </div>
+
         <div class="form-card" id="pwCard" hidden style="margin-bottom:18px;max-width:640px">
           <h3 style="font-size:1.05rem;margin-bottom:12px">🔑 Şifre Değiştir</h3>
           <div class="form-grid" style="grid-template-columns:1fr 1fr">
@@ -408,6 +447,28 @@
             </select>
             <button class="btn btn-gold btn-sm" id="nuAdd">+ Ekle</button>
             <span class="mini" id="nuMsg"></span>
+          </div>
+        </div>
+
+        <!-- RANDEVU SAATLERİ (sadece Yönetici) -->
+        <div class="form-card" id="rndCard" hidden style="margin-bottom:18px;max-width:760px">
+          <h3 style="font-size:1.05rem;margin-bottom:4px">📅 Görüşme Randevusu Saatleri</h3>
+          <p class="mini" style="margin-bottom:12px">Sitedeki <strong>Görüşme Ayarla</strong> sayfasında müşterilere
+            gösterilecek saatler. Dolu saatler ve geçmiş saatler otomatik olarak çıkarılır.</p>
+          <div class="adm-row" id="rndGunler" style="margin-bottom:10px"></div>
+          <div class="edit-grid">
+            <div><label>Başlangıç</label><input class="adm-input" id="rBas" type="time"></div>
+            <div><label>Bitiş</label><input class="adm-input" id="rBit" type="time"></div>
+            <div><label>Görüşme süresi (dakika)</label><input class="adm-input" id="rDilim" type="number" min="10" max="120"></div>
+            <div><label>Mola başlangıcı</label><input class="adm-input" id="rMolaBas" type="time"></div>
+            <div><label>Mola bitişi</label><input class="adm-input" id="rMolaBit" type="time"></div>
+            <div><label>En erken kaç saat sonrası</label><input class="adm-input" id="rErken" type="number" min="0" max="72"></div>
+            <div><label>Kaç gün ileriye randevu</label><input class="adm-input" id="rGec" type="number" min="1" max="180"></div>
+          </div>
+          <div class="adm-row" style="margin-top:12px">
+            <button class="btn btn-gold btn-sm" id="rSave">💾 Kaydet</button>
+            <a class="btn btn-ghost btn-sm" href="randevu" target="_blank">Sayfayı Gör</a>
+            <span class="mini" id="rMsg"></span>
           </div>
         </div>
 
@@ -460,6 +521,7 @@
           <button class="btn btn-ghost btn-sm" id="bulkKars" title="2–4 üyeyi ölçü ve fotoğraflarıyla yan yana görün">⚖ Karşılaştır</button>
           <button class="btn btn-gold btn-sm" id="bulkSunum" title="Seçili kadroyu tek dosyada müşteriye sunun (PDF olarak kaydedilebilir)">📄 Cast Sunumu</button>
           <button class="btn btn-ghost btn-sm" id="bulkWa" title="Seçili kadroya WhatsApp'tan tek tek hazır mesaj gönderin">💬 WhatsApp Listesi</button>
+          <button class="btn btn-ghost btn-sm" id="bulkDuyuru" title="Seçili kadroya tek seferde e-posta duyurusu gönderin">📢 E-posta Duyurusu</button>
           <button class="btn btn-tehlike btn-sm" id="bulkDel" title="Seçili üyeleri çöp kutusuna taşır — Silinenler sekmesinden geri alınabilir">🗑 Toplu Sil</button>
           <button class="btn btn-ghost btn-sm" id="bulkClear">Seçimi Bırak</button>
         </div>
@@ -639,6 +701,25 @@
         <span class="mini" id="waSayac"></span>
       </div>
       <div class="wa-liste" id="waListe"></div>
+    </div>
+  </div>
+
+  <!-- Toplu e-posta duyurusu -->
+  <div class="genis-katman" id="duyuruKatman">
+    <div class="genis-kutu" style="width:min(620px,100%)" role="dialog" aria-modal="true" aria-label="E-posta duyurusu">
+      <button class="genis-kapat" data-genis-kapat="duyuruKatman" aria-label="Kapat">×</button>
+      <h3>Kadroya E-posta Duyurusu</h3>
+      <p class="mini" id="duyuruKimlere">—</p>
+      <label class="mini" style="display:block;margin:12px 0 4px">Hazır duyuru</label>
+      <select class="adm-input" id="duyuruSablon" style="width:100%"><option value="">Seçin…</option></select>
+      <label class="mini" style="display:block;margin:12px 0 4px">Konu</label>
+      <input class="adm-input" id="duyuruKonu" style="width:100%" placeholder="örn. Yarın casting var">
+      <label class="mini" style="display:block;margin:12px 0 4px">Mesaj — <code>{ad}</code> kişinin adıyla değişir</label>
+      <textarea class="adm-input" id="duyuruGovde" rows="7" style="width:100%"></textarea>
+      <div class="adm-row">
+        <button class="btn btn-gold btn-sm" id="duyuruGonder">📢 Gönder</button>
+        <span class="mini" id="duyuruMsg"></span>
+      </div>
     </div>
   </div>
 
@@ -929,7 +1010,9 @@
         ["Gelen formlar", renderSubs],
         ["Günlük", renderLogs], ["Paylaşımlar", renderShares], ["Yetkililer", renderAdmins],
         ["Oturumlar", renderSessions], ["2FA", renderTotp], ["Görevler", renderTasks],
-        ["Araçlar", renderTools], ["Seçim", syncBulk], ["Sekme sayaçları", updateTabCounts],
+        ["Araçlar", renderTools], ["E-posta ayarı", renderEposta], ["Randevu ayarı", renderRandevu],
+        ["Etiketler", renderEtiketler],
+        ["Seçim", syncBulk], ["Sekme sayaçları", updateTabCounts],
       ];
       const patlayan = [];
       for (const [ad, fn] of bolumler) {
@@ -1271,6 +1354,85 @@
       if (son) toast(son, "hata");
     });
 
+    /* =========================================================
+       E-posta ayarları + yedekleme (Ayarlar sekmesi)
+       ========================================================= */
+    function renderEposta() {
+      const e = DATA.eposta || {};
+      $("epostaCard").hidden = DATA.me?.role !== "admin";
+      $("smHost").value = e.host || "";
+      $("smPort").value = e.port || 587;
+      $("smUser").value = e.user || "";
+      $("smFrom").value = e.from || "";
+      $("smFromAd").value = e.from_ad || "Model of World";
+      $("smTo").value = e.to || "";
+      $("smTls").checked = e.tls !== false;
+      $("smPass").placeholder = e.sifre_var ? "(kayıtlı — değiştirmeyecekseniz boş bırakın)" : "posta şifresi";
+      $("epostaDurum").innerHTML = e.kurulu
+        ? '<span style="color:#20744c">✓ Kurulu — bildirimler gönderiliyor.</span>'
+        : '<span style="color:#c33">⚠️ Kurulu değil — hiçbir e-posta gönderilmiyor.</span>';
+      const y = DATA.son_yedek_bilgi || "";
+      $("yedekBilgi").innerHTML = y
+        ? `Son yedek: <strong>${esc(y)}</strong>`
+        : "Henüz otomatik yedek alınmamış (sunucu açıldıktan kısa süre sonra ilk yedeği alır).";
+    }
+    $("smKaydet").addEventListener("click", async () => {
+      const r = await api("/api/admin/smtp", {
+        kaydet: 1, host: $("smHost").value, port: +$("smPort").value || 587,
+        tls: $("smTls").checked, user: $("smUser").value, pass: $("smPass").value,
+        from: $("smFrom").value, from_ad: $("smFromAd").value, to: $("smTo").value,
+      });
+      $("smMsg").textContent = r.ok ? "✓ Kaydedildi" : ("⚠️ " + (r.err || "Kaydedilemedi"));
+      if (r.ok) { $("smPass").value = ""; load(); }
+    });
+    $("smTest").addEventListener("click", async () => {
+      $("smMsg").textContent = "Gönderiliyor…";
+      const r = await api("/api/admin/smtp", { test: 1, test_adres: $("smTestAdres").value });
+      $("smMsg").textContent = r.ok ? "✓ " + (r.data.mesaj || "Gönderildi") : "⚠️ " + (r.err || "Gönderilemedi");
+      toast(r.ok ? "📨 Test e-postası gönderildi" : (r.err || "Gönderilemedi"), r.ok ? "" : "hata");
+    });
+    /* ---------- Randevu saatleri ---------- */
+    const RND_GUN = [[1, "Pzt"], [2, "Sal"], [3, "Çar"], [4, "Per"], [5, "Cum"], [6, "Cmt"], [7, "Paz"]];
+    function renderRandevu() {
+      const yonetici = DATA.me?.role === "admin";
+      $("rndCard").hidden = !yonetici;
+      if (!yonetici) return;
+      const a = DATA.randevu_ayar || {};
+      $("rndGunler").innerHTML = '<span class="mini">Görüşme günleri:</span>' + RND_GUN.map(([n, ad]) =>
+        `<label class="mini" style="display:flex;gap:5px;align-items:center">
+           <input type="checkbox" class="selbox rGun" value="${n}" ${(a.gunler || []).includes(n) ? "checked" : ""}> ${ad}</label>`).join("");
+      $("rBas").value = a.bas || "10:00";
+      $("rBit").value = a.bit || "18:00";
+      $("rDilim").value = a.dilim || 15;
+      $("rMolaBas").value = a.mola_bas || "";
+      $("rMolaBit").value = a.mola_bit || "";
+      $("rErken").value = a.en_erken_saat ?? 3;
+      $("rGec").value = a.en_gec_gun ?? 45;
+    }
+    $("rSave").addEventListener("click", async () => {
+      const gunler = [...document.querySelectorAll(".rGun:checked")].map(c => +c.value);
+      if (!gunler.length) { $("rMsg").textContent = "⚠️ En az bir gün seçin"; return; }
+      $("rMsg").textContent = "Kaydediliyor…";
+      const r = await api("/api/admin/randevu-ayar", {
+        gunler, bas: $("rBas").value, bit: $("rBit").value, dilim: +$("rDilim").value,
+        mola_bas: $("rMolaBas").value, mola_bit: $("rMolaBit").value,
+        en_erken_saat: +$("rErken").value, en_gec_gun: +$("rGec").value,
+      });
+      $("rMsg").textContent = r.ok ? "✓ Kaydedildi" : "⚠️ " + (r.err || "Kaydedilemedi");
+      toast(r.ok ? "📅 Randevu saatleri güncellendi" : (r.err || "Kaydedilemedi"), r.ok ? "" : "hata");
+      if (r.ok) load();
+    });
+
+    $("yedekSimdi").addEventListener("click", async () => {
+      $("yedekMsg").textContent = "Yedek alınıyor…";
+      const r = await api("/api/admin/yedek-simdi", {});
+      $("yedekMsg").textContent = r.ok
+        ? `✓ ${r.data.bilgi.ad} (${Math.round(r.data.bilgi.boyut / 1024)} KB)${r.data.bilgi.not || ""}`
+        : "⚠️ " + (r.err || "Alınamadı");
+      if (r.ok) { toast("💾 Yedek alındı"); load(); }
+    });
+    $("backupBtn2").addEventListener("click", () => { toast("💾 Yedek indiriliyor…"); location.href = "/api/admin/backup"; });
+
     $("backupBtn").addEventListener("click", () => { toast("💾 Yedek indiriliyor…"); location.href = "/api/admin/backup"; });
     $("maintBtn").addEventListener("click", async () => {
       const yeni = !DATA.maintenance;
@@ -1552,6 +1714,55 @@
       window.open("sunum?ids=" + ids.join(","), "_blank", "noopener");
     });
 
+    /* --- Toplu e-posta duyurusu --- */
+    const DUYURU_SABLON = [
+      ["Casting duyurusu", "Casting daveti — Model of World",
+       "Merhaba {ad},\n\nYaklaşan bir proje için casting yapıyoruz. İlgileniyorsanız bu e-postayı yanıtlayın " +
+       "ya da WhatsApp'tan bize yazın.\n\nTarih:\nYer:\nAranan profil:\n\nModel of World Ajans"],
+      ["Profil güncelleme", "Profilinizi güncelleyin — Model of World",
+       "Merhaba {ad},\n\nCasting seçkilerinde öne çıkabilmeniz için profilinizdeki ölçülerin ve fotoğrafların " +
+       "güncel olması gerekiyor. Panelinizden birkaç dakikada tamamlayabilirsiniz:\n" +
+       "https://www.modelofworld.com/uye\n\nModel of World Ajans"],
+      ["Müsaitlik hatırlatması", "Müsaitlik takviminizi işaretler misiniz?",
+       "Merhaba {ad},\n\nÖnümüzdeki dönem için iş planlaması yapıyoruz. Panelinizdeki takvimden müsait " +
+       "olduğunuz günleri işaretlerseniz size uygun işlerde önceliğiniz olur:\n" +
+       "https://www.modelofworld.com/uye\n\nModel of World Ajans"],
+      ["Genel duyuru", "Model of World — bilgilendirme",
+       "Merhaba {ad},\n\n\n\nModel of World Ajans"],
+    ];
+    $("bulkDuyuru").addEventListener("click", () => {
+      const ids = seciliIds();
+      if (!ids.length) return toast("Önce duyuru gidecek üyeleri seçin", "hata");
+      if (!DATA.eposta?.kurulu)
+        return toast("Önce Ayarlar sekmesinden e-posta gönderim bilgilerini girin", "hata");
+      const kisiler = ids.map(id => uyeBul(id)).filter(Boolean);
+      const epostali = kisiler.filter(u => (u.email || "").includes("@")).length;
+      $("duyuruKimlere").innerHTML = `${kisiler.length} üye seçili · <strong>${epostali}</strong> kişiye gidecek` +
+        (kisiler.length - epostali ? ` · ${kisiler.length - epostali} üyenin e-postası yok` : "");
+      $("duyuruSablon").innerHTML = '<option value="">Seçin…</option>' +
+        DUYURU_SABLON.map(([ad], i) => `<option value="${i}">${ad}</option>`).join("");
+      $("duyuruMsg").textContent = "";
+      $("duyuruKatman")._ids = ids;
+      $("duyuruKatman").classList.add("open");
+    });
+    $("duyuruSablon").addEventListener("change", e => {
+      const s = DUYURU_SABLON[+e.target.value];
+      if (s) { $("duyuruKonu").value = s[1]; $("duyuruGovde").value = s[2]; }
+    });
+    $("duyuruGonder").addEventListener("click", async () => {
+      const ids = $("duyuruKatman")._ids || [];
+      const konu = $("duyuruKonu").value.trim(), govde = $("duyuruGovde").value.trim();
+      if (!konu || !govde) return toast("Konu ve mesaj gerekli", "hata");
+      if (!(await onayIste(`${ids.length} üyeye "${konu}" başlıklı e-posta gönderilecek.`,
+            "📢 Gönder", "Toplu Duyuru", "Gönderilen e-posta geri alınamaz.", false))) return;
+      $("duyuruMsg").textContent = "Gönderiliyor…";
+      const r = await api("/api/admin/duyuru", { konu, govde, user_ids: ids });
+      if (!r.ok) { $("duyuruMsg").textContent = "⚠️ " + (r.err || "Gönderilemedi"); return; }
+      $("duyuruMsg").textContent = `✓ ${r.data.gidecek} kişiye gönderiliyor` +
+        (r.data.epostasiz ? ` · ${r.data.epostasiz} üyenin e-postası yok` : "");
+      toast(`📢 Duyuru ${r.data.gidecek} kişiye gönderiliyor — sonuç günlükte görünecek`);
+    });
+
     /* --- WhatsApp toplu mesaj listesi --- */
     const WA_SABLON = [
       ["Casting daveti", "Merhaba {ad}, Model of World'den yazıyoruz. Yarın için bir casting davetimiz var — müsait misiniz?"],
@@ -1721,7 +1932,7 @@
       ["finance", "💰", "Finansal Takip",      ["financeH2","financeTab"]],
       ["formlar", "✉️", "Gelen Formlar",      ["subTitle","subInfo","frmSekme","subFiltre","subs"]],
       ["ekip",    "📌", "Ekip & Görevler",    ["tasksH2","tasksCard","usersCard"]],
-      ["ayarlar", "⚙️", "Ayarlar & Güvenlik", ["pwCard","sessCard"]],
+      ["ayarlar", "⚙️", "Ayarlar & Güvenlik", ["epostaCard","rndCard","pwCard","sessCard"]],
     ];
     (function buildTabs() {
       const layout = document.createElement("div");

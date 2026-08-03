@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=c09136c">
+  <link rel="stylesheet" href="assets/css/style.css?v=7c8c741">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <script type="application/ld+json">
   {
@@ -53,8 +53,8 @@
     "knowsAbout": ["fuar hostesi", "manken ajansı", "katalog modeli", "defile organizasyonu", "fotoğraf prodüksiyonu", "etkinlik yönetimi"]
   }
   </script>
-  <meta name="mow-surum" content="c09136c">
-  <script src="assets/js/surum-kontrol.js?v=c09136c"></script>
+  <meta name="mow-surum" content="7c8c741">
+  <script src="assets/js/surum-kontrol.js?v=7c8c741"></script>
 </head>
 <body data-page="home">
   <div id="site-header"></div>
@@ -177,25 +177,81 @@
     </div>
   </section>
 
+  <!-- ÇALIŞILAN MARKALAR (yalnızca izinli, gerçek referanslar varsa görünür) -->
+  <div class="brands-strip" id="brandsStrip" hidden>
+    <div class="container">
+      <p class="brands-title">Çalıştığımız markalar</p>
+      <div class="brands-row" id="brandsRow"></div>
+    </div>
+  </div>
+
+  <!-- MÜŞTERİ YORUMLARI (yalnızca izinli, gerçek yorumlar varsa görünür) -->
+  <section id="testimonialsSection" hidden>
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Referanslar</span>
+        <h2>Müşterilerimiz Ne Diyor?</h2>
+      </div>
+      <div class="testimonials-grid" id="testimonialsRoot"></div>
+    </div>
+  </section>
+
   <!-- CTA -->
   <section class="cta-band">
     <div class="container reveal">
       <span class="eyebrow" style="justify-content:center">Projeniz mi var?</span>
       <h2>Markanız için doğru yüzleri<br>24 saat içinde önerelim.</h2>
       <p>Teklif formunu doldurun; ekibimiz aynı gün içinde size özel cast seçkisi ve fiyat çalışmasıyla dönüş yapsın.</p>
-      <a class="btn btn-gold" href="teklif">Ücretsiz Teklif Alın</a>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a class="btn btn-gold" href="teklif">Ücretsiz Teklif Alın</a>
+        <a class="btn btn-ghost" href="randevu">15 Dakikada Brief Verin</a>
+      </div>
     </div>
   </section>
 
   <div id="site-footer"></div>
 
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=c09136c"></script>
-  <script src="assets/js/main.js?v=c09136c"></script>
-  <script src="assets/js/analytics.js?v=c09136c"></script>
+  <script src="assets/js/data.js?v=7c8c741"></script>
+  <script src="assets/js/main.js?v=7c8c741"></script>
+  <script src="assets/js/analytics.js?v=7c8c741"></script>
   <script>
     (function () {
-      const { TALENTS, SERVICES, PROJECTS, COUNTERS, renderTalentCard, observeNew } = window.VERA;
+      const { TALENTS, SERVICES, PROJECTS, COUNTERS, BRANDS, TESTIMONIALS,
+              renderTalentCard, observeNew } = window.VERA;
+      const kacis = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+      /* --- Marka şeridi ve referanslar ---
+         Yalnızca ornek:true taşımayan kayıtlar yayınlanır. Böylece izni olmayan
+         bir marka adı veya uydurma bir yorum siteye çıkmaz; gerçeğini data.js'e
+         ekler ve ornek satırını silersiniz, bölüm kendiliğinden görünür. */
+      const gercekMarkalar = (BRANDS || []).filter(b => !b.ornek);
+      if (gercekMarkalar.length) {
+        document.getElementById("brandsStrip").hidden = false;
+        document.getElementById("brandsRow").innerHTML = gercekMarkalar.map(b => {
+          const govde = b.logo
+            ? `<img src="${kacis(b.logo)}" alt="${kacis(b.name)}" loading="lazy">`
+            : kacis(b.name);
+          return b.href
+            ? `<a class="brand-logo" href="${kacis(b.href)}" target="_blank" rel="noopener nofollow" title="${kacis(b.name)}">${govde}</a>`
+            : `<span class="brand-logo" title="${kacis(b.name)}">${govde}</span>`;
+        }).join("");
+      }
+
+      const gercekYorumlar = (TESTIMONIALS || []).filter(t => !t.ornek);
+      if (gercekYorumlar.length) {
+        document.getElementById("testimonialsSection").hidden = false;
+        document.getElementById("testimonialsRoot").innerHTML = gercekYorumlar.map((t, i) => `
+          <div class="testimonial reveal" data-delay="${i % 3}">
+            <span class="quote-mark">“</span>
+            <blockquote>${kacis(t.quote)}</blockquote>
+            <div class="t-author">
+              ${t.logo ? `<img src="${kacis(t.logo)}" alt="${kacis(t.company)}" style="height:26px;width:auto;margin-bottom:8px;display:block">` : ""}
+              <strong>${kacis(t.name)}</strong>
+              <span>${[t.role, t.company].filter(Boolean).map(kacis).join(" · ")}</span>
+            </div>
+          </div>`).join("");
+      }
 
       /* --- Hızlı Cast Arama: çoklu kategori seçimi --- */
       const CAT_META = window.VERA.CATEGORIES;

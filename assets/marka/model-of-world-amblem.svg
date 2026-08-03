@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Model of World amblemi">
+  <title>Model of World — yalnız amblem (MW madalyonu)</title>
+  <circle cx="60" cy="62" r="52" fill="none" stroke="#d34f6e" stroke-width="3"/>
+  <path d="M60 2 L63.4 10.6 L72 14 L63.4 17.4 L60 26 L56.6 17.4 L48 14 L56.6 10.6 Z" fill="#d34f6e"/>
+  <text x="60" y="80" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+        font-size="44" font-weight="600" letter-spacing="1" fill="#d34f6e">MW</text>
+</svg>

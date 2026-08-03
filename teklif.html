@@ -21,10 +21,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=c09136c">
+  <link rel="stylesheet" href="assets/css/style.css?v=7c8c741">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
-  <meta name="mow-surum" content="c09136c">
-  <script src="assets/js/surum-kontrol.js?v=c09136c"></script>
+  <meta name="mow-surum" content="7c8c741">
+  <script src="assets/js/surum-kontrol.js?v=7c8c741"></script>
 </head>
 <body data-page="teklif">
   <div id="site-header"></div>
@@ -36,6 +36,7 @@
       <p class="muted mt-2" style="max-width:58ch;margin-inline:auto">Formu doldurun; ekibimiz aynı iş günü içinde size özel cast seçkisi ve fiyat çalışmasıyla dönüş yapsın.</p>
       <p class="mt-2" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
         <a class="btn btn-ghost btn-sm" href="nasil-calisir#markalar">Süreç Nasıl İşliyor?</a>
+        <a class="btn btn-ghost btn-sm" href="randevu">Form Yerine Görüşelim</a>
         <a class="btn btn-gold btn-sm" id="waTeklif" target="_blank" rel="noopener">WhatsApp'tan Yazın</a>
       </p>
     </div>
@@ -66,7 +67,7 @@
             </div>
             <div class="field">
               <label>Telefon <span class="req">*</span></label>
-              <input type="tel" name="phone" inputmode="numeric" maxlength="14" required pattern="[0-9+() \-]{10,}" placeholder="05xx xxx xx xx">
+              <input type="tel" name="phone" inputmode="numeric" maxlength="14" required pattern="[0-9+\(\)\s\-]{10,}" placeholder="05xx xxx xx xx">
               <span class="err">Geçerli bir telefon numarası girin.</span>
             </div>
 
@@ -190,10 +191,10 @@
   <div id="site-footer"></div>
 
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=c09136c"></script>
-  <script src="assets/js/main.js?v=c09136c"></script>
-  <script src="assets/js/analytics.js?v=c09136c"></script>
-  <script src="assets/js/forms.js?v=c09136c"></script>
+  <script src="assets/js/data.js?v=7c8c741"></script>
+  <script src="assets/js/main.js?v=7c8c741"></script>
+  <script src="assets/js/analytics.js?v=7c8c741"></script>
+  <script src="assets/js/forms.js?v=7c8c741"></script>
   <script>
     document.getElementById("faqClients").innerHTML = window.VERA.FAQ_CLIENTS.map(f => `
       <details class="acc-item"><summary>${f.q}</summary><div class="acc-body">${f.a}</div></details>`).join("");

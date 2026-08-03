@@ -99,6 +99,10 @@ def init_db():
       id INTEGER PRIMARY KEY, job_id INTEGER, user_id INTEGER,
       status TEXT DEFAULT 'beklemede', updated TEXT, created TEXT);
     CREATE TABLE IF NOT EXISTS settings(k TEXT PRIMARY KEY, v TEXT);
+    CREATE TABLE IF NOT EXISTS customers(
+      id INTEGER PRIMARY KEY, name TEXT, contact TEXT, phone TEXT, email TEXT,
+      source TEXT, status TEXT DEFAULT 'potansiyel', note TEXT,
+      created TEXT, updated TEXT);
     CREATE TABLE IF NOT EXISTS shares(
       token TEXT PRIMARY KEY, user_ids TEXT, allow_sensitive INTEGER DEFAULT 0,
       expires TEXT, created TEXT);
@@ -143,6 +147,11 @@ def init_db():
     # v7: üye silme artık çöp kutusuna taşır — 'deleted' silinme zamanını tutar,
     # boş/NULL ise üye etkin demektir. Kalıcı silme kaydı tamamen kaldırır.
     try: c.execute("ALTER TABLE users ADD COLUMN deleted TEXT")
+    except sqlite3.OperationalError: pass
+    # v9: müşteri kaydı — işler bir müşteriye bağlanır, aday nereden geldiği tutulur
+    try: c.execute("ALTER TABLE jobs ADD COLUMN customer_id INTEGER")
+    except sqlite3.OperationalError: pass
+    try: c.execute("ALTER TABLE profiles ADD COLUMN source TEXT")
     except sqlite3.OperationalError: pass
     # v8: yönetici elle üye açabilir. Şifreyi yönetici belirlediği için üye ilk
     # girişinde kendi şifresini seçmeden panele devam edemez.
@@ -364,6 +373,63 @@ def is_minor(uid):
     except Exception:
         return False
 
+YEDEK_DIR = os.path.join(DATA_DIR, "yedekler")
+
+def yedek_al(kim="otomatik"):
+    """Veritabanının tutarlı bir kopyasını yedekler klasörüne yazar.
+       Son 14 yedek saklanır; MOW_YEDEK_KOPYA verilmişse (bulut klasörü,
+       ikinci disk) aynı dosya oraya da kopyalanır."""
+    os.makedirs(YEDEK_DIR, exist_ok=True)
+    ad = "mow-%s.db" % datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
+    hedef = os.path.join(YEDEK_DIR, ad)
+    kaynak = sqlite3.connect(DB_PATH); kopya = sqlite3.connect(hedef)
+    try:
+        with kopya: kaynak.backup(kopya)
+    finally:
+        kaynak.close(); kopya.close()
+    boyut = os.path.getsize(hedef)
+
+    disari = os.environ.get("MOW_YEDEK_KOPYA", "").strip()
+    dis_sonuc = ""
+    if disari:
+        try:
+            os.makedirs(disari, exist_ok=True)
+            shutil.copy2(hedef, os.path.join(disari, ad))
+            dis_sonuc = " · dış kopya: %s" % disari
+        except Exception as e:
+            dis_sonuc = " · DIŞ KOPYA BAŞARISIZ: %s" % e
+
+    eski = sorted(f for f in os.listdir(YEDEK_DIR) if f.startswith("mow-") and f.endswith(".db"))
+    for f in eski[:-14]:
+        try: os.remove(os.path.join(YEDEK_DIR, f))
+        except OSError: pass
+    return {"ad": ad, "boyut": boyut, "not": dis_sonuc}
+
+def yedek_dongusu():
+    """Her saat başı kontrol eder; son yedeğin üzerinden 24 saat geçtiyse yeni yedek alır.
+       Sunucu kapalıyken kaçan yedek, açılıştan kısa süre sonra telafi edilir."""
+    while True:
+        try:
+            son = ayar_oku("son_yedek", "") or ""
+            gerek = True
+            if son:
+                try:
+                    gerek = (datetime.now(timezone.utc) - datetime.fromisoformat(son)) > timedelta(hours=24)
+                except ValueError:
+                    gerek = True
+            if gerek:
+                bilgi = yedek_al()
+                ayar_yaz("son_yedek", now())
+                ayar_yaz("son_yedek_bilgi", "%s · %d KB%s" % (bilgi["ad"], bilgi["boyut"] // 1024, bilgi["not"]))
+                audit("sistem", "otomatik-yedek", None, "%s (%d KB)%s" % (bilgi["ad"], bilgi["boyut"] // 1024, bilgi["not"]))
+                db().commit()
+        except Exception as e:
+            try:
+                audit("sistem", "otomatik-yedek-hata", None, str(e)[:200]); db().commit()
+            except Exception:
+                pass
+        _time.sleep(3600)
+
 def onay_token_uret(uid):
     """Üyeye özel tek kullanımlık onay bağlantısı üretir (WhatsApp ile gönderilir)."""
     tok = secrets.token_urlsafe(24)
@@ -479,14 +545,18 @@ def randevu_ayari():
     a.update(ayar_oku("randevu", {}) or {})
     return a
 
+# Çalışma saatleri Türkiye saatine göre girilir; sunucu UTC çalıştığı için
+# "bugün" ve "en erken saat" hesapları bu dilime çevrilerek yapılır (TR'de yaz saati yok).
+TR_DILIM = timezone(timedelta(hours=3))
+
 def randevu_saatleri(gun_iso):
     """Verilen gün için seçilebilir saatler. Dolu, geçmiş ve mola saatleri düşülür."""
     a = randevu_ayari()
     try:
-        g = datetime.strptime(gun_iso, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        g = datetime.strptime(gun_iso, "%Y-%m-%d").replace(tzinfo=TR_DILIM)
     except ValueError:
         return []
-    bugun = datetime.now(timezone.utc)
+    bugun = datetime.now(TR_DILIM)
     if (g.date() - bugun.date()).days > int(a["en_gec_gun"]): return []
     if g.date() < bugun.date(): return []
     if (g.isoweekday()) not in a["gunler"]: return []
@@ -929,8 +999,14 @@ class Handler(BaseHTTPRequestHandler):
             eposta_ayar = {k: ma.get(k) for k in ("host", "port", "tls", "user", "from", "from_ad", "to")}
             eposta_ayar["sifre_var"] = bool(ma.get("pass"))
             eposta_ayar["kurulu"] = mail_kurulu(ma)
+            musteriler = [dict(r) for r in db().execute("SELECT * FROM customers ORDER BY name COLLATE NOCASE")]
+            for m in musteriler:
+                m["isler"] = [dict(r) for r in db().execute(
+                    "SELECT id, title, date, fee, location FROM jobs WHERE customer_id=? ORDER BY date DESC", (m["id"],))]
             out = {"users": users, "silinenler": silinenler,
                    "eposta": eposta_ayar, "randevu_ayar": randevu_ayari(),
+                   "son_yedek_bilgi": ayar_oku("son_yedek_bilgi", ""),
+                   "customers": musteriler,
                    "jobs": jobs, "submissions": subs, "audit": logs,
                    "sos": sos, "shares": shares, "tasks": tasks, "templates": templates,
                    "maintenance": bool(mrow and mrow["v"] == "1"),
@@ -1652,6 +1728,20 @@ class Handler(BaseHTTPRequestHandler):
             db().commit()
             return self._json(200, {"ok": True})
 
+        if p == "/api/admin/yedek-simdi":
+            # Panelden elle tetiklenen yedek (otomatik döngüden bağımsız)
+            adm = self._admin(qs)
+            if not self._can(adm, "users"): return self._json(403, {"error": "Yönetici rolü gerekli"})
+            try:
+                bilgi = yedek_al(adm["username"])
+            except Exception as e:
+                return self._json(500, {"error": "Yedek alınamadı: %s" % e})
+            ayar_yaz("son_yedek", now())
+            ayar_yaz("son_yedek_bilgi", "%s · %d KB%s" % (bilgi["ad"], bilgi["boyut"] // 1024, bilgi["not"]))
+            audit("admin:" + adm["username"], "yedek-alindi", None, bilgi["ad"])
+            db().commit()
+            return self._json(200, {"ok": True, "bilgi": bilgi})
+
         if p == "/api/admin/maintenance":
             adm = self._admin(qs)
             if not self._can(adm, "users"): return self._json(403, {"error": "Yönetici rolü gerekli"})
@@ -1851,7 +1941,127 @@ class Handler(BaseHTTPRequestHandler):
                 db().execute("UPDATE profiles SET published='0' WHERE user_id=?", (uid,))
             audit("admin:" + adm["username"], "durum-" + st, uid, note[:100])
             db().commit()
+
+            # Üyeye karar bildirimi — red gerekçesi şablonu buradan gider
+            postalandi = False
+            if d.get("eposta_gonder", True) and st in ("onaylandi", "reddedildi"):
+                kisi = db().execute("SELECT email, fullname FROM users WHERE id=?", (uid,)).fetchone()
+                if kisi and (kisi["email"] or "").strip():
+                    ilkAd = (kisi["fullname"] or "").split(" ")[0]
+                    if st == "onaylandi":
+                        konu = "Başvurunuz kabul edildi — Model of World"
+                        govde = ("Merhaba %s,\n\nBaşvurunuz olumlu sonuçlandı; Model of World kadrosuna katıldınız.\n\n"
+                                 "%sPanelinizden profilinizi tamamlayabilir, fotoğraf yükleyebilir ve "
+                                 "müsaitlik takviminizi işaretleyebilirsiniz:\n"
+                                 "https://www.modelofworld.com/uye\n\n"
+                                 "Profili eksiksiz olan adaylar castinglerde öne çıkar.\n\n"
+                                 "Model of World Ajans\nwww.modelofworld.com") % (
+                                     ilkAd or "", (note + "\n\n") if note else "")
+                    else:
+                        konu = "Başvurunuz hakkında — Model of World"
+                        govde = ("Merhaba %s,\n\nBaşvurunuzu değerlendirdik; şu an için kadromuza uygun bir "
+                                 "eşleşme bulamadık.\n\n%s"
+                                 "Bu bir yetenek değerlendirmesi değildir; ihtiyaç duyduğumuz profiller "
+                                 "dönemsel olarak değişir. İlerleyen dönemde tekrar başvurabilirsiniz.\n\n"
+                                 "Model of World Ajans\nwww.modelofworld.com") % (
+                                     ilkAd or "", ("Gerekçe: " + note + "\n\n") if note else "")
+                    postalandi = mail_gonder(kisi["email"], konu, govde, kayit_adi="durum-" + st)
+            return self._json(200, {"ok": True, "eposta": postalandi})
+
+        if p == "/api/admin/musteri":
+            # Müşteri kaydı: ekle / güncelle / sil. İşler bu kayda bağlanır.
+            adm = self._admin(qs)
+            if not self._can(adm, "review"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            d = jbody()
+            act = d.get("action") or "add"
+            DURUMLAR = ("potansiyel", "aktif", "kaybedildi")
+
+            if act == "delete":
+                cid = int(d.get("id") or 0)
+                row = db().execute("SELECT name FROM customers WHERE id=?", (cid,)).fetchone()
+                if not row: return self._json(404, {"error": "Müşteri bulunamadı"})
+                db().execute("UPDATE jobs SET customer_id=NULL WHERE customer_id=?", (cid,))
+                db().execute("DELETE FROM customers WHERE id=?", (cid,))
+                audit("admin:" + adm["username"], "musteri-silindi", None, row["name"] or str(cid))
+                db().commit()
+                return self._json(200, {"ok": True})
+
+            ad = str(d.get("name") or "").strip()[:120]
+            if act == "add" and not ad:
+                return self._json(400, {"error": "Firma / müşteri adı gerekli"})
+            alanlar = {
+                "name": ad,
+                "contact": str(d.get("contact") or "").strip()[:120],
+                "phone": str(d.get("phone") or "").strip()[:30],
+                "email": str(d.get("email") or "").strip()[:120],
+                "source": str(d.get("source") or "").strip()[:60],
+                "status": d.get("status") if d.get("status") in DURUMLAR else "potansiyel",
+                "note": str(d.get("note") or "")[:2000],
+            }
+            if act == "add":
+                var = db().execute("SELECT id FROM customers WHERE LOWER(name)=?", (ad.lower(),)).fetchone()
+                if var: return self._json(409, {"error": "Bu isimde müşteri zaten var (#%d)" % var["id"]})
+                cur = db().execute(
+                    "INSERT INTO customers(name,contact,phone,email,source,status,note,created,updated) "
+                    "VALUES(?,?,?,?,?,?,?,?,?)",
+                    (alanlar["name"], alanlar["contact"], alanlar["phone"], alanlar["email"],
+                     alanlar["source"], alanlar["status"], alanlar["note"], now(), now()))
+                audit("admin:" + adm["username"], "musteri-eklendi", None, ad)
+                db().commit()
+                return self._json(200, {"ok": True, "id": cur.lastrowid})
+
+            cid = int(d.get("id") or 0)
+            if not db().execute("SELECT 1 FROM customers WHERE id=?", (cid,)).fetchone():
+                return self._json(404, {"error": "Müşteri bulunamadı"})
+            if not ad: alanlar.pop("name")
+            db().execute("UPDATE customers SET %s, updated=? WHERE id=?"
+                         % ", ".join("%s=?" % k for k in alanlar),
+                         list(alanlar.values()) + [now(), cid])
+            audit("admin:" + adm["username"], "musteri-guncellendi", None, ad or ("#" + str(cid)))
+            db().commit()
             return self._json(200, {"ok": True})
+
+        if p == "/api/admin/duyuru":
+            # Seçili kadroya e-posta duyurusu. {ad} yazılırsa kişinin adıyla değişir.
+            adm = self._admin(qs)
+            if not self._can(adm, "review"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            if not mail_kurulu():
+                return self._json(400, {"error": "Önce Ayarlar bölümünden e-posta gönderim bilgilerini girin"})
+            d = jbody()
+            konu = str(d.get("konu") or "").strip()[:200]
+            govde = str(d.get("govde") or "").strip()[:4000]
+            ids = [int(x) for x in (d.get("user_ids") or [])][:400]
+            if not konu or not govde: return self._json(400, {"error": "Konu ve mesaj gerekli"})
+            if not ids: return self._json(400, {"error": "En az bir üye seçin"})
+
+            kisiler = [dict(r) for r in db().execute(
+                "SELECT id, email, fullname FROM users WHERE id IN (%s) AND COALESCE(deleted,'')=''"
+                % ",".join("?" * len(ids)), ids)]
+            gidecek = [k for k in kisiler if (k["email"] or "").strip() and "@" in k["email"]]
+            if not gidecek: return self._json(400, {"error": "Seçili üyelerin geçerli e-posta adresi yok"})
+
+            a = mail_ayari()
+            def toplu():
+                basarili, hatali = 0, 0
+                for k in gidecek:
+                    ilkAd = (k["fullname"] or "").split(" ")[0]
+                    try:
+                        _mail_gonder_senkron(a, [k["email"]], konu,
+                                             govde.replace("{ad}", ilkAd),
+                                             yanit_adresi=a.get("to") or a.get("from"))
+                        basarili += 1
+                    except Exception:
+                        hatali += 1
+                    _time.sleep(0.4)          # sunucu hız sınırına takılmamak için
+                try:
+                    audit("admin:" + adm["username"], "toplu-duyuru", None,
+                          "%s · %d gönderildi%s" % (konu[:60], basarili, ", %d hata" % hatali if hatali else ""))
+                    db().commit()
+                except Exception:
+                    pass
+            threading.Thread(target=toplu, daemon=True).start()
+            return self._json(200, {"ok": True, "gidecek": len(gidecek),
+                                    "epostasiz": len(kisiler) - len(gidecek)})
 
         if p == "/api/admin/tags":
             # Etiket düzeni: yeniden adlandır / birleştir / sil / seçili üyelere ekle
@@ -2086,11 +2296,17 @@ class Handler(BaseHTTPRequestHandler):
             if not title: return self._json(400, {"error": "İş başlığı gerekli"})
             ids = [int(x) for x in (d.get("user_ids") or []) if str(x).isdigit()]
             if not ids: return self._json(400, {"error": "En az bir üye seçin"})
-            cur = db().execute("INSERT INTO jobs(title,date,location,hours,fee,note,created,sensitive,usage) VALUES(?,?,?,?,?,?,?,?,?)",
+            musteri = int(d.get("customer_id") or 0) or None
+            cur = db().execute("INSERT INTO jobs(title,date,location,hours,fee,note,created,sensitive,usage,customer_id) "
+                "VALUES(?,?,?,?,?,?,?,?,?,?)",
                 (title[:200], str(d.get("date") or "")[:40], str(d.get("location") or "")[:200],
                  str(d.get("hours") or "")[:100], str(d.get("fee") or "")[:100],
                  str(d.get("note") or "")[:1000], now(),
-                 "1" if d.get("sensitive") else "0", str(d.get("usage") or "")[:500]))
+                 "1" if d.get("sensitive") else "0", str(d.get("usage") or "")[:500], musteri))
+            if musteri:
+                # İş verilen müşteri artık "aktif" sayılır (huni: potansiyel → aktif)
+                db().execute("UPDATE customers SET status='aktif', updated=? WHERE id=? AND status<>'aktif'",
+                             (now(), musteri))
             for uid in ids:
                 db().execute("INSERT INTO job_offers(job_id,user_id,created) VALUES(?,?,?)",
                              (cur.lastrowid, uid, now()))
@@ -2195,6 +2411,8 @@ if __name__ == "__main__":
     # Canlıda 8010; testlerde MOW_PORT ile başka bir port verilebilir
     PORT = int(os.environ.get("MOW_PORT", "8010"))
     print(f"MOW API v3 127.0.0.1:{PORT} — veri: {DATA_DIR}")
+    # Günlük otomatik yedek — arka planda, servisi bloklamaz
+    threading.Thread(target=yedek_dongusu, daemon=True).start()
     # Gözetmen döngüsü: beklenmeyen bir hata servisi düşürürse süreç ölmez,
     # nedeni kaydedip 3 saniye sonra yeniden dinlemeye başlar. Boylece panel ve
     # uye girisi "sunucu kapali" durumuna dusmez.

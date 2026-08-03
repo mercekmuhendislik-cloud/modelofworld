@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 408 120" width="408" height="120" role="img" aria-label="Model of World">
+  <title>Model of World — ana logo</title>
+  <g fill="#d34f6e">
+    <!-- Amblem: MW madalyonu -->
+    <circle cx="52" cy="62" r="30" fill="none" stroke="#d34f6e" stroke-width="2.2"/>
+    <path d="M52 16.5 L54 21.5 L59 23.5 L54 25.5 L52 30.5 L50 25.5 L45 23.5 L50 21.5 Z"/>
+    <text x="52" y="72" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+          font-size="26" font-weight="600" letter-spacing="0.5">MW</text>
+    <!-- Kelime markası -->
+    <text x="100" y="58" font-family="Georgia, 'Times New Roman', serif" font-size="27"
+          letter-spacing="4.5" fill="#1a1216">MODEL</text>
+    <text x="230" y="58" font-family="Georgia, 'Times New Roman', serif" font-size="24"
+          font-style="italic" fill="#d34f6e">of</text>
+    <text x="266" y="58" font-family="Georgia, 'Times New Roman', serif" font-size="27"
+          letter-spacing="4.5" fill="#1a1216">WORLD</text>
+    <text x="101" y="80" font-family="Georgia, 'Times New Roman', serif" font-size="10"
+          letter-spacing="6" fill="#96707c">AGENCY</text>
+  </g>
+</svg>

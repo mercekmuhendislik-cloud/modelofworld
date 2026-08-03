@@ -499,6 +499,12 @@ section { padding: clamp(64px, 9vw, 120px) 0; }
   backdrop-filter: blur(8px);
   border: 1px solid rgba(211, 79, 110, 0.4);
 }
+/* Tarih filtresi kullanıldığında: o gün müsait olduğunu bildiren üyeler */
+.talent-badge.musait {
+  top: auto; bottom: 14px; left: 14px;
+  background: rgba(12, 46, 32, 0.72); color: #d8f3e3;
+  border-color: rgba(77, 168, 120, 0.6); letter-spacing: 0.14em;
+}
 .talent-info { padding: 18px 20px 20px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .talent-info h3 { font-size: 1.25rem; }
 .talent-info small { display: block; color: var(--text-2); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.16em; margin-top: 3px; }

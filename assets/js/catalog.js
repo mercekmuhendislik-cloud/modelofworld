@@ -17,8 +17,12 @@
     category: [], gender: [], city: [], hair: [], eye: [], lang: [], shoe: [], size: [],
     minHeight: 130, maxWeight: 90,
     dilHepsi: false,          /* true → seçilen dillerin HEPSİNİ bilenler */
+    tarih: "",                /* YYYY-MM-DD → o gün müsait olanlar */
     sort: "featured",
   };
+
+  /* Tarih sorgusunun sonucu: { "u12": true } — null ise filtre kapalı */
+  let musaitlik = null;
 
   /* ---- URL'den başlangıç filtreleri ---- */
   const params = new URLSearchParams(location.search);
@@ -138,6 +142,12 @@
 
   function apply() {
     const list = TALENTS.filter(t => {
+      /* Tarih filtresi: yalnızca kadroya kayıtlı üyeler için anlamlı.
+         O gün "dolu" işaretleyenler sunucudan hiç gelmez, listeden düşer. */
+      if (musaitlik) {
+        if (!t.real) return false;
+        if (!(t.id in musaitlik)) return false;
+      }
       /* Kategori: üyenin birden fazla kategorisi olabilir */
       if (state.category.length) {
         const kats = (t.categories && t.categories.length) ? t.categories : [t.category];
@@ -178,9 +188,15 @@
     };
     list.sort(sorters[state.sort] || sorters.featured);
 
+    /* Tarih seçiliyse müsait olduğunu bildirenler önce ve rozetli gösterilir */
+    const gosterilecek = musaitlik
+      ? list.map(t => ({ ...t, musait: musaitlik[t.id] === true }))
+            .sort((a, b) => (b.musait - a.musait))
+      : list;
+
     const grid = $("catalogGrid");
     const empty = $("emptyState");
-    grid.innerHTML = list.map(renderTalentCard).join("");
+    grid.innerHTML = gosterilecek.map(renderTalentCard).join("");
     empty.classList.toggle("hidden", list.length > 0);
     /* Kadro hiç yoksa (yayında üye yok ya da servise ulaşılamıyor) filtre
        mesajı yanıltıcı olur — durumu açıkça yaz. */
@@ -190,8 +206,16 @@
         '<p>Profiller ajans onayından geçtikçe burada yayınlanır. Aradığınız profili bize iletirseniz ' +
         'uygun adayları doğrudan sunalım.</p>' +
         '<a class="btn btn-gold btn-sm mt-2" href="teklif">Profil Talebi Gönder</a>';
+    } else if (!list.length && musaitlik) {
+      const [y, m, g] = state.tarih.split("-");
+      empty.innerHTML =
+        `<div class="serif">${+g}.${m}.${y} için uygun profil çıkmadı</div>` +
+        '<p>Bu tarih için müsaitlik bildiren üye yok ya da diğer filtreleriniz sonucu daraltıyor. ' +
+        'Tarihi bize bildirin — kadromuzdan uygun olanları biz tarayıp sunalım.</p>' +
+        `<a class="btn btn-gold btn-sm mt-2" href="teklif?tarih=${encodeURIComponent(state.tarih)}">Bu Tarih İçin Teklif İsteyin</a>`;
     }
-    $("resultCount").innerHTML = `<strong>${list.length}</strong> profil listeleniyor`;
+    $("resultCount").innerHTML = `<strong>${list.length}</strong> profil listeleniyor` +
+      (musaitlik ? ` · ${state.tarih.split("-").reverse().join(".")} müsaitliğine göre` : "");
     ozetCiz();
     observeNew(grid);
     grid.querySelectorAll(".reveal").forEach(el => el.classList.add("in"));
@@ -254,10 +278,47 @@
 
   $("fSort").addEventListener("change", e => { state.sort = e.target.value; apply(); });
 
+  /* ---------------------------------------------------------
+     Tarihe göre müsaitlik — sunucudan sorulur
+     Takvimin tamamı dışa verilmez; yalnızca seçilen günün sonucu gelir.
+     --------------------------------------------------------- */
+  const bugunIso = new Date().toISOString().slice(0, 10);
+  if ($("fDate")) $("fDate").min = bugunIso;
+  if (params.get("tarih")) { state.tarih = params.get("tarih"); if ($("fDate")) $("fDate").value = state.tarih; }
+
+  async function musaitlikAl() {
+    const not = $("fDateNot");
+    if (!state.tarih) { musaitlik = null; apply(); return; }
+    if (not) not.textContent = "Müsaitlik kontrol ediliyor…";
+    const r = await fetch("/api/cast?tarih=" + encodeURIComponent(state.tarih)).catch(() => null);
+    if (!r || !r.ok) {
+      musaitlik = null;
+      if (not) not.textContent = "Müsaitlik bilgisi alınamadı — tarih filtresi uygulanmadı.";
+      apply(); return;
+    }
+    const d = await r.json();
+    musaitlik = {};
+    (d.cast || []).forEach(x => { musaitlik[x.id] = !!x.musait; });
+    const [y, m, g] = state.tarih.split("-");
+    const kacMusait = Object.values(musaitlik).filter(Boolean).length;
+    if (not) not.textContent = `${+g}.${m}.${y} için ${kacMusait} üye müsait olduğunu bildirdi. ` +
+      "Örnek profiller bu filtrede gösterilmez.";
+    apply();
+  }
+
+  if ($("fDate")) {
+    $("fDate").addEventListener("change", e => { state.tarih = e.target.value; musaitlikAl(); });
+    if (state.tarih) musaitlikAl();
+  }
+
   $("fClear").addEventListener("click", () => {
     state.q = "";
     ["category", "gender", "city", "hair", "eye", "lang", "shoe", "size"].forEach(k => state[k] = []);
     state.minHeight = 130; state.maxWeight = 90; state.dilHepsi = false;
+    state.tarih = ""; musaitlik = null;
+    if ($("fDate")) { $("fDate").value = ""; }
+    if ($("fDateNot")) $("fDateNot").textContent =
+      "Tarih seçerseniz o gün dolu olan üyeler listeden çıkar, müsait olduğunu bildirenler başa gelir.";
     $("fSearch").value = "";
     if (hRange) { hRange.value = 130; $("fHeightOut").textContent = "Tümü"; }
     if (wRange) { wRange.value = 90; $("fWeightOut").textContent = "Tümü"; }
