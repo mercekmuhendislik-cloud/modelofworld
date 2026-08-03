@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Görüşme Ayarla — Model of World</title>
+  <meta name="description" content="15 dakikalık ücretsiz brief görüşmesi için uygun bir saat seçin. Form doldurmadan, doğrudan konuşarak başlayın.">
+  <!-- Open Graph & Twitter Cards -->
+  <link rel="canonical" href="https://www.modelofworld.com/randevu">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Model of World">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="Görüşme Ayarla — Model of World">
+  <meta property="og:description" content="15 dakikalık ücretsiz brief görüşmesi için uygun bir saat seçin.">
+  <meta property="og:url" content="https://www.modelofworld.com/randevu">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Görüşme Ayarla — Model of World">
+  <meta name="twitter:description" content="15 dakikalık ücretsiz brief görüşmesi için uygun bir saat seçin.">
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css?v=c09136c">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
+  <style>
+    .rv-duzen { display: grid; grid-template-columns: 1.15fr .85fr; gap: 26px; align-items: start; }
+    @media (max-width: 900px) { .rv-duzen { grid-template-columns: 1fr; } }
+
+    /* Gün şeridi */
+    .rv-gunler { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+    .rv-gun {
+      flex: none; min-width: 74px; text-align: center; cursor: pointer;
+      border: 1px solid var(--line); border-radius: 12px; padding: 10px 6px;
+      background: var(--surface); transition: border-color .2s, transform .2s;
+    }
+    .rv-gun:hover:not(.kapali) { border-color: var(--gold); transform: translateY(-2px); }
+    .rv-gun.secili { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); }
+    .rv-gun.kapali { opacity: .35; cursor: not-allowed; }
+    .rv-gun .gun-ad { font-size: .6rem; text-transform: uppercase; letter-spacing: .14em; color: var(--text-2); }
+    .rv-gun .gun-no { font-family: var(--font-serif); font-size: 1.5rem; line-height: 1.1; margin-top: 2px; }
+    .rv-gun .gun-ay { font-size: .62rem; color: var(--text-2); }
+
+    /* Saat ızgarası */
+    .rv-saatler { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; margin-top: 18px; }
+    .rv-saat {
+      border: 1px solid var(--line); border-radius: 10px; padding: 11px 4px; background: var(--surface);
+      font-size: .9rem; cursor: pointer; text-align: center; transition: border-color .2s, background .2s;
+      font-variant-numeric: tabular-nums;
+    }
+    .rv-saat:hover { border-color: var(--gold); }
+    .rv-saat.secili { background: var(--gold-grad); color: #fff; border-color: transparent; }
+    .rv-bos { color: var(--text-2); font-size: .88rem; padding: 18px 0; }
+
+    .rv-ozet {
+      border: 1px solid var(--gold); border-radius: var(--radius); padding: 18px 20px;
+      background: color-mix(in srgb, var(--gold) 7%, transparent); margin-bottom: 18px;
+    }
+    .rv-ozet strong { font-family: var(--font-serif); font-size: 1.25rem; display: block; }
+    .rv-ozet span { font-size: .84rem; color: var(--text-2); }
+
+    .rv-yan { border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; background: var(--surface); }
+    .rv-yan h3 { font-size: 1.15rem; margin-bottom: 12px; }
+    .rv-yan ul { display: grid; gap: 10px; }
+    .rv-yan li { display: flex; gap: 10px; font-size: .9rem; color: var(--text-2); }
+    .rv-yan li::before { content: "✓"; color: var(--gold); flex: none; }
+
+    .rv-tamam { text-align: center; padding: 30px 0; }
+    .rv-tamam .ikon { font-size: 2.6rem; display: block; margin-bottom: 12px; }
+    .kanal-secim { display: flex; gap: 8px; flex-wrap: wrap; }
+    .kanal-secim label {
+      border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; cursor: pointer;
+      font-size: .85rem; display: flex; align-items: center; gap: 8px;
+    }
+    .kanal-secim label:has(input:checked) { border-color: var(--gold); color: var(--gold); }
+    .kanal-secim input { accent-color: var(--gold); }
+  </style>
+  <meta name="mow-surum" content="c09136c">
+  <script src="assets/js/surum-kontrol.js?v=c09136c"></script>
+</head>
+<body data-page="randevu">
+  <div id="site-header"></div>
+
+  <div class="page-head">
+    <div class="container">
+      <span class="eyebrow">Kurumsal Müşteriler</span>
+      <h1>15 dakikada<br><em class="script">brief alalım</em></h1>
+      <p class="muted mt-2" style="max-width:60ch">Form doldurmak yerine konuşmayı tercih ediyorsanız uygun bir saat seçin.
+        Görüşme ücretsizdir; kapsam netleşmemiş olsa bile ne yapılabileceğini birlikte çıkarırız.</p>
+    </div>
+  </div>
+
+  <section style="padding-top:6px">
+    <div class="container">
+      <div class="rv-duzen">
+        <div class="form-card">
+          <div id="rvAdim1">
+            <h3 style="margin-bottom:4px">1 · Gün seçin</h3>
+            <p class="muted" style="font-size:.85rem;margin-bottom:14px">Hafta içi <span id="rvSaatAralik">10:00–18:00</span> arası görüşüyoruz.</p>
+            <div class="rv-gunler" id="rvGunler"></div>
+            <h3 style="margin:26px 0 4px">2 · Saat seçin</h3>
+            <div id="rvSaatler" class="rv-saatler"></div>
+            <div id="rvSaatBos" class="rv-bos" hidden></div>
+          </div>
+
+          <form id="rvForm" hidden novalidate style="margin-top:8px">
+            <div class="rv-ozet">
+              <strong id="rvOzetMetin">—</strong>
+              <span>15 dakika · ücretsiz brief görüşmesi</span>
+              <p style="margin-top:8px"><button type="button" class="btn btn-ghost btn-sm" id="rvGeri">Saati değiştir</button></p>
+            </div>
+            <h3 style="margin-bottom:14px">3 · İletişim bilgileriniz</h3>
+            <div class="form-grid">
+              <div class="field">
+                <label>Ad Soyad <span class="req">*</span></label>
+                <input type="text" name="name" required minlength="5" placeholder="Ad Soyad">
+                <span class="err">Ad ve soyadınızı yazın.</span>
+              </div>
+              <div class="field">
+                <label>Firma / Marka</label>
+                <input type="text" name="company" placeholder="Firma adı">
+              </div>
+              <div class="field">
+                <label>E-posta <span class="req">*</span></label>
+                <input type="email" name="email" required placeholder="ornek@firma.com">
+                <span class="err">Geçerli bir e-posta girin.</span>
+              </div>
+              <div class="field">
+                <label>Telefon <span class="req">*</span></label>
+                <input type="tel" name="phone" required pattern="[0-9+() \-]{10,}" placeholder="05xx xxx xx xx">
+                <span class="err">Geçerli bir telefon numarası girin.</span>
+              </div>
+              <div class="field full">
+                <label>Görüşme nasıl olsun?</label>
+                <div class="kanal-secim">
+                  <label><input type="radio" name="channel" value="telefon" checked> Telefon</label>
+                  <label><input type="radio" name="channel" value="whatsapp"> WhatsApp görüntülü</label>
+                  <label><input type="radio" name="channel" value="ofis"> Ofiste yüz yüze</label>
+                </div>
+              </div>
+              <div class="field full">
+                <label>Kısaca ihtiyacınız</label>
+                <textarea name="note" rows="3" placeholder="Fuar için 6 hostes, 3 gün, İstanbul…"></textarea>
+              </div>
+            </div>
+            <div class="adm-row" style="margin-top:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-gold" type="submit" id="rvGonder">Görüşmeyi Onayla</button>
+              <span class="muted" id="rvMsg" style="font-size:.86rem"></span>
+            </div>
+          </form>
+
+          <div id="rvTamam" class="rv-tamam" hidden>
+            <span class="ikon">✓</span>
+            <h3 id="rvTamamBaslik">Görüşmeniz ayarlandı</h3>
+            <p class="muted mt-2" id="rvTamamMetin"></p>
+            <p class="mt-4" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+              <a class="btn btn-ghost btn-sm" href="katalog">Kadroyu İncele</a>
+              <a class="btn btn-ghost btn-sm" href="proje">Projelerimiz</a>
+            </p>
+          </div>
+        </div>
+
+        <aside class="rv-yan">
+          <h3>Görüşmede ne konuşuruz?</h3>
+          <ul>
+            <li>İşin türü, tarihi, şehri ve kaç kişiye ihtiyaç duyduğunuz</li>
+            <li>Kadroda arayacağımız profil özellikleri</li>
+            <li>Bütçe aralığı ve fiyatlandırmanın nasıl çalıştığı</li>
+            <li>Sözleşme, sigorta ve görsel kullanım hakları</li>
+          </ul>
+          <p class="muted" style="font-size:.86rem;margin-top:18px">Görüşme sonunda, konuştuklarımıza uygun cast seçkisini
+            aynı iş günü içinde e-postayla iletiriz.</p>
+          <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+          <h3>Acele mi ediyor?</h3>
+          <p class="muted" style="font-size:.88rem;margin-bottom:14px">Operasyon bugün veya yarınsa doğrudan yazın,
+            saat seçmenize gerek yok.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a class="btn btn-gold btn-sm" id="rvWa" href="#" target="_blank" rel="noopener">WhatsApp'tan Yazın</a>
+            <a class="btn btn-ghost btn-sm" href="teklif">Formu Doldurayım</a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="/api/cast.js"></script>
+  <script src="assets/js/data.js?v=c09136c"></script>
+  <script src="assets/js/main.js?v=c09136c"></script>
+  <script src="assets/js/analytics.js?v=c09136c"></script>
+  <script>
+    (function () {
+      const $ = id => document.getElementById(id);
+      const { AGENCY } = window.VERA;
+      $("rvWa").href = "https://wa.me/" + AGENCY.whatsapp.replace(/[^\d]/g, "") +
+        "?text=" + encodeURIComponent("Merhaba, acil bir kadro ihtiyacımız var.");
+
+      const GUN_AD = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
+      const AY_AD = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                     "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+      const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+      let ayar = { gunler: [1, 2, 3, 4, 5], dilim: 15, en_gec_gun: 45 };
+      let secGun = "", secSaat = "";
+
+      /* Önümüzdeki 14 günü şerit olarak çiz (kapalı günler soluk) */
+      function gunleriCiz() {
+        const bugun = new Date();
+        let html = "";
+        for (let i = 0; i < 14; i++) {
+          const d = new Date(bugun.getFullYear(), bugun.getMonth(), bugun.getDate() + i);
+          const g = iso(d);
+          const haftaGunu = d.getDay() === 0 ? 7 : d.getDay();
+          const kapali = !ayar.gunler.includes(haftaGunu);
+          html += `<div class="rv-gun ${kapali ? "kapali" : ""} ${g === secGun ? "secili" : ""}"
+                        data-gun="${kapali ? "" : g}" ${kapali ? 'title="Bu gün görüşme yapılmıyor"' : ""}>
+            <div class="gun-ad">${i === 0 ? "Bugün" : GUN_AD[d.getDay()]}</div>
+            <div class="gun-no">${d.getDate()}</div>
+            <div class="gun-ay">${AY_AD[d.getMonth()].slice(0, 3)}</div>
+          </div>`;
+        }
+        $("rvGunler").innerHTML = html;
+      }
+
+      async function saatleriCiz(gun) {
+        $("rvSaatler").innerHTML = '<div class="rv-bos">Uygun saatler alınıyor…</div>';
+        $("rvSaatBos").hidden = true;
+        const r = await fetch("/api/randevu-saatleri?tarih=" + encodeURIComponent(gun)).catch(() => null);
+        const d = r && r.ok ? await r.json() : { saatler: [] };
+        if (d.gunler) { ayar = { gunler: d.gunler, dilim: d.dilim, en_gec_gun: d.en_gec_gun }; }
+        if (!d.saatler.length) {
+          $("rvSaatler").innerHTML = "";
+          $("rvSaatBos").hidden = false;
+          $("rvSaatBos").textContent = "Bu gün için uygun saat kalmadı — başka bir gün seçin " +
+            "ya da acilse WhatsApp'tan yazın.";
+          return;
+        }
+        $("rvSaatler").innerHTML = d.saatler
+          .map(s => `<button type="button" class="rv-saat" data-saat="${s}">${s}</button>`).join("");
+      }
+
+      $("rvGunler").addEventListener("click", e => {
+        const g = e.target.closest(".rv-gun");
+        if (!g || !g.dataset.gun) return;
+        secGun = g.dataset.gun; secSaat = "";
+        gunleriCiz();
+        saatleriCiz(secGun);
+      });
+
+      $("rvSaatler").addEventListener("click", e => {
+        const b = e.target.closest(".rv-saat");
+        if (!b) return;
+        secSaat = b.dataset.saat;
+        [...document.querySelectorAll(".rv-saat")].forEach(x => x.classList.toggle("secili", x === b));
+        const [y, m, d] = secGun.split("-");
+        $("rvOzetMetin").textContent = `${+d} ${AY_AD[+m - 1]} ${y}, ${secSaat}`;
+        $("rvAdim1").hidden = true;
+        $("rvForm").hidden = false;
+        $("rvForm").querySelector('[name="name"]').focus();
+      });
+
+      $("rvGeri").addEventListener("click", () => {
+        $("rvForm").hidden = true; $("rvAdim1").hidden = false;
+        saatleriCiz(secGun);
+      });
+
+      /* İlk açılışta ilk uygun günü seç */
+      (async function baslat() {
+        const r = await fetch("/api/randevu-saatleri?tarih=" + iso(new Date())).catch(() => null);
+        if (r && r.ok) {
+          const d = await r.json();
+          if (d.gunler) ayar = { gunler: d.gunler, dilim: d.dilim, en_gec_gun: d.en_gec_gun };
+        }
+        gunleriCiz();
+        const ilk = document.querySelector(".rv-gun:not(.kapali)");
+        if (ilk) { secGun = ilk.dataset.gun; gunleriCiz(); saatleriCiz(secGun); }
+      })();
+
+      $("rvForm").addEventListener("submit", async e => {
+        e.preventDefault();
+        const f = e.target;
+        let hata = false;
+        f.querySelectorAll("[required]").forEach(i => {
+          const kotu = !i.checkValidity();
+          i.closest(".field").classList.toggle("invalid", kotu);
+          if (kotu) hata = true;
+        });
+        if (hata) { $("rvMsg").textContent = "Eksik alanları tamamlayın."; return; }
+
+        const btn = $("rvGonder");
+        btn.disabled = true; $("rvMsg").textContent = "Kaydediliyor…";
+        const veri = {
+          name: f.name.value.trim(), company: f.company.value.trim(),
+          email: f.email.value.trim(), phone: f.phone.value.trim(),
+          channel: f.channel.value, note: f.note.value.trim(),
+          date: secGun, time: secSaat,
+        };
+        const r = await fetch("/api/randevu", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(veri),
+        }).catch(() => null);
+        const d = r ? await r.json().catch(() => ({})) : {};
+        btn.disabled = false;
+
+        if (!r || !r.ok) {
+          $("rvMsg").textContent = d.error || "Kaydedilemedi, lütfen tekrar deneyin.";
+          if (r && r.status === 409) { $("rvGeri").click(); }
+          return;
+        }
+        const [y, m, gg] = secGun.split("-");
+        $("rvForm").hidden = true;
+        $("rvTamam").hidden = false;
+        $("rvTamamMetin").innerHTML =
+          `<strong>${+gg} ${AY_AD[+m - 1]} ${y}, ${secSaat}</strong> için görüşmeniz kaydedildi.<br>` +
+          (d.eposta ? "Onay e-postası az önce gönderildi. " : "") +
+          "Saati değiştirmek isterseniz bize yazmanız yeterli.";
+        $("rvTamam").scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=ce846f1">
+  <link rel="stylesheet" href="assets/css/style.css?v=c09136c">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -183,6 +183,27 @@
     .yeni-fotolar { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
     .yeni-fotolar img { width:74px; height:98px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
 
+    /* Dikkat listesi + kadro dağılımı kartları */
+    .dikkat-liste { display:flex; flex-direction:column; gap:4px; margin-top:8px; }
+    .dikkat-sat { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%;
+      background:var(--bg-2); border:1px solid var(--line); border-radius:9px; padding:7px 11px;
+      font:inherit; font-size:.8rem; color:var(--text); cursor:pointer; text-align:left; }
+    .dikkat-sat:hover { border-color:var(--gold); background:rgba(211,79,110,.08); }
+    .dikkat-sat b { font-size:.95rem; color:var(--gold-2); }
+    .dikkat-sat.acil { border-color:#d95a5a; background:rgba(217,90,90,.08); }
+    .dikkat-sat.acil b { color:#c33; }
+    .dag-blok { margin-top:10px; }
+    .dag-baslik { font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; color:var(--text-2); }
+    .dag-sat { display:grid; grid-template-columns:88px 1fr 28px; gap:8px; align-items:center;
+      font-size:.76rem; margin-top:3px; }
+    .dag-sat > span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .dag-cubuk { background:var(--bg-2); border-radius:999px; height:7px; overflow:hidden; }
+    .dag-cubuk i { display:block; height:100%; background:var(--gold-grad); border-radius:999px; }
+    .dag-sat b { text-align:right; font-size:.78rem; color:var(--text-2); }
+    .dikkat-rozet { display:inline-flex; align-items:center; gap:8px; background:rgba(211,79,110,.12);
+      border:1px solid var(--gold); border-radius:999px; padding:5px 12px; font-size:.78rem; }
+    .dikkat-rozet button { background:none; border:0; color:var(--gold); cursor:pointer; font:inherit; }
+
     /* Karşılaştırma / WhatsApp listesi penceresi (ortak kabuk) */
     .genis-katman { position:fixed; inset:0; z-index:395; background:rgba(20,8,14,.62); backdrop-filter:blur(6px);
       display:none; align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto; }
@@ -291,8 +312,8 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
-  <meta name="mow-surum" content="ce846f1">
-  <script src="assets/js/surum-kontrol.js?v=ce846f1"></script>
+  <meta name="mow-surum" content="c09136c">
+  <script src="assets/js/surum-kontrol.js?v=c09136c"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -408,9 +429,21 @@
           <button class="btn btn-ghost btn-sm" id="backupBtn" hidden>💾 Yedek Al (.db)</button>
           <button class="btn btn-ghost btn-sm" id="maintBtn" hidden></button>
           <button class="btn btn-ghost btn-sm" id="tplBtn">✉️ Red Şablonları</button>
+          <button class="btn btn-ghost btn-sm" id="etiketBtn">🏷 Etiketler</button>
           <button class="btn btn-ghost btn-sm" id="widgetReset" hidden>⚙ Gizli widget'ları göster</button>
           <span class="mini" id="pulseInfo" style="margin-left:auto"></span>
         </div>
+        <div class="form-card" id="etiketCard" hidden style="margin-bottom:14px">
+          <p class="mini" style="margin-bottom:10px">Etiketleri düzenleyin: yazım farkı yüzünden ikiye bölünmüş
+            etiketleri birleştirin, gereksizleri silin. Değişiklik ilgili tüm üyelere uygulanır.</p>
+          <div id="etiketListe"></div>
+          <div class="adm-row" style="margin-top:12px;border-top:1px dashed var(--line);padding-top:12px">
+            <input class="adm-input" id="etiketYeni" placeholder="Seçili üyelere eklenecek etiket" style="flex:1;min-width:180px" list="etiketOneri">
+            <button class="btn btn-gold btn-sm" id="etiketEkle">🏷 Seçili Üyelere Ekle</button>
+            <span class="mini" id="etiketMsg"></span>
+          </div>
+        </div>
+        <datalist id="etiketOneri"></datalist>
         <div class="form-card" id="tplCard" hidden style="margin-bottom:14px">
           <p class="mini" style="margin-bottom:8px">Her satır bir red gerekçesi şablonudur (üyeye aynen iletilir):</p>
           <textarea id="tplText" class="search-input" rows="6" style="width:100%;font-size:.85rem"></textarea>
@@ -563,6 +596,15 @@
         <div id="financeTab"></div>
 
         <h2 class="adm-section-title" id="logTitle" hidden>🕘 Aktivite Günlüğü</h2>
+        <div class="adm-row" id="logAracRow" hidden style="margin-bottom:10px">
+          <input class="adm-input" id="logQ" placeholder="İşlem, kişi, ayrıntı ara…" style="flex:1;min-width:180px">
+          <select class="adm-input" id="logKim" title="Kim yaptı"><option value="">Herkes</option></select>
+          <input class="adm-input" id="logBas" type="date" title="Başlangıç tarihi">
+          <input class="adm-input" id="logBit" type="date" title="Bitiş tarihi">
+          <button class="btn btn-ghost btn-sm" id="logTemizle">Süzgeci Temizle</button>
+          <button class="btn btn-ghost btn-sm" id="logCsv">⬇ CSV</button>
+          <span class="mini" id="logSayi"></span>
+        </div>
         <div id="logs"></div>
       </div>
 
@@ -912,6 +954,38 @@
 
     function haftaAnahtar(t) { const d = new Date(t); const y = new Date(d.getFullYear(), 0, 1); return d.getFullYear() + "-" + String(Math.ceil(((d - y) / 864e5 + y.getDay() + 1) / 7)).padStart(2, "0"); }
 
+    /* =========================================================
+       Merkezî "dikkat" listesi — veri kalitesi tek bakışta
+       Her satır tıklanınca üye listesi o soruna göre süzülür.
+       ========================================================= */
+    const DIKKAT = [
+      ["fotosuz-yayinda", "🌐 Fotoğrafsız yayında", u => u.profile?.published === "1" &&
+        !(u.media || []).some(m => m.kind === "photo" && !m.deleted), true],
+      ["onaysiz-yayinda", "📋 Onayı olmadan yayında", u => u.profile?.published === "1" &&
+        u.profile?.consent_kvkk !== "1", true],
+      ["bekleyen-eski", "⏳ 7 günden uzun süredir onay bekliyor", u =>
+        (u.profile?.status || "inceleniyor") === "inceleniyor" &&
+        (u.created || "") < new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10), true],
+      ["fotosuz", "📷 Hiç fotoğrafı yok", u => !(u.media || []).some(m => m.kind === "photo" && !m.deleted), false],
+      ["olcusuz", "📏 Boy/kilo girilmemiş", u => !(u.profile?.height && u.profile?.weight), false],
+      ["onaysiz", "📋 KVKK onayı yok", u => u.profile?.consent_kvkk !== "1", false],
+      ["ilk-giris", "🔑 İlk girişini yapmamış", u => u.must_change_pw === "1", false],
+      ["takvimsiz", "📅 Müsaitlik takvimi boş", u => {
+        try { return !Object.keys(JSON.parse(u.profile?.availability || "{}")).length; } catch { return true; }
+      }, false],
+    ];
+    let DIKKAT_SEC = "";
+    function dikkatUygula(anahtar) {
+      DIKKAT_SEC = anahtar;
+      showAtab("uyeler");
+      DURUM = "";
+      $("durumSekme").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.durum === ""));
+      renderUsers();
+      $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    window.dikkatUygula = dikkatUygula;
+    window.dikkatTemizle = () => { DIKKAT_SEC = ""; renderUsers(); };
+
     function renderDash() {
       const gizli = wHidden();
       $("widgetReset").hidden = !gizli.length;
@@ -936,6 +1010,46 @@
             ["mesaj", "iletisim"].includes(String(x.kind).toLowerCase()) && x.processed !== "1").length;
           return `<strong style="color:${bekleyenMesaj ? "#c62828" : "var(--gold-2)"}">${bekleyenMesaj}</strong><span>Yanıt Bekleyen Mesaj</span>`;
         })()) +
+        kart("dikkat", (() => {
+          const satirlar = DIKKAT.map(([k, ad, f, acil]) => {
+            const n = users.filter(f).length;
+            if (!n) return "";
+            return `<button type="button" class="dikkat-sat ${acil ? "acil" : ""}" onclick="dikkatUygula('${k}')">
+                      <span>${ad}</span><b>${n}</b></button>`;
+          }).filter(Boolean);
+          return `<span>Dikkat Gerektirenler</span>
+            <div class="dikkat-liste">${satirlar.join("") ||
+              '<div class="mini" style="padding:10px 0;color:#20744c">✓ Bekleyen bir eksik yok — kadro verisi temiz.</div>'}</div>`;
+        })()).replace('dash-card"', 'dash-card dash-wide"') +
+        kart("dagilim", (() => {
+          const say = (alan, don) => {
+            const m = {};
+            users.forEach(u => {
+              const v = don(u);
+              (Array.isArray(v) ? v : [v]).filter(Boolean).forEach(x => m[x] = (m[x] || 0) + 1);
+            });
+            return Object.entries(m).sort((a, b) => b[1] - a[1]);
+          };
+          const cubuk = (baslik, ciftler, esle = x => x) => {
+            if (!ciftler.length) return "";
+            const mx = ciftler[0][1];
+            return `<div class="dag-blok"><span class="dag-baslik">${baslik}</span>` +
+              ciftler.slice(0, 6).map(([k, n]) =>
+                `<div class="dag-sat"><span>${esc(esle(k))}</span>
+                   <span class="dag-cubuk"><i style="width:${Math.round(n / mx * 100)}%"></i></span>
+                   <b>${n}</b></div>`).join("") + "</div>";
+          };
+          const yasGrup = u => {
+            const y = +(u.profile?.age || 0);
+            if (!y) return "";
+            return y < 18 ? "18 altı" : y < 25 ? "18–24" : y < 31 ? "25–30" : y < 41 ? "31–40" : "41+";
+          };
+          return `<span>Kadro Dağılımı</span>
+            ${cubuk("Kategori", say("kategori", u => (u.profile?.category || "").split(",").filter(Boolean)), k => KATLAR[k] || k)}
+            ${cubuk("Şehir", say("sehir", u => u.profile?.city))}
+            ${cubuk("Yaş", say("yas", yasGrup))}
+            ${cubuk("Beden", say("beden", u => u.profile?.size))}`;
+        })()).replace('dash-card"', 'dash-card dash-wide"') +
         kart("grafik", `<span>Üye Artışı (8 hafta)</span><canvas id="chBar" width="300" height="90" style="width:100%"></canvas>`).replace('dash-card"', 'dash-card dash-wide"') +
         kart("durum", `<span>Durum Dağılımı</span><canvas id="chDonut" width="90" height="90" style="float:right"></canvas><div class="mini" style="margin-top:8px">⏳ ${bekleyen} · ✓ ${onayli} · ✕ ${users.length - bekleyen - onayli}</div>`) +
         (H && !gizli.includes("saglik") ? kart("saglik",
@@ -1165,6 +1279,70 @@
       toast(r.ok ? (yeni ? "🔧 Bakım modu AÇIK — site kapalı" : "🟢 Site tekrar yayında") : r.err, r.ok ? "" : "hata");
       load();
     });
+    /* =========================================================
+       Etiket yönetimi — birleştir / yeniden adlandır / sil / topluca ekle
+       ========================================================= */
+    function etiketSayimi() {
+      const m = new Map();                       /* küçük harf anahtar → {ad, n} */
+      (DATA.users || []).forEach(u => (u.profile?.admin_tags || "").split(",")
+        .map(t => t.trim()).filter(Boolean).forEach(t => {
+          const k = t.toLocaleLowerCase("tr");
+          const v = m.get(k) || { ad: t, n: 0, yazimlar: new Set() };
+          v.n++; v.yazimlar.add(t);
+          m.set(k, v);
+        }));
+      return [...m.values()].sort((a, b) => b.n - a.n);
+    }
+    function renderEtiketler() {
+      const liste = etiketSayimi();
+      $("etiketOneri").innerHTML = liste.map(t => `<option value="${esc(t.ad)}">`).join("");
+      if ($("etiketCard").hidden) return;
+      $("etiketListe").innerHTML = liste.length ? liste.map(t => `
+        <div class="adm-row" style="margin-top:6px" data-etiket="${esc(t.ad)}">
+          <span class="adm-badge">🏷 ${esc(t.ad)}</span>
+          <span class="mini">${t.n} üye${t.yazimlar.size > 1 ? " · ⚠️ farklı yazımlar: " + [...t.yazimlar].map(esc).join(" / ") : ""}</span>
+          <input class="adm-input" data-et-yeni placeholder="yeni ad / birleştirilecek etiket" style="flex:1;min-width:170px" list="etiketOneri">
+          <button class="btn btn-ghost btn-sm" data-et-act="rename">✏️ Değiştir</button>
+          <button class="btn btn-tehlike btn-sm" data-et-act="delete">🗑 Kaldır</button>
+        </div>`).join("")
+        : '<div class="bos-durum"><span class="ikon">🏷</span>Henüz etiket kullanılmamış. Üye kartlarından etiket ekleyebilirsiniz.</div>';
+    }
+    $("etiketBtn").addEventListener("click", () => {
+      $("etiketCard").hidden = !$("etiketCard").hidden;
+      renderEtiketler();
+    });
+    $("etiketListe").addEventListener("click", async e => {
+      const b = e.target.closest("[data-et-act]");
+      if (!b) return;
+      const satir = b.closest("[data-etiket]");
+      const eski = satir.dataset.etiket;
+      const act = b.dataset.etAct;
+      if (act === "delete") {
+        if (!(await onayIste(`"${eski}" etiketi bu etikete sahip tüm üyelerden kaldırılacak.`,
+              "🗑 Etiketi Kaldır", "Etiket Silme", "Üye kayıtları silinmez, yalnızca etiket düşer.", true))) return;
+      }
+      const yeni = satir.querySelector("[data-et-yeni]").value.trim();
+      if (act === "rename" && !yeni) return toast("Yeni etiket adını yazın", "hata");
+      const r = await api("/api/admin/tags", { action: act, from: eski, to: yeni });
+      if (!r.ok) return toast(r.err || "İşlem yapılamadı", "hata");
+      const varMi = etiketSayimi().some(t => t.ad.toLocaleLowerCase("tr") === yeni.toLocaleLowerCase("tr"));
+      toast(act === "delete" ? `🗑 "${eski}" kaldırıldı (${r.data.etkilenen} üye)`
+        : varMi ? `🔀 "${eski}" → "${yeni}" birleştirildi (${r.data.etkilenen} üye)`
+                : `✏️ "${eski}" → "${yeni}" (${r.data.etkilenen} üye)`);
+      load();
+    });
+    $("etiketEkle").addEventListener("click", async () => {
+      const ids = seciliIds();
+      const etiket = $("etiketYeni").value.trim();
+      if (!etiket) return toast("Önce etiketi yazın", "hata");
+      if (!ids.length) return toast("Önce üyeleri seçin (listedeki kutucuklar)", "hata");
+      const r = await api("/api/admin/tags", { action: "assign", to: etiket, user_ids: ids });
+      if (!r.ok) return toast(r.err || "Eklenemedi", "hata");
+      toast(`🏷 "${etiket}" ${r.data.etkilenen} üyeye eklendi`);
+      $("etiketYeni").value = "";
+      load();
+    });
+
     $("tplBtn").addEventListener("click", () => $("tplCard").hidden = !$("tplCard").hidden);
     $("tplSave").addEventListener("click", async () => {
       const list = $("tplText").value.split("\n").map(x => x.trim()).filter(Boolean);
@@ -1466,12 +1644,31 @@
     let palSel = 0;
     function palOpen() { $("palette").classList.add("open"); $("palInput").value = ""; palRender(""); setTimeout(() => $("palInput").focus(), 50); }
     function palClose() { $("palette").classList.remove("open"); }
+    /* Komut paleti: üyeler + işler + formlar + günlük + bölümler tek arama */
     function palItems(q) {
       q = q.toLowerCase();
       const cmds = BOLUMLER.filter(([l]) => l.toLowerCase().includes(q)).map(([l, sel]) => ({ l, tip: "bölüm", sel }));
-      const uys = (DATA?.users || []).filter(u => (`${u.fullname} ${u.email}`).toLowerCase().includes(q))
-        .slice(0, 7).map(u => ({ l: "👤 " + (u.fullname || u.email), tip: "üye", uid: u.id }));
-      return [...uys, ...cmds].slice(0, 10);
+      if (!q) return cmds.slice(0, 10);
+
+      const uys = (DATA?.users || [])
+        .filter(u => (`${u.fullname} ${u.email} ${u.phone} ${u.profile?.city} ${u.profile?.admin_tags}`).toLowerCase().includes(q))
+        .slice(0, 6).map(u => ({ l: "👤 " + (u.fullname || u.email), tip: "üye", uid: u.id }));
+
+      const isler = (DATA?.jobs || [])
+        .filter(j => (`${j.title} ${j.location} ${j.date} ${j.note}`).toLowerCase().includes(q))
+        .slice(0, 4).map(j => ({ l: `💼 ${j.title}${j.date ? " · " + j.date : ""}`, tip: "iş", sel: "#jobsList" }));
+
+      const formlar = (DATA?.submissions || []).filter(s => (s.data || "").toLowerCase().includes(q))
+        .slice(0, 4).map(s => {
+          const v = frmVeri(s);
+          return { l: `✉️ ${v.fullname || v.name || "(isimsiz)"} · ${s.kind}`, tip: "form", sel: "#subs" };
+        });
+
+      const gunluk = (DATA?.audit || [])
+        .filter(l => (`${l.who} ${l.action} ${l.detail}`).toLowerCase().includes(q))
+        .slice(0, 3).map(l => ({ l: `🕘 ${l.action} — ${l.who}`, tip: "günlük", sel: "#logs", logq: q }));
+
+      return [...uys, ...isler, ...formlar, ...gunluk, ...cmds].slice(0, 14);
     }
     function palRender(q) {
       const items = palItems(q); palSel = 0;
@@ -1493,6 +1690,8 @@
         if (card) { card.classList.add("open"); card.scrollIntoView({ behavior: "smooth", block: "center" });
           card.style.borderColor = "var(--gold)"; setTimeout(() => card.style.borderColor = "", 2500); }
       } else {
+        /* Günlükte arandıysa süzgeci de doldur — aranan satır gözle bulunmasın */
+        if (it.logq && $("logQ")) { $("logQ").value = it.logq; renderLogs(); }
         const hedef = document.querySelector(it.sel);
         const pane = hedef?.closest(".atab-pane");
         if (pane) showAtab(pane.dataset.tab);
@@ -1517,7 +1716,7 @@
     /* ---------- Sekmeli Panel: bölümler sekmelere taşınır ---------- */
     const ATABS = [
       ["genel",   "📊", "Genel Bakış",        ["sosBand","dashRoot","logTitle","logs"]],
-      ["uyeler",  "👥", "Üyeler & Onaylar",   ["toolsRow","tplCard","bulkBar","durumSekme","hizlandirRow","filterRow2","results"]],
+      ["uyeler",  "👥", "Üyeler & Onaylar",   ["toolsRow","etiketCard","tplCard","bulkBar","durumSekme","hizlandirRow","filterRow2","results"]],
       ["isler",   "💼", "İşler & Paylaşım",   ["takH2","takCard","jobH2","jobCard","jobsList","shareH2","shareCard"]],
       ["finance", "💰", "Finansal Takip",      ["financeH2","financeTab"]],
       ["formlar", "✉️", "Gelen Formlar",      ["subTitle","subInfo","frmSekme","subFiltre","subs"]],
@@ -1800,8 +1999,10 @@
       sekmeSayaclari();
       if (DURUM === "silinen") { renderSilinenler(q); return; }
       const musaitGun = $("fMusait").value, musaitMod = $("fMusaitMod").value;
+      const dikkatKural = DIKKAT.find(d => d[0] === DIKKAT_SEC);
       let users = DATA.users.filter(u => {
         const p = u.profile || {};
+        if (dikkatKural && !dikkatKural[2](u)) return false;
         if (DURUM === "yayinda") { if (p.published !== "1") return false; }
         else if (DURUM && (p.status || "inceleniyor") !== DURUM) return false;
         if (catF && !(p.category || "").split(",").includes(catF)) return false;
@@ -1823,7 +2024,9 @@
         : srt === "ad" ? (a.fullname || "").localeCompare(b.fullname || "", "tr")
         : (b.created || "").localeCompare(a.created || ""));
       LISTE = users;
-      $("countInfo").textContent = users.length + " üye";
+      $("countInfo").innerHTML = users.length + " üye" + (dikkatKural
+        ? ` <span class="dikkat-rozet">${dikkatKural[1]} <button type="button" onclick="dikkatTemizle()" title="Süzgeci kaldır">✕</button></span>`
+        : "");
 
       $("results").innerHTML = users.length ? users.map(u => {
         const p = u.profile || {};
@@ -2805,11 +3008,53 @@
         }
       }
     });
-    function renderLogs() {
-      $("logTitle").hidden = !(DATA.audit || []).length;
-      $("logs").innerHTML = (DATA.audit || []).map(l =>
-        `<div class="adm-log">${l.created?.slice(0,16).replace("T"," ")} · <strong>${l.who}</strong>${l.ip ? ' <span style="opacity:.6">[' + l.ip + ']</span>' : ""} → ${l.action}${l.user_id ? " (üye #" + l.user_id + ")" : ""}${l.detail ? " — " + esc(l.detail) : ""}</div>`).join("");
+    /* =========================================================
+       Denetim günlüğü — arama, kişi/tarih süzgeci, CSV dışa aktarma
+       ========================================================= */
+    function logSuz() {
+      const q = ($("logQ")?.value || "").toLowerCase();
+      const kim = $("logKim")?.value || "";
+      const bas = $("logBas")?.value || "", bit = $("logBit")?.value || "";
+      return (DATA.audit || []).filter(l => {
+        if (kim && l.who !== kim) return false;
+        const g = (l.created || "").slice(0, 10);
+        if (bas && g < bas) return false;
+        if (bit && g > bit) return false;
+        if (q && !`${l.who} ${l.action} ${l.detail} ${l.user_id || ""} ${l.ip || ""}`.toLowerCase().includes(q)) return false;
+        return true;
+      });
     }
+    function renderLogs() {
+      const hepsi = DATA.audit || [];
+      $("logTitle").hidden = !hepsi.length;
+      if ($("logAracRow")) $("logAracRow").hidden = !hepsi.length;
+      const kimler = [...new Set(hepsi.map(l => l.who))].sort();
+      const secili = $("logKim").value;
+      $("logKim").innerHTML = '<option value="">Herkes</option>' +
+        kimler.map(k => `<option ${k === secili ? "selected" : ""}>${esc(k)}</option>`).join("");
+      const liste = logSuz();
+      $("logSayi").textContent = `${liste.length} kayıt (toplam ${hepsi.length})`;
+      $("logs").innerHTML = liste.length
+        ? liste.map(l =>
+          `<div class="adm-log">${l.created?.slice(0,16).replace("T"," ")} · <strong>${esc(l.who)}</strong>${l.ip ? ' <span style="opacity:.6">[' + esc(l.ip) + ']</span>' : ""} → ${esc(l.action)}${l.user_id ? " (üye #" + l.user_id + ")" : ""}${l.detail ? " — " + esc(l.detail) : ""}</div>`).join("")
+        : '<div class="bos-durum"><span class="ikon">🔍</span>Bu süzgece uyan kayıt yok.</div>';
+    }
+    ["logQ", "logKim", "logBas", "logBit"].forEach(id =>
+      $(id)?.addEventListener(id === "logQ" ? "input" : "change", renderLogs));
+    $("logTemizle")?.addEventListener("click", () => {
+      ["logQ", "logKim", "logBas", "logBit"].forEach(id => $(id).value = "");
+      renderLogs();
+    });
+    $("logCsv")?.addEventListener("click", () => {
+      const satirlar = [["tarih", "kim", "islem", "uye_id", "ayrinti", "ip"]]
+        .concat(logSuz().map(l => [l.created || "", l.who || "", l.action || "", l.user_id || "", l.detail || "", l.ip || ""]));
+      const csv = "﻿" + satirlar.map(s => s.map(h => `"${String(h).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      a.download = "denetim-gunlugu-" + new Date().toISOString().slice(0, 10) + ".csv";
+      a.click();
+      toast("⬇ Günlük indirildi (" + (satirlar.length - 1) + " kayıt)");
+    });
   </script>
 </body>
 </html>

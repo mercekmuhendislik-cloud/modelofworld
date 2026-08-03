@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=ce846f1">
+  <link rel="stylesheet" href="assets/css/style.css?v=c09136c">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .service-full {
@@ -44,9 +44,16 @@
     .sf-body ul { display: grid; gap: 11px; margin-bottom: 28px; }
     .sf-body ul li { display: flex; gap: 12px; color: var(--text-2); font-size: .95rem; }
     .sf-body ul li::before { content: "—"; color: var(--gold); flex: none; }
+    /* Başlangıç fiyatı — kartın içinde ayrı bir şerit */
+    .svc-fiyat {
+      display: flex; flex-direction: column; gap: 4px;
+      border-left: 2px solid var(--gold); padding: 10px 0 10px 14px; margin-bottom: 26px;
+    }
+    .svc-fiyat strong { font-family: var(--font-serif); font-size: 1.3rem; color: var(--gold); }
+    .svc-fiyat span { font-size: .82rem; color: var(--text-2); max-width: 46ch; }
   </style>
-  <meta name="mow-surum" content="ce846f1">
-  <script src="assets/js/surum-kontrol.js?v=ce846f1"></script>
+  <meta name="mow-surum" content="c09136c">
+  <script src="assets/js/surum-kontrol.js?v=c09136c"></script>
 </head>
 <body data-page="hizmetler">
   <div id="site-header"></div>
@@ -75,12 +82,25 @@
   <div id="site-footer"></div>
 
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=ce846f1"></script>
-  <script src="assets/js/main.js?v=ce846f1"></script>
-  <script src="assets/js/analytics.js?v=ce846f1"></script>
+  <script src="assets/js/data.js?v=c09136c"></script>
+  <script src="assets/js/main.js?v=c09136c"></script>
+  <script src="assets/js/analytics.js?v=c09136c"></script>
   <script>
     (function () {
-      const { SERVICES } = window.VERA;
+      const { SERVICES, RATES, PRICING } = window.VERA;
+
+      /* Başlangıç fiyatı: teklif hesaplayıcısının kullandığı tarifenin alt sınırı.
+         Tek kaynak olduğu için formdaki tahminle burada yazan hiç çelişmez. */
+      function fiyatSatiri(s) {
+        if (!PRICING || PRICING.show === false) return "";
+        if (s.priceNote) return `<p class="svc-fiyat"><strong>${s.priceNote}</strong></p>`;
+        const t = RATES[s.id];
+        if (!t || !t[0]) return "";
+        return `<p class="svc-fiyat">
+          <strong>${PRICING.prefix} ${(+t[0]).toLocaleString("tr-TR")} ${PRICING.suffix}</strong>
+          <span>${PRICING.note}</span></p>`;
+      }
+
       document.getElementById("servicesRoot").innerHTML = SERVICES.map((s, i) => `
         <article class="service-full reveal" id="${s.id}">
           <div class="sf-visual" style="--sv1:${s.gradient[0]};--sv2:${s.gradient[1]}">
@@ -92,6 +112,7 @@
             <h2>${s.title}</h2>
             <p>${s.short}</p>
             <ul>${s.details.map(d => `<li>${d}</li>`).join("")}</ul>
+            ${fiyatSatiri(s)}
             <div style="display:flex;gap:12px;flex-wrap:wrap">
               <a class="btn btn-gold btn-sm" href="teklif">Bu Hizmet İçin Teklif Al</a>
               ${s.catalogCat ? `<a class="btn btn-ghost btn-sm" href="katalog?cat=${s.catalogCat}">Kadroyu İncele</a>` : ""}

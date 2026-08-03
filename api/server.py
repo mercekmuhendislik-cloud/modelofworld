@@ -911,7 +911,8 @@ class Handler(BaseHTTPRequestHandler):
                            o.checkin_loc, o.feedback_rating, o.feedback_note, u.fullname, u.id user_id
                     FROM job_offers o JOIN users u ON u.id=o.user_id WHERE o.job_id=?""", (j["id"],))]
             subs = [dict(r) for r in db().execute("SELECT * FROM submissions ORDER BY id DESC LIMIT 100")]
-            logs = [dict(r) for r in db().execute("SELECT * FROM audit ORDER BY id DESC LIMIT 120")]
+            # Günlükte tarih/kişi süzgeci yapılabilsin diye geniş pencere gönderilir
+            logs = [dict(r) for r in db().execute("SELECT * FROM audit ORDER BY id DESC LIMIT 600")]
             sos = [dict(r) for r in db().execute("SELECT * FROM submissions WHERE kind='SOS' ORDER BY id DESC LIMIT 20")]
             shares = [dict(r) for r in db().execute("SELECT token, user_ids, allow_sensitive, expires, client_likes FROM shares WHERE expires >= ? ORDER BY rowid DESC LIMIT 20", (now(),))]
             # Rol bazlı veri filtresi: finans izni olmayan roller IBAN/vergi göremez
@@ -1851,6 +1852,54 @@ class Handler(BaseHTTPRequestHandler):
             audit("admin:" + adm["username"], "durum-" + st, uid, note[:100])
             db().commit()
             return self._json(200, {"ok": True})
+
+        if p == "/api/admin/tags":
+            # Etiket düzeni: yeniden adlandır / birleştir / sil / seçili üyelere ekle
+            adm = self._admin(qs)
+            if not self._can(adm, "note"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            d = jbody()
+            act = d.get("action")
+            eski = str(d.get("from") or "").strip()
+            yeni = str(d.get("to") or "").strip()[:40]
+
+            def etiketler(uid):
+                r = db().execute("SELECT admin_tags FROM profiles WHERE user_id=?", (uid,)).fetchone()
+                return [t.strip() for t in ((r["admin_tags"] if r else "") or "").split(",") if t.strip()]
+
+            def yaz(uid, liste):
+                temiz, gorulen = [], set()
+                for t in liste:
+                    a = t.strip()[:40]
+                    if a and a.lower() not in gorulen:
+                        gorulen.add(a.lower()); temiz.append(a)
+                db().execute("UPDATE profiles SET admin_tags=? WHERE user_id=?", (", ".join(temiz)[:400], uid))
+
+            if act in ("rename", "merge", "delete"):
+                if not eski: return self._json(400, {"error": "Kaynak etiket gerekli"})
+                if act != "delete" and not yeni: return self._json(400, {"error": "Hedef etiket gerekli"})
+                sayac = 0
+                for r in db().execute("SELECT user_id, admin_tags FROM profiles WHERE admin_tags IS NOT NULL AND admin_tags<>''"):
+                    mevcut = [t.strip() for t in (r["admin_tags"] or "").split(",") if t.strip()]
+                    if not any(t.lower() == eski.lower() for t in mevcut): continue
+                    kalan = [t for t in mevcut if t.lower() != eski.lower()]
+                    if act != "delete": kalan.append(yeni)
+                    yaz(r["user_id"], kalan)
+                    sayac += 1
+                audit("admin:" + adm["username"], "etiket-" + act, None,
+                      "%s%s (%d üye)" % (eski, "" if act == "delete" else " → " + yeni, sayac))
+                db().commit()
+                return self._json(200, {"ok": True, "etkilenen": sayac})
+
+            if act == "assign":
+                ids = [int(x) for x in (d.get("user_ids") or [])][:200]
+                if not yeni or not ids: return self._json(400, {"error": "Etiket ve üye listesi gerekli"})
+                for uid in ids:
+                    yaz(uid, etiketler(uid) + [yeni])
+                audit("admin:" + adm["username"], "etiket-eklendi", None, "%s (%d üye)" % (yeni, len(ids)))
+                db().commit()
+                return self._json(200, {"ok": True, "etkilenen": len(ids)})
+
+            return self._json(400, {"error": "Geçersiz işlem"})
 
         if p == "/api/admin/note":
             adm = self._admin(qs)

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projeler — Model of World</title>
+  <meta name="description" content="Model of World'ün tamamladığı defile, fuar, lansman ve prodüksiyon projeleri: ihtiyaç, kurulan kadro ve teslim edilen iş.">
+  <!-- Open Graph & Twitter Cards -->
+  <link rel="canonical" href="https://www.modelofworld.com/proje">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Model of World">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="Projeler — Model of World">
+  <meta property="og:description" content="Tamamlanan defile, fuar, lansman ve prodüksiyon projeleri: ihtiyaç, kadro, teslim.">
+  <meta property="og:url" content="https://www.modelofworld.com/proje">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&auto=format&fit=crop&w=1200&h=630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Projeler — Model of World">
+  <meta name="twitter:description" content="Tamamlanan defile, fuar, lansman ve prodüksiyon projeleri.">
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&auto=format&fit=crop&w=1200&h=630">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css?v=c09136c">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
+  <style>
+    /* Vaka künyesi — şehir / süre / kadro */
+    .vk-kunye {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1px; background: var(--line); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden; margin: 26px 0 34px;
+    }
+    .vk-kunye div { background: var(--surface); padding: 16px 18px; }
+    .vk-kunye dt { font-size: .6rem; text-transform: uppercase; letter-spacing: .18em; color: var(--text-2); }
+    .vk-kunye dd { font-family: var(--font-serif); font-size: 1.2rem; margin-top: 6px; }
+
+    /* Bölüm blokları */
+    .vk-blok { margin-bottom: 38px; }
+    .vk-blok h2 { font-size: clamp(1.4rem, 2.6vw, 1.9rem); margin-bottom: 12px; }
+    .vk-blok p { color: var(--text-2); max-width: 68ch; }
+    .vk-blok ul { display: grid; gap: 11px; margin-top: 14px; }
+    .vk-blok ul li { display: flex; gap: 12px; color: var(--text-2); font-size: .96rem; }
+    .vk-blok ul li::before { content: "—"; color: var(--gold); flex: none; }
+
+    .vk-alinti {
+      border-left: 3px solid var(--gold); padding: 6px 0 6px 20px; margin: 30px 0;
+      font-family: var(--font-serif); font-size: 1.3rem; line-height: 1.6;
+    }
+    .vk-alinti footer { font-family: var(--font-sans); font-size: .82rem; color: var(--text-2); margin-top: 10px; }
+
+    .vk-gorseller { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 20px; }
+    .vk-gorseller img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--line); }
+
+    .vk-kapak { position: relative; aspect-ratio: 21/9; border-radius: var(--radius); overflow: hidden; margin-bottom: 8px; }
+    .vk-kapak img { width: 100%; height: 100%; object-fit: cover; }
+    @media (max-width: 700px) { .vk-kapak { aspect-ratio: 16/10; } }
+
+    .vk-gizli { font-size: .84rem; color: var(--text-2); font-style: italic; }
+    .vk-diger { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  </style>
+  <meta name="mow-surum" content="c09136c">
+  <script src="assets/js/surum-kontrol.js?v=c09136c"></script>
+</head>
+<body data-page="proje">
+  <div id="site-header"></div>
+
+  <div id="icerik"></div>
+
+  <div id="site-footer"></div>
+
+  <script src="/api/cast.js"></script>
+  <script src="assets/js/data.js?v=c09136c"></script>
+  <script src="assets/js/main.js?v=c09136c"></script>
+  <script src="assets/js/analytics.js?v=c09136c"></script>
+  <script>
+    (function () {
+      const { PROJECTS } = window.VERA;
+      const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      const kok = document.getElementById("icerik");
+      const id = (new URLSearchParams(location.search).get("id") || "").trim();
+      const p = PROJECTS.find(x => x.id === id);
+
+      /* --- Liste görünümü: id verilmediyse veya bulunamadıysa --- */
+      if (!p) {
+        const kartlar = PROJECTS.map(x => `
+          <a class="project-card reveal" href="proje?id=${encodeURIComponent(x.id)}" data-cursor="Vakayı Oku">
+            <div class="project-visual" style="--pv1:${x.gradient[0]};--pv2:${x.gradient[1]}">
+              ${x.img ? `<img class="cover" src="${x.img}?q=80&auto=format&fit=crop&w=640&h=400" alt="${esc(x.title)}" loading="lazy">` : ""}
+              <span class="pv-cat">${esc(x.category)}</span>
+            </div>
+            <div class="project-body">
+              <h3>${esc(x.title)}</h3>
+              <p>${esc(x.scope)}</p>
+              <span class="pv-date">${esc(x.date)} · Vakayı oku →</span>
+            </div>
+          </a>`).join("");
+
+        kok.innerHTML = `
+          <div class="page-head"><div class="container">
+            <span class="eyebrow">Saha &amp; Sahne</span>
+            <h1>Tamamlanan<br><em class="script">Projeler</em></h1>
+            <p class="muted mt-2" style="max-width:60ch">${id ? "Aradığınız proje bulunamadı — aşağıdaki listeden seçebilirsiniz." :
+              "Defile, fuar, lansman ve prodüksiyon operasyonlarımız: ihtiyacın ne olduğu, nasıl bir kadro kurduğumuz ve neyi teslim ettiğimiz."}</p>
+          </div></div>
+          <section style="padding-top:0"><div class="container">
+            <div class="projects-grid">${kartlar}</div>
+          </div></section>
+          <section class="cta-band"><div class="container">
+            <span class="eyebrow" style="justify-content:center">Benzer bir işiniz mi var?</span>
+            <h2>Projenizi anlatın, kadroyu biz kuralım.</h2>
+            <p>Brief görüşmesi ücretsizdir; kapsam netleşmemiş olsa bile konuşabiliriz.</p>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+              <a class="btn btn-gold" href="teklif">Teklif İsteyin</a>
+              <a class="btn btn-ghost" href="randevu">15 Dakikalık Görüşme Ayarla</a>
+            </div>
+          </div></section>`;
+        window.VERA.observeNew();
+        return;
+      }
+
+      /* --- Vaka detayı --- */
+      document.title = p.title + " — Model of World";
+      const kunye = [
+        ["Marka", p.brand || null],
+        ["Kategori", p.category],
+        ["Şehir", p.city],
+        ["Süre", p.days],
+        ["Kadro", p.people || p.scope],
+        ["Tarih", p.date],
+      ].filter(([, v]) => v);
+
+      const digerleri = PROJECTS.filter(x => x.id && x.id !== p.id);
+
+      kok.innerHTML = `
+        <div class="page-head"><div class="container">
+          <span class="eyebrow">${esc(p.category)}</span>
+          <h1>${esc(p.title)}</h1>
+          <p class="muted mt-2" style="max-width:62ch">${esc(p.scope)}</p>
+          <p class="mt-2"><a class="btn btn-ghost btn-sm" href="proje">← Tüm projeler</a></p>
+        </div></div>
+
+        <section style="padding-top:0"><div class="container" style="max-width:900px">
+          ${p.img ? `<div class="vk-kapak reveal">
+            <img src="${p.img}?q=80&auto=format&fit=crop&w=1400&h=600" alt="${esc(p.title)}"></div>` : ""}
+          ${!p.brand ? '<p class="vk-gizli">Marka adı, gizlilik anlaşması gereği paylaşılmıyor.</p>' : ""}
+
+          <dl class="vk-kunye reveal">
+            ${kunye.map(([a, b]) => `<div><dt>${a}</dt><dd>${esc(b)}</dd></div>`).join("")}
+          </dl>
+
+          ${p.need ? `<div class="vk-blok reveal">
+            <h2>İhtiyaç</h2><p>${esc(p.need)}</p></div>` : ""}
+
+          ${(p.work && p.work.length) ? `<div class="vk-blok reveal">
+            <h2>Ne yaptık</h2>
+            <ul>${p.work.map(w => `<li>${esc(w)}</li>`).join("")}</ul></div>` : ""}
+
+          ${p.result ? `<div class="vk-blok reveal">
+            <h2>Sonuç</h2><p>${esc(p.result)}</p></div>` : ""}
+
+          ${p.quote ? `<blockquote class="vk-alinti reveal">“${esc(p.quote)}”
+            ${p.quoteBy ? `<footer>${esc(p.quoteBy)}</footer>` : ""}</blockquote>` : ""}
+
+          ${(p.gallery && p.gallery.length) ? `<div class="vk-blok reveal">
+            <h2>Kareler</h2>
+            <div class="vk-gorseller">${p.gallery.map(g =>
+              `<img src="${esc(g)}" alt="${esc(p.title)}" loading="lazy">`).join("")}</div></div>` : ""}
+        </div></section>
+
+        ${digerleri.length ? `<section style="background:var(--bg-2);border-block:1px solid var(--line)">
+          <div class="container">
+            <div class="section-head reveal"><span class="eyebrow">Devamı</span><h2>Diğer Projeler</h2></div>
+            <div class="vk-diger">${digerleri.map(x => `
+              <a class="project-card reveal" href="proje?id=${encodeURIComponent(x.id)}" data-cursor="Vakayı Oku">
+                <div class="project-visual" style="--pv1:${x.gradient[0]};--pv2:${x.gradient[1]}">
+                  ${x.img ? `<img class="cover" src="${x.img}?q=80&auto=format&fit=crop&w=640&h=400" alt="${esc(x.title)}" loading="lazy">` : ""}
+                  <span class="pv-cat">${esc(x.category)}</span>
+                </div>
+                <div class="project-body"><h3>${esc(x.title)}</h3><p>${esc(x.scope)}</p></div>
+              </a>`).join("")}</div>
+          </div></section>` : ""}
+
+        <section class="cta-band"><div class="container">
+          <span class="eyebrow" style="justify-content:center">Benzer bir operasyon</span>
+          <h2>Aynı işi sizin için de kurarız.</h2>
+          <p>Tarih ve kişi sayısını söyleyin; aynı iş günü cast seçkisi ve net fiyatla dönelim.</p>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <a class="btn btn-gold" href="teklif">Teklif İsteyin</a>
+            <a class="btn btn-ghost" href="randevu">15 Dakikalık Görüşme Ayarla</a>
+          </div>
+        </div></section>`;
+
+      window.VERA.observeNew();
+    })();
+  </script>
+</body>
+</html>

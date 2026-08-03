@@ -391,6 +391,23 @@ const SERVICES = [
   },
 ];
 
+/* Fiyat gösterimi (hizmetler sayfası)
+   -----------------------------------
+   Hizmet kartlarında "kişi/gün ... TL'den başlar" satırı, aşağıdaki RATES
+   tablosundaki alt sınırdan hesaplanır — teklif formundaki hesaplayıcı da aynı
+   tabloyu kullanır, yani iki yerde farklı sayı çıkmaz.
+
+   show: false yaparsanız fiyat satırı sitede hiç görünmez.
+   Bir hizmete özel metin yazmak isterseniz SERVICES içine priceNote ekleyin;
+   o hizmette hesaplanan satırın yerine sizin metniniz çıkar. */
+const PRICING = {
+  show: true,
+  prefix: "Kişi/gün",
+  suffix: "TL'den başlar",
+  note: "Başlangıç fiyatıdır; kişi sayısı, süre ve şehre göre değişir. " +
+        "Net fiyat brief sonrası aynı gün iletilir.",
+};
+
 /* Tahmini bütçe hesaplayıcı — kişi/gün TL aralığı (temsili; gerçek tarifeyle güncellenecek) */
 const RATES = {
   "manken-model":   [8000, 20000],
@@ -609,7 +626,7 @@ window.VERA = {
   TALENTS: KADRO, TALENTS_DEMO: TALENTS, CANLI_KADRO: CAST_CANLI.length > 0,
   GERCEK_SAYI: CAST_CANLI.length,
   AGENCY, CATEGORIES, LABELS, SERVICES, ILLER, ILLER_POPULER, DILLER,
-  RATES, HEADCOUNT_MID, DURATION_DAYS, FAQ_CANDIDATES, FAQ_CLIENTS,
+  RATES, PRICING, HEADCOUNT_MID, DURATION_DAYS, FAQ_CANDIDATES, FAQ_CLIENTS,
   PROJECTS, COUNTERS, BRANDS, TESTIMONIALS, BLOG_POSTS, ONAY_MADDELERI,
   talentPlaceholder, formatLanguages,
 };
