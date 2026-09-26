@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=9beb427">
+  <link rel="stylesheet" href="assets/css/style.css?v=551dafe">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <script type="application/ld+json">
   {
@@ -53,8 +53,8 @@
     "knowsAbout": ["fuar hostesi", "manken temini", "katalog modeli", "defile organizasyonu", "fotoğraf prodüksiyonu", "etkinlik yönetimi"]
   }
   </script>
-  <meta name="mow-surum" content="9beb427">
-  <script src="assets/js/surum-kontrol.js?v=9beb427"></script>
+  <meta name="mow-surum" content="551dafe">
+  <script src="assets/js/surum-kontrol.js?v=551dafe"></script>
 </head>
 <body data-page="home">
   <div id="site-header"></div>
@@ -212,9 +212,9 @@
   <div id="site-footer"></div>
 
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=9beb427"></script>
-  <script src="assets/js/main.js?v=9beb427"></script>
-  <script src="assets/js/analytics.js?v=9beb427"></script>
+  <script src="assets/js/data.js?v=551dafe"></script>
+  <script src="assets/js/main.js?v=551dafe"></script>
+  <script src="assets/js/analytics.js?v=551dafe"></script>
   <script>
     (function () {
       const { TALENTS, SERVICES, PROJECTS, COUNTERS, BRANDS, TESTIMONIALS,
@@ -309,11 +309,44 @@
       const car = document.getElementById("featuredCarousel");
       /* Yayında üye yoksa boş carousel göstermek yerine bölümü kaldır */
       if (!TALENTS.length) car.closest("section")?.remove();
-      /* Her açılışta farklı sıra: öne çıkanlar kendi içinde, diğerleri kendi içinde karışık gelir */
+      /* Dönüşümlü gösterim: her açılışta 8 FARKLI kişi gelir. Bir kez gösterilen kişi,
+         kadrodaki herkes sırayla gösterilmeden bir daha çıkmaz. Sıra tarayıcıda
+         (localStorage) tutulur; kadro değişirse yeni üyeler hemen öne alınır. */
       const karistir = window.VERA.karistir;
-      const oneCikanlar = karistir(TALENTS.filter(t => t.featured));
-      const digerleri = karistir(TALENTS.filter(t => !t.featured));
-      car.innerHTML = [...oneCikanlar, ...digerleri].slice(0, 8).map(renderTalentCard).join("");
+      const ANAHTAR = "mow-carousel-sira";
+      const idler = TALENTS.map(t => t.id);
+      /* Kadro küçükse kart sayısı düşer (en az 4) — yoksa aynı kişilerin peş peşe gelmesi kaçınılmaz */
+      const SLOT = Math.min(8, Math.max(4, Math.floor(idler.length / 2)));
+      /* kuyruk: bu turda sırasını bekleyenler · gosterildi: bu turda zaten çıkanlar */
+      let kuyruk = [], gosterildi = [];
+      try {
+        const d = JSON.parse(localStorage.getItem(ANAHTAR) || "{}") || {};
+        if (Array.isArray(d.kuyruk)) kuyruk = d.kuyruk;
+        if (Array.isArray(d.gosterildi)) gosterildi = d.gosterildi;
+      } catch { /* bozuk kayıt → sıfırdan başla */ }
+      kuyruk = kuyruk.filter(id => idler.includes(id));                       /* ayrılanları at */
+      gosterildi = gosterildi.filter(id => idler.includes(id));
+      /* Ne kuyrukta ne gösterilenlerde olan = kadroya yeni katılan → hemen öne */
+      const yeniler = karistir(idler.filter(id => !kuyruk.includes(id) && !gosterildi.includes(id)));
+      kuyruk = [...yeniler, ...kuyruk];
+      const sonAcilis = gosterildi.slice(-SLOT);                              /* bir önceki açılışta çıkanlar */
+      const secilen = kuyruk.splice(0, SLOT);
+      gosterildi.push(...secilen);
+      if (secilen.length < SLOT && idler.length > secilen.length) {
+        /* Tur bitti: boşluğu yeni bir karışık turdan doldur. Az önce ekrandakiler ve
+           bir önceki açılışta çıkanlar bu dolguya girmez (yeterli kişi varsa). */
+        let havuz = idler.filter(id => !secilen.includes(id) && !sonAcilis.includes(id));
+        if (havuz.length < SLOT - secilen.length) havuz = idler.filter(id => !secilen.includes(id));
+        const yeniTur = karistir(havuz);
+        const ek = yeniTur.splice(0, SLOT - secilen.length);
+        secilen.push(...ek);
+        /* Yeni tur: kuyrukta kalanlar sırayla gelir; şu an ekrandakiler tur bitene kadar bekler */
+        kuyruk = [...yeniTur, ...karistir(idler.filter(id => !yeniTur.includes(id) && !secilen.includes(id)))];
+        gosterildi = [...secilen];
+      }
+      try { localStorage.setItem(ANAHTAR, JSON.stringify({ kuyruk, gosterildi })); } catch {}
+      const kartlar = secilen.map(id => TALENTS.find(t => t.id === id)).filter(Boolean);
+      car.innerHTML = kartlar.map(renderTalentCard).join("");
       car.querySelectorAll(".reveal").forEach(el => el.classList.add("in"));
 
       const step = () => (car.querySelector(".talent-card")?.offsetWidth || 300) + 24;

@@ -14,6 +14,13 @@
   /* Varsayılan "Karışık" sıra: sayfa her açılışta farklı dizilir; filtre değiştirince
      sıra sabit kalsın diye rastgele anahtar bir kez üretilir (id → sıra numarası). */
   const rastgeleSira = new Map(karistir(TALENTS).map((t, i) => [t.id, i]));
+  const eklenmeSira = new Map(TALENTS.map((t, i) => [t.id, i]));
+
+  /* Arama için Türkçe duyarsızlaştırma: "ayse" → Ayşe, "IREM" → İrem, "gokce" → Gökçe bulur.
+     JS'in toLowerCase'i İ/ı harflerinde bozuk davranır; bu yüzden tr yereli + harf sadeleştirme. */
+  const sade = s => String(s || "").toLocaleLowerCase("tr")
+    .replace(/ş/g, "s").replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ü/g, "u")
+    .replace(/ö/g, "o").replace(/ı/g, "i").replace(/î/g, "i").replace(/â/g, "a").replace(/û/g, "u");
 
   /* Her chip grubu bir dizi tutar; boş dizi = "Tümü" */
   const state = {
@@ -33,7 +40,7 @@
   const listeye = v => String(v || "").split(",").map(x => x.trim()).filter(Boolean);
   if (params.get("cat")) state.category = listeye(params.get("cat"));
   if (params.get("gender")) state.gender = listeye(params.get("gender"));
-  if (params.get("q")) state.q = params.get("q").toLowerCase();
+  if (params.get("q")) state.q = sade(params.get("q"));
 
   /* ---- Seçenekler kadrodan üretilir ---- */
   const tekil = dizi => [...new Set(dizi.filter(v => v !== undefined && v !== null && v !== ""))];
@@ -177,20 +184,28 @@
         const kats = (t.categories && t.categories.length) ? t.categories : [t.category];
         const hay = `${t.name} ${(t.tags || []).join(" ")} ${(t.languages || []).join(" ")} ${t.city} ` +
           kats.map(k => (CATEGORIES[k] || {}).label || k).join(" ");
-        if (!hay.toLowerCase().includes(state.q)) return false;
+        if (!sade(hay).includes(state.q)) return false;
       }
       return true;
     });
+    /* Arama yazıldıysa İSMİ eşleşenler her sıralamada en başa alınır (etiket eşleşmeleri arkadan gelir) */
+    const isimEslesti = state.q ? t => sade(t.name).includes(state.q) : () => false;
 
     const sorters = {
       /* Karışık: gerçek (panelden yayınlanan) üyeler örnek profillerin önünde, kendi içinde rastgele */
       featured: (a, b) => (!!b.real - !!a.real) || (rastgeleSira.get(a.id) - rastgeleSira.get(b.id)),
+      /* En son eklenenler: kayıt tarihi (sunucudan "eklendi") yeni olan önce;
+         tarih yoksa listeye sonradan girenler önde sayılır */
+      newest: (a, b) => (!!b.real - !!a.real)
+        || String(b.eklendi || "").localeCompare(String(a.eklendi || ""))
+        || (eklenmeSira.get(b.id) - eklenmeSira.get(a.id)),
       name: (a, b) => a.name.localeCompare(b.name, "tr"),
       "height-desc": (a, b) => (b.height || 0) - (a.height || 0),
       "height-asc": (a, b) => (a.height || 0) - (b.height || 0),
       "age-asc": (a, b) => (a.age || 0) - (b.age || 0),
     };
-    list.sort(sorters[state.sort] || sorters.featured);
+    const sirala = sorters[state.sort] || sorters.featured;
+    list.sort((a, b) => (isimEslesti(b) - isimEslesti(a)) || sirala(a, b));
 
     /* Tarih seçiliyse müsait olduğunu bildirenler önce ve rozetli gösterilir */
     const gosterilecek = musaitlik
@@ -277,7 +292,7 @@
   let debounce;
   $("fSearch").addEventListener("input", e => {
     clearTimeout(debounce);
-    debounce = setTimeout(() => { state.q = e.target.value.trim().toLowerCase(); apply(); }, 200);
+    debounce = setTimeout(() => { state.q = sade(e.target.value.trim()); apply(); }, 200);
   });
 
   $("fSort").addEventListener("change", e => { state.sort = e.target.value; apply(); });

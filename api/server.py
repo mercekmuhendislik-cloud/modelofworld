@@ -467,7 +467,7 @@ def cast_list():
     """Siteye çıkacak kadro: onaylı + yayında + profili herkese açık üyeler.
        Öne çıkanlar başta. Hassas/kişisel hiçbir alan dışa verilmez."""
     rows = db().execute("""
-        SELECT u.fullname, p.* FROM profiles p JOIN users u ON u.id = p.user_id
+        SELECT u.fullname, u.created AS uye_kayit, p.* FROM profiles p JOIN users u ON u.id = p.user_id
         WHERE COALESCE(u.deleted,'') = ''
           AND COALESCE(p.published,'0') = '1'
           AND COALESCE(p.status,'') = 'onaylandi'
@@ -500,6 +500,7 @@ def cast_list():
             "hair": r["hair"] or "", "eye": r["eye"] or "", "skin": r["skin"] or "",
             "city": r["city"] or "", "languages": diller, "langLevels": {},
             "experience": "", "featured": (r["featured"] or "0") == "1", "available": True,
+            "eklendi": r["uye_kayit"] or "",         # katalogda "En Son Eklenenler" sıralaması için
             "tags": yetenekler,
             "gradient": ["#2b1d34", "#7a5c8f"],
             "photo": tumFoto[0] if tumFoto else "",
