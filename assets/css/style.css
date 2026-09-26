@@ -473,7 +473,9 @@ section { padding: clamp(64px, 9vw, 120px) 0; }
 }
 .talent-card:hover { transform: translateY(-6px); box-shadow: var(--shadow); border-color: rgba(211, 79, 110, 0.35); }
 .talent-media { aspect-ratio: 3 / 4; position: relative; overflow: hidden; }
-.talent-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
+/* Kapak kareleri farklı oranlarda gelir (9:16 telefon, 3:4 stüdyo, kare) — kırpma yüzü koruyacak
+   şekilde üst tarafa yakın yapılır; böylece her kartta baş aynı hizada kalır */
+.talent-media img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; transition: transform 0.6s ease; }
 .talent-card:hover .talent-media img { transform: scale(1.05); }
 
 /* Placeholder görsel */
@@ -602,6 +604,7 @@ input[type="range"] { flex: 1; accent-color: var(--gold); }
 }
 @media (max-width: 900px) { .detail-layout { grid-template-columns: 1fr; } }
 .detail-media { border-radius: var(--radius); overflow: hidden; aspect-ratio: 3/4; border: 1px solid var(--line); position: sticky; top: calc(var(--header-h) + 20px); }
+.detail-media img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
 @media (max-width: 900px) { .detail-media { position: static; } }
 
 .detail-name { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }

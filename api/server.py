@@ -71,7 +71,7 @@ PROFILE_COLS = [
 # Yalnızca yönetici alanları — /api/me bunları asla döndürmez
 ADMIN_COLS = ["admin_note", "admin_rating", "admin_tags"]
 # Yayın bayrakları: yalnızca yönetici değiştirir, üye görebilir
-FLAG_COLS = ["published", "featured"]
+FLAG_COLS = ["published", "featured", "cover_photo"]   # cover_photo: katalog kartında görünen fotoğrafın id'si
 # Üyeye görünen ama üyenin değiştiremediği alanlar
 READONLY_COLS = ["status", "review_note", "consent_at", "status_at"]
 LONG_COLS = {"availability": 6000, "about": 2000, "admin_note": 2000, "review_note": 1000}
@@ -479,11 +479,19 @@ def cast_list():
     for r in rows:
         uid = r["user_id"]
         gruplar = {"studio": [], "podium": [], "polaroid": []}
+        # Yöneticinin seçtiği kapak fotoğrafı hem kartta hem albümünde en başa alınır;
+        # seçim yoksa (veya seçilen kare silinmişse) en eski fotoğraf kapak olur.
+        kapak_id = _sayi(r["cover_photo"]) or 0
+        kapak = ""
         for f in db().execute("""SELECT id, album FROM photos WHERE user_id=? AND kind='photo'
-                AND deleted=0 AND COALESCE(album,'genel') != 'sanatsal' ORDER BY id""", (uid,)):
+                AND deleted=0 AND COALESCE(album,'genel') != 'sanatsal'
+                ORDER BY CASE WHEN id=? THEN 0 ELSE 1 END, id""", (uid, kapak_id)):
             al = f["album"] if f["album"] in gruplar else "studio"
-            gruplar[al].append("/api/cast-photo/%d" % f["id"])
+            url = "/api/cast-photo/%d" % f["id"]
+            gruplar[al].append(url)
+            if f["id"] == kapak_id: kapak = url
         tumFoto = gruplar["studio"] + gruplar["podium"] + gruplar["polaroid"]
+        if kapak: tumFoto = [kapak] + [u for u in tumFoto if u != kapak]
         diller = ["Türkçe"] + [d.strip() for d in (r["languages"] or "").split(",") if d.strip()]
         try: yetenekler = (json.loads(r["skills"] or "{}").get("list") or [])
         except Exception: yetenekler = []
@@ -1394,7 +1402,19 @@ class Handler(BaseHTTPRequestHandler):
             row = db().execute("SELECT * FROM photos WHERE id=?", (pid,)).fetchone()
             if not row: return self._json(404, {"error": "Dosya bulunamadı"})
             act = str(d.get("action") or "")
-            if act == "arsivle":
+            if act in ("arsivle", "kalici"):
+                # Kaldırılan kare kapaksa seçimi temizle — katalog ilk fotoğrafa döner
+                db().execute("UPDATE profiles SET cover_photo=NULL WHERE user_id=? AND cover_photo=?",
+                             (row["user_id"], str(pid)))
+            if act == "kapak":
+                # Katalog kartında ve profil sayfasında ilk görünen kare bu olur
+                if row["kind"] != "photo" or row["deleted"]:
+                    return self._json(400, {"error": "Yalnızca aktif bir fotoğraf kapak yapılabilir"})
+                if (row["album"] or "genel") == "sanatsal":
+                    return self._json(400, {"error": "Sanatsal albümdeki kare kapak olamaz"})
+                db().execute("UPDATE profiles SET cover_photo=? WHERE user_id=?", (str(pid), row["user_id"]))
+                audit("admin:" + adm["username"], "medya-kapak", row["user_id"], (row["orig"] or "")[:60])
+            elif act == "arsivle":
                 db().execute("UPDATE photos SET deleted=1 WHERE id=?", (pid,))
                 audit("admin:" + adm["username"], "medya-arsiv", row["user_id"], (row["orig"] or "")[:60])
             elif act == "geri-al":

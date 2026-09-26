@@ -85,6 +85,11 @@
     .foto-kutu .foto-sil:hover { background:#d95a5a; color:#fff; }
     .foto-kutu .foto-sil.geri { border-color:var(--gold); color:var(--gold); }
     .foto-kutu .foto-sil.geri:hover { background:var(--gold); color:#fff; }
+    /* Kapak seçimi: sol üst köşede yıldız; seçili kare altın çerçeveli */
+    .foto-kutu .foto-sil.kapak-yap { right:auto; left:-6px; border-color:var(--gold); color:var(--gold); }
+    .foto-kutu .foto-sil.kapak-yap:hover { background:var(--gold); color:#fff; }
+    .foto-kutu.kapak img { border:2px solid var(--gold); box-shadow:0 0 0 2px rgba(201,160,80,.25); }
+    .foto-kutu.kapak .foto-alb { background:var(--gold); color:#fff; font-weight:600; }
     .foto-kutu .foto-alb {
       position:absolute; left:2px; bottom:2px; right:2px; font-size:.58rem; letter-spacing:.06em;
       text-align:center; text-transform:uppercase; color:#fff; background:rgba(20,8,14,.6);
@@ -959,6 +964,19 @@
       $("durumSekme").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
       renderUsers();
     });
+    /* Üye sitede GERÇEKTEN görünüyor mu? Sunucudaki katalog sorgusuyla aynı 4 şart:
+       yayında + onaylı + profil herkese açık + hesap dondurulmamış. */
+    function katalogdaGorunur(u) {
+      const p = u.profile || {};
+      return p.published === "1" && p.status === "onaylandi" && p.privacy === "public" && p.frozen !== "1";
+    }
+    function gorunmemeNedeni(u) {
+      const p = u.profile || {};
+      if (p.status !== "onaylandi") return "onayı yok";
+      if (p.frozen === "1") return "üye hesabını dondurdu";
+      if (p.privacy !== "public") return "profil özel";
+      return "";
+    }
     function sekmeSayaclari() {
       const hepsi = DATA.users || [];
       const say = {
@@ -1049,6 +1067,12 @@
        Her satır tıklanınca üye listesi o soruna göre süzülür.
        ========================================================= */
     const DIKKAT = [
+      ["gorunmez-yayinda", "🚫 Yayında ama katalogda GÖRÜNMÜYOR (özel profil / dondurulmuş hesap / onaysız)",
+        u => u.profile?.published === "1" && !katalogdaGorunur(u), true],
+      ["olcu-mantiksiz", "📏 Boy/kilo yazım hatası (boy 100–230, kilo 30–200 dışında)", u => {
+        const b = +(u.profile?.height || 0), k = +(u.profile?.weight || 0);
+        return (b && (b < 100 || b > 230)) || (k && (k < 30 || k > 200));
+      }, true],
       ["fotosuz-yayinda", "🌐 Fotoğrafsız yayında", u => u.profile?.published === "1" &&
         !(u.media || []).some(m => m.kind === "photo" && !m.deleted), true],
       ["onaysiz-yayinda", "📋 Onayı olmadan yayında", u => u.profile?.published === "1" &&
@@ -1094,7 +1118,13 @@
         kart("onayli", `<strong>${onayli}</strong><span>Kadroda</span>`) +
         kart("yeni", `<strong>+${yeni}</strong><span>Son 7 Gün</span>`) +
         kart("kabul", `<strong>${kabul}</strong><span>Kabul Edilen İş</span>`) +
-        kart("sitede", `<strong style="color:#20744c">${users.filter(u => u.profile?.published === "1").length}</strong><span>Sitede Yayında</span>`) +
+        kart("sitede", (() => {
+          const yayinda = users.filter(u => u.profile?.published === "1").length;
+          const gorunen = users.filter(katalogdaGorunur).length;
+          const fark = yayinda - gorunen;
+          return `<strong style="color:${fark ? "#c62828" : "#20744c"}">${gorunen}</strong><span>Sitede Görünen${fark
+            ? ` <em style="color:#c62828;font-style:normal" title="Yayında işaretli ama katalogda çıkmayan üye var — Dikkat listesinden bakın">(${yayinda} yayında, ${fark} görünmüyor)</em>` : ""}</span>`;
+        })()) +
         kart("mesaj", (() => {
           const bekleyenMesaj = (DATA.submissions || []).filter(x =>
             ["mesaj", "iletisim"].includes(String(x.kind).toLowerCase()) && x.processed !== "1").length;
@@ -2260,8 +2290,10 @@
         const aktif = (u.media || []).filter(m => !m.deleted);
         const arsiv = (u.media || []).filter(m => m.deleted);
         const fotolar = aktif.filter(m => m.kind === "photo");
-        const thumb = fotolar[0]
-          ? `<img class="adm-thumb" src="/api/photo/${fotolar[0].id}?k=1" loading="lazy" alt=""
+        // Üye kartındaki küçük resim = sitedeki kapak (seçilmemişse ilk fotoğraf)
+        const kapakFoto = fotolar.find(m => String(m.id) === String(p.cover_photo)) || fotolar[0];
+        const thumb = kapakFoto
+          ? `<img class="adm-thumb" src="/api/photo/${kapakFoto.id}?k=1" loading="lazy" alt=""
                   onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'adm-thumb',title:'Fotoğraf açılamadı'}))">`
           : `<div class="adm-thumb" title="Fotoğraf yok"></div>`;
         const videolar = aktif.filter(m => m.kind === "video");
@@ -2290,6 +2322,11 @@
               : (p.published === "1"
                 ? '<span class="adm-badge eksik" title="Üye profili özel — yayında olmasına rağmen katalogda GÖRÜNMEZ. Düzeltmek için Yayından Al → Siteye Çıkar yapıp gizliliği açın.">⚠️ ÖZEL — KATALOGDA GÖRÜNMEZ</span>'
                 : '<span class="adm-badge" title="Profil özel — yayına alınsa bile katalogda görünmez, yalnızca VIP paylaşımlarda çıkar">🔒 özel</span>')}
+            ${p.frozen === "1"
+              ? `<span class="adm-badge eksik" title="Üye panelinden hesabını geçici olarak dondurdu — katalogda çıkmaz, iş teklifi almaz${p.published === "1" ? ". Yayında işaretli olsa da sitede GÖRÜNMEZ." : ""}">❄️ HESABINI DONDURDU${p.published === "1" ? " — KATALOGDA GÖRÜNMEZ" : ""}</span>` : ""}
+            ${(() => { const b = +(p.height || 0), k = +(p.weight || 0);
+              return ((b && (b < 100 || b > 230)) || (k && (k < 30 || k > 200)))
+                ? `<span class="adm-badge eksik" title="Boy/kilo yazım hatası görünüyor (boy ${p.height || "—"}, kilo ${p.weight || "—"}). Düzenle ile düzeltin; katalog filtreleri bu üyeyi yanlış süzebilir.">📏 ÖLÇÜ HATALI: ${esc(p.height)} cm / ${esc(p.weight)} kg</span>` : ""; })()}
             ${p.admin_tags ? `<span class="adm-badge">🏷 ${esc(p.admin_tags)}</span>` : ""}
             ${yeniMi(u.created) ? '<span class="adm-badge" style="color:#20744c;border-color:#4da878">🆕 yeni</span>' : ""}
             ${fotolar.length ? `<span class="adm-badge">📷 ${fotolar.length}</span>`
@@ -2306,6 +2343,8 @@
                 ? `<button class="btn ${p.published === "1" ? "btn-ghost" : "btn-gold"}" data-act="yayin">${p.published === "1" ? "⛔ Yayından Al" : "🌐 Siteye Çıkar"}</button>
                    ${(p.published === "1" && p.privacy !== "public")
                      ? `<button class="btn btn-gold" data-act="gizlilikac" title="Profil özel olduğu için katalogda görünmüyor — tek tıkla herkese açık yapın">🌍 Katalogda Göster</button>` : ""}
+                   ${p.frozen === "1"
+                     ? `<button class="btn btn-gold" data-act="dondurkaldir" title="Üyenin kendi koyduğu dondurmayı kaldırır; üye tekrar katalogda görünür ve teklif alır">❄️ Dondurmayı Kaldır</button>` : ""}
                    <button class="btn btn-ghost" data-act="one">${p.featured === "1" ? "☆ Öne Çıkarma" : "⭐ Öne Çıkar"}</button>` : ""}
               ${p.consent_kvkk === "1"
                 ? ""
@@ -2326,11 +2365,13 @@
             ${rateLine(p)}
             ${p.review_note ? `<br>📮 Üyeye iletilen not: "${esc(p.review_note)}"` : ""}
             <div class="adm-photos">
-              ${fotolar.map(m => `<span class="foto-kutu">${m.album === "sanatsal"
+              ${fotolar.map(m => `<span class="foto-kutu${String(m.id) === String(p.cover_photo) ? " kapak" : ""}">${m.album === "sanatsal"
                 ? `<img class="nsfw" src="/api/photo/${m.id}?k=1" loading="lazy" title="Sanatsal — netleştirmek için tıklayın" onclick="this.classList.toggle('show')">`
                 : `<a href="/api/photo/${m.id}" target="_blank" title="${m.album} — tam boy açmak için tıklayın"><img src="/api/photo/${m.id}?k=1" loading="lazy"></a>`}
-                <span class="foto-alb">${m.album || "genel"}</span>
+                <span class="foto-alb">${String(m.id) === String(p.cover_photo) ? "★ kapak" : (m.album || "genel")}</span>
                 <button class="foto-sil" data-foto="${m.id}" data-fact="arsivle" title="Fotoğrafı kaldır (arşive taşınır, geri alınabilir)">✕</button>
+                ${m.album !== "sanatsal" && String(m.id) !== String(p.cover_photo)
+                  ? `<button class="foto-sil kapak-yap" data-foto="${m.id}" data-fact="kapak" title="Kapak yap — katalog kartında ve profil sayfasında ilk bu kare görünür">★</button>` : ""}
               </span>`).join("")}
               ${videolar.map(m => `<span class="foto-kutu"><a class="btn btn-ghost btn-sm" href="/api/photo/${m.id}" target="_blank">🎬 ${esc(m.orig)}</a>
                 <button class="foto-sil" data-foto="${m.id}" data-fact="arsivle" title="Videoyu kaldır (arşive taşınır)">✕</button></span>`).join("")}
@@ -2467,7 +2508,9 @@
       const r = await api("/api/admin/media", { photo_id: pid, action: fact });
       if (!r.ok) { toast(r.err || "İşlem yapılamadı", "hata"); return; }
       toast(fact === "geri-al" ? "↩ Dosya geri alındı"
-          : fact === "kalici" ? "🗑 Dosya sunucudan silindi" : "🗄 Dosya arşive taşındı");
+          : fact === "kalici" ? "🗑 Dosya sunucudan silindi"
+          : fact === "kapak" ? "★ Kapak fotoğrafı güncellendi — katalog 30 sn içinde yenilenir"
+          : "🗄 Dosya arşive taşındı");
       load();
     });
 
@@ -2640,6 +2683,19 @@
       }
 
       /* --- Yayında ama özel: gizliliği açıp katalogda göster --- */
+      if (act === "dondurkaldir") {
+        const uye = (DATA.users || []).find(x => x.id === uid) || {};
+        if (!(await onayIste(
+              (uye.fullname || "Üye") + " hesabını panelinden kendisi dondurmuş (tatil, sağlık vb.). " +
+              "Dondurmayı kaldırırsanız katalogda tekrar görünür ve iş teklifi almaya başlar. " +
+              "Mümkünse önce üyeye haber verin.",
+              "❄️ Dondurmayı Kaldır", "Hesabı Aktifleştir"))) return;
+        const sonuc = await api("/api/admin/update", { user_id: uid, frozen: "0" });
+        if (!sonuc.ok) { toast(sonuc.err || "Hata", "hata"); return; }
+        toast("✅ Dondurma kaldırıldı — üye 30 saniye içinde katalogda görünür");
+        load(); return;
+      }
+
       if (act === "gizlilikac") {
         const uye = (DATA.users || []).find(x => x.id === uid) || {};
         if (!(await onayIste(
