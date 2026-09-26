@@ -23,7 +23,7 @@ const AGENCY = {
   instagram: "https://instagram.com/",
   /* Resmi ticari bilgiler — yayın öncesi gerçek değerlerle doldurulacak */
   legal: {
-    title: "Model of World Ajans Organizasyon ve Prodüksiyon Ltd. Şti.",
+    title: "Model of World Organizasyon ve Prodüksiyon Ltd. Şti.",
     taxOffice: "Şişli V.D.",
     taxNo: "000 000 0000",
     mersis: "0000-0000-0000-0000",
@@ -50,25 +50,25 @@ AGENCY.mapsYolTarifi = () =>
    --------------------------------------------------------- */
 const ONAY_MADDELERI = [
   {
-    baslik: "Ajans kaydı",
+    baslik: "Kadro kaydı",
     metin: "Model of World'ün model / hostes kadrosuna kaydedilmemi, verdiğim bilgilerin iş " +
-           "yönlendirmesi ve casting süreçleri için ajans tarafından işlenmesini kabul ediyorum.",
+           "yönlendirmesi ve casting süreçleri için Model of World tarafından işlenmesini kabul ediyorum.",
   },
   {
     baslik: "Kişisel verilerin işlenmesi (KVKK)",
     metin: "Ad soyad, iletişim bilgilerim, ölçülerim ve fotoğraflarımın 6698 sayılı KVKK kapsamında " +
-           "ajans tarafından kaydedilmesine ve saklanmasına izin veriyorum. Bilgilerim yalnızca " +
+           "Model of World tarafından kaydedilmesine ve saklanmasına izin veriyorum. Bilgilerim yalnızca " +
            "iş süreçleri için kullanılır, üçüncü kişilere pazarlama amacıyla satılmaz.",
   },
   {
     baslik: "Görsel kullanımı",
-    metin: "Fotoğraflarımın ajansın internet sitesinde, cast kataloğunda ve müşterilere sunulan " +
+    metin: "Fotoğraflarımın Model of World internet sitesinde, cast kataloğunda ve müşterilere sunulan " +
            "seçkilerde tanıtım amacıyla yayınlanmasına izin veriyorum. Sitede gizlilik kuralı gereği " +
            "yalnızca adım ve soyadımın baş harfi görünür.",
   },
   {
     baslik: "Ücret alınmaz",
-    metin: "Ajansa kayıt, değerlendirme ve iş yönlendirmesi için hiçbir ücret ödemediğimi; " +
+    metin: "Kayıt, değerlendirme ve iş yönlendirmesi için hiçbir ücret ödemediğimi; " +
            "benden kayıt, dosya veya çekim ücreti istenmediğini beyan ederim.",
   },
 ];
@@ -423,12 +423,12 @@ const DURATION_DAYS = { "yarim-gun": 0.6, "1-gun": 1, "2-3-gun": 2.5, "hafta": 6
 
 /* Aday SSS */
 const FAQ_CANDIDATES = [
-  { q: "Ajansınıza nasıl seçilirim?", a: "Üye olup panelinizden başvurunuzu tamamlamanız yeterli. Casting ekibimiz her başvuruyu 5 iş günü içinde inceler; uygun profiller görüşmeye davet edilir." },
-  { q: "Başvuru veya kayıt için ücret ödeyecek miyim?", a: "Hayır. Ajansımız adaylardan hiçbir aşamada kayıt, dosya veya çekim ücreti talep etmez. Sizden ücret isteyen kişilere itibar etmeyin." },
-  { q: "Deneyimim yok, başvurabilir miyim?", a: "Evet. Kadromuzun bir bölümü ajans bünyesinde eğitilerek ilk işine bizimle çıkmıştır. Değerlendirmede potansiyel esas alınır." },
+  { q: "Kadronuza nasıl seçilirim?", a: "Üye olup panelinizden başvurunuzu tamamlamanız yeterli. Casting ekibimiz her başvuruyu 5 iş günü içinde inceler; uygun profiller görüşmeye davet edilir." },
+  { q: "Başvuru veya kayıt için ücret ödeyecek miyim?", a: "Hayır. Model of World adaylardan hiçbir aşamada kayıt, dosya veya çekim ücreti talep etmez. Sizden ücret isteyen kişilere itibar etmeyin." },
+  { q: "Deneyimim yok, başvurabilir miyim?", a: "Evet. Kadromuzun bir bölümü bünyemizde eğitilerek ilk işine bizimle çıkmıştır. Değerlendirmede potansiyel esas alınır." },
   { q: "Fotoğraflarım nasıl olmalı?", a: "Doğal ışıkta, makyajsız/az makyajlı, filtresiz; 1 yakın portre ve 1 tüm boy fotoğrafı zorunludur. Profesyonel çekim şart değildir." },
   { q: "Kişisel bilgilerim güvende mi?", a: "Tüm veriler KVKK kapsamında yalnızca değerlendirme amacıyla işlenir; üçüncü kişilerle paylaşılmaz. Sitede yalnızca adınız ve soyadınızın baş harfi yayınlanır." },
-  { q: "Kabul edilirsem süreç nasıl işler?", a: "Sözleşme ve gizlilik şartları panelinizden dijital olarak imzalanır, sedcard çekiminiz ajans tarafından yapılır ve profiliniz yayına hazırlanır." },
+  { q: "Kabul edilirsem süreç nasıl işler?", a: "Sözleşme ve gizlilik şartları panelinizden dijital olarak imzalanır, sedcard çekiminiz ekibimiz tarafından yapılır ve profiliniz yayına hazırlanır." },
 ];
 
 /* Müşteri SSS */
@@ -436,7 +436,7 @@ const FAQ_CLIENTS = [
   { q: "İptal şartları nelerdir?", a: "Etkinliğe 3 günden fazla kala ücretsiz iptal; son 72 saat içinde %50 kesinti uygulanır. Detaylar sözleşme taslağında yer alır." },
   { q: "Personel değişikliği nasıl yapılır?", a: "Etkinlik öncesi onayladığınız cast'te değişiklik gerekirse eşdeğer profil alternatifi ücretsiz sunulur; son dakika durumları için her operasyonda yedek plan hazırdır." },
   { q: "Teklife ne kadar sürede dönüş yapıyorsunuz?", a: "Aynı iş günü içinde size özel cast seçkisi ve fiyat çalışması iletilir. Acil operasyonlar için 7/24 WhatsApp hattımız açıktır." },
-  { q: "Üniforma / kıyafetleri kim sağlıyor?", a: "Kurumsal üniforma, konsept elbise veya markanıza özel kıyafet ajans tarafından tedarik edilebilir; kendi kıyafetinizin kullanılması da mümkündür." },
+  { q: "Üniforma / kıyafetleri kim sağlıyor?", a: "Kurumsal üniforma, konsept elbise veya markanıza özel kıyafet tarafımızca tedarik edilebilir; kendi kıyafetinizin kullanılması da mümkündür." },
 ];
 
 /* Tamamlanan projeler — ana sayfa şeridi ve proje vaka sayfaları (proje.html?id=…)
@@ -448,7 +448,7 @@ const FAQ_CLIENTS = [
      brand     Markanın adı. Gizlilik sözleşmesi varsa boş bırakın; sayfa
                "Marka adı gizlilik gereği paylaşılmıyor" yazar.
      need      Müşterinin talebi — tek paragraf, müşterinin ağzından.
-     work      Ajansın yaptığı işler — madde madde.
+     work      Yapılan işler — madde madde.
      result    Ölçülebilir sonuç. Uydurma sayı yazmayın; elinizde yoksa boş kalsın.
      team      Kadro özeti · city, days, quote (müşteri cümlesi), quoteBy
      gallery   Ek görseller: ["assets/media/proje-x-1.jpg", …]
@@ -489,7 +489,7 @@ const PROJECTS = [
       "Dil yeterliliği doğrulanmış 8 hostesin seçkisi",
       "Marka ve ürün brief'i: stant öncesi eğitim toplantısı",
       "Vardiya planı, mola düzeni ve günlük devam çizelgesi",
-      "Sahada ajans süpervizörü ve her gün için yedek profil planı",
+      "Sahada Model of World süpervizörü ve her gün için yedek profil planı",
     ],
     result: "", quote: "", quoteBy: "", gallery: [],
   },
@@ -621,10 +621,21 @@ function formatLanguages(t) {
 const CAST_CANLI = Array.isArray(window.VERA_CAST) ? window.VERA_CAST : [];
 const KADRO = CAST_CANLI;
 
+/* Diziyi rastgele karıştırır (Fisher–Yates); kaynağı değiştirmez, yeni dizi döner.
+   Ana sayfa carousel'i ve katalog her açılışta farklı sırada gelsin diye kullanılır. */
+function karistir(dizi) {
+  const d = [...dizi];
+  for (let i = d.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [d[i], d[j]] = [d[j], d[i]];
+  }
+  return d;
+}
+
 /* Diğer scriptlerin erişimi için global */
 window.VERA = {
   TALENTS: KADRO, TALENTS_DEMO: TALENTS, CANLI_KADRO: CAST_CANLI.length > 0,
-  GERCEK_SAYI: CAST_CANLI.length,
+  GERCEK_SAYI: CAST_CANLI.length, karistir,
   AGENCY, CATEGORIES, LABELS, SERVICES, ILLER, ILLER_POPULER, DILLER,
   RATES, PRICING, HEADCOUNT_MID, DURATION_DAYS, FAQ_CANDIDATES, FAQ_CLIENTS,
   PROJECTS, COUNTERS, BRANDS, TESTIMONIALS, BLOG_POSTS, ONAY_MADDELERI,

@@ -273,7 +273,7 @@
     : `<div class="video-slot">
          <div class="play">▶</div>
          <strong style="color:var(--text)">Video book hazırlanıyor</strong>
-         <span>Catwalk / tanıtım videosu için ajansımızla iletişime geçin — talep üzerine WhatsApp'tan iletilir.</span>
+         <span>Catwalk / tanıtım videosu için bizimle iletişime geçin — talep üzerine WhatsApp'tan iletilir.</span>
        </div>`;
 
   $("galleryTabs").addEventListener("click", e => {

@@ -138,7 +138,7 @@
   /* Sunucuya gönder ve GERÇEKTEN iletildi mi diye bak.
      Eskiden yanıt kontrol edilmiyordu: sunucu hata verse bile ziyaretçiye
      "talebiniz alındı" yazıyordu ve talep yalnızca ziyaretçinin tarayıcısında
-     kalıyordu — yani ajansa hiç ulaşmıyordu. */
+     kalıyordu — yani bize hiç ulaşmıyordu. */
   async function submitTo(kind, form) {
     const fd = new FormData(form);
     const data = Object.fromEntries(fd.entries());

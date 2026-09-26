@@ -101,7 +101,7 @@
         <div class="footer-grid">
           <div class="footer-about">
             ${LOGO}
-            <p>Model &amp; hostes temini, prodüksiyon ve etkinlik yönetiminde premium ajans çözümleri.</p>
+            <p>Model &amp; hostes temini, prodüksiyon ve etkinlik yönetiminde premium çözümler.</p>
           </div>
           <div>
             <h4>Menü</h4>

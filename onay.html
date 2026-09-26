@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=ddf66a4">
+  <link rel="stylesheet" href="assets/css/style.css?v=9beb427">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .onay-kart { max-width: 620px; margin-inline: auto; }
@@ -23,8 +23,8 @@
     .onay-bitti .tik { width: 58px; height: 58px; margin: 0 auto 16px; border-radius: 50%; background: var(--gold-grad);
       color: #fff; font-size: 1.7rem; display: flex; align-items: center; justify-content: center; }
   </style>
-  <meta name="mow-surum" content="ddf66a4">
-  <script src="assets/js/surum-kontrol.js?v=ddf66a4"></script>
+  <meta name="mow-surum" content="9beb427">
+  <script src="assets/js/surum-kontrol.js?v=9beb427"></script>
 </head>
 <body data-page="onay">
   <div id="site-header"></div>
@@ -33,7 +33,7 @@
     <div class="container center">
       <span class="eyebrow" style="justify-content:center">Model of World</span>
       <h1>Onay Sayfası</h1>
-      <p class="muted mt-2" style="max-width:54ch;margin-inline:auto">Ajans kaydınızın tamamlanması için aşağıdaki metni okuyup onaylamanız gerekiyor. Onayınız olmadan profiliniz sitede yayınlanmaz.</p>
+      <p class="muted mt-2" style="max-width:54ch;margin-inline:auto">Kaydınızın tamamlanması için aşağıdaki metni okuyup onaylamanız gerekiyor. Onayınız olmadan profiliniz sitede yayınlanmaz.</p>
     </div>
   </div>
 
@@ -45,7 +45,7 @@
 
         <div id="onayHataKutu" hidden>
           <p style="color:var(--danger);font-size:.95rem;line-height:1.7" id="onayHataMetin"></p>
-          <p class="muted mt-2" style="font-size:.86rem">Yeni bağlantı için ajansla iletişime geçebilirsiniz:</p>
+          <p class="muted mt-2" style="font-size:.86rem">Yeni bağlantı için bizimle iletişime geçebilirsiniz:</p>
           <div class="mt-2" style="display:flex;gap:10px;flex-wrap:wrap">
             <a class="btn btn-gold btn-sm" id="hataWa" target="_blank" rel="noopener">WhatsApp'tan Yazın</a>
             <a class="btn btn-ghost btn-sm" href="iletisim">İletişim</a>
@@ -77,7 +77,7 @@
         <div id="onayBittiKutu" class="onay-bitti" hidden>
           <div class="tik">✓</div>
           <h3 style="font-family:var(--font-serif);font-size:1.35rem">Onayınız Alındı</h3>
-          <p class="muted mt-2" style="font-size:.9rem;line-height:1.7">Teşekkürler. Kaydınız tamamlandı; ajans ekibi profilinizi bundan sonra değerlendirmeye alabilir.</p>
+          <p class="muted mt-2" style="font-size:.9rem;line-height:1.7">Teşekkürler. Kaydınız tamamlandı; ekibimiz profilinizi bundan sonra değerlendirmeye alabilir.</p>
           <div class="mt-3" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
             <a class="btn btn-ghost btn-sm" href="uye">Üye Girişi</a>
             <a class="btn btn-ghost btn-sm" href="/">Ana Sayfa</a>
@@ -91,8 +91,8 @@
   <div id="site-footer"></div>
 
   <script src="/api/cast.js"></script>
-  <script src="assets/js/data.js?v=ddf66a4"></script>
-  <script src="assets/js/main.js?v=ddf66a4"></script>
+  <script src="assets/js/data.js?v=9beb427"></script>
+  <script src="assets/js/main.js?v=9beb427"></script>
   <script>
     (function () {
       const { AGENCY, ONAY_MADDELERI } = window.VERA;
@@ -108,7 +108,7 @@
       };
 
       if (!anahtar) {
-        hata("Bu sayfaya yalnızca ajansın size gönderdiği kişiye özel bağlantıyla ulaşabilirsiniz.");
+        hata("Bu sayfaya yalnızca Model of World'ün size gönderdiği kişiye özel bağlantıyla ulaşabilirsiniz.");
         return;
       }
 

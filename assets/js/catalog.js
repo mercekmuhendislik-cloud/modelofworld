@@ -8,8 +8,12 @@
      · Diller grubunda ek anahtar  → "herhangi biri" / "hepsini bilen"
    ========================================================= */
 (function () {
-  const { TALENTS, CATEGORIES, LABELS, renderTalentCard, observeNew } = window.VERA;
+  const { TALENTS, CATEGORIES, LABELS, renderTalentCard, observeNew, karistir } = window.VERA;
   const $ = id => document.getElementById(id);
+
+  /* Varsayılan "Karışık" sıra: sayfa her açılışta farklı dizilir; filtre değiştirince
+     sıra sabit kalsın diye rastgele anahtar bir kez üretilir (id → sıra numarası). */
+  const rastgeleSira = new Map(karistir(TALENTS).map((t, i) => [t.id, i]));
 
   /* Her chip grubu bir dizi tutar; boş dizi = "Tümü" */
   const state = {
@@ -179,8 +183,8 @@
     });
 
     const sorters = {
-      /* Gerçek (panelden yayınlanan) üyeler örnek profillerin önünde gelir */
-      featured: (a, b) => (!!b.real - !!a.real) || (b.featured - a.featured) || a.name.localeCompare(b.name, "tr"),
+      /* Karışık: gerçek (panelden yayınlanan) üyeler örnek profillerin önünde, kendi içinde rastgele */
+      featured: (a, b) => (!!b.real - !!a.real) || (rastgeleSira.get(a.id) - rastgeleSira.get(b.id)),
       name: (a, b) => a.name.localeCompare(b.name, "tr"),
       "height-desc": (a, b) => (b.height || 0) - (a.height || 0),
       "height-asc": (a, b) => (a.height || 0) - (b.height || 0),
@@ -203,7 +207,7 @@
     if (!TALENTS.length) {
       empty.innerHTML =
         '<div class="serif">Kadromuz yayına hazırlanıyor</div>' +
-        '<p>Profiller ajans onayından geçtikçe burada yayınlanır. Aradığınız profili bize iletirseniz ' +
+        '<p>Profiller onaydan geçtikçe burada yayınlanır. Aradığınız profili bize iletirseniz ' +
         'uygun adayları doğrudan sunalım.</p>' +
         '<a class="btn btn-gold btn-sm mt-2" href="teklif">Profil Talebi Gönder</a>';
     } else if (!list.length && musaitlik) {

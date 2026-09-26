@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=ddf66a4">
+  <link rel="stylesheet" href="assets/css/style.css?v=9beb427">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .adm-user { border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:10px; overflow:hidden; }
@@ -312,8 +312,8 @@
       .adm-photos img { width:60px; height:80px; }
     }
   </style>
-  <meta name="mow-surum" content="ddf66a4">
-  <script src="assets/js/surum-kontrol.js?v=ddf66a4"></script>
+  <meta name="mow-surum" content="9beb427">
+  <script src="assets/js/surum-kontrol.js?v=9beb427"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -804,6 +804,13 @@
           <span class="mini" id="yFotoMsg"></span>
         </div>
         <div class="yeni-fotolar" id="yFotoOnizleme"></div>
+
+        <div class="yeni-baslik">Video Ekle</div>
+        <p class="mini">Tanıtım / yürüyüş videosu (MP4, MOV, WEBM… en fazla 250 MB). Üye daha sonra panelinden de yükleyebilir.</p>
+        <div class="adm-row">
+          <input type="file" accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi,.3gp" id="yVideoInput">
+          <span class="mini" id="yVideoMsg"></span>
+        </div>
 
         <div class="yeni-baslik">Onay Bağlantısı</div>
         <p class="mini" id="yOnayAciklama"></p>
@@ -1315,9 +1322,9 @@
       let d = String(telSade || "").replace(/\D/g, "");
       if (d.startsWith("0")) d = d.slice(1);
       if (!d.startsWith("90")) d = "90" + d;
-      const mesaj = `Merhaba ${ad}, Model of World ajansındanız. Kaydınızı oluşturduk. ` +
+      const mesaj = `Merhaba ${ad}, Model of World ekibinden yazıyoruz. Kaydınızı oluşturduk. ` +
         `Kaydın tamamlanması için aşağıdaki bağlantıdan KVKK ve görsel kullanım onayını vermeniz gerekiyor:\n${link}\n\n` +
-        `Onayınız gelmeden profiliniz sitede yayınlanmaz. Ajansımız hiçbir aşamada ücret talep etmez.`;
+        `Onayınız gelmeden profiliniz sitede yayınlanmaz. Model of World hiçbir aşamada ücret talep etmez.`;
       return `https://wa.me/${d}?text=${encodeURIComponent(mesaj)}`;
     }
 
@@ -1352,6 +1359,14 @@
       e.target.value = "";
       msg.textContent = ok ? `✓ ${ok} fotoğraf yüklendi` : "";
       if (son) toast(son, "hata");
+    });
+    /* Yeni üyeye video yükleme */
+    $("yVideoInput").addEventListener("change", async e => {
+      if (!YENI_UID || !e.target.files?.length) return;
+      const msg = $("yVideoMsg");
+      const ok = await videoYukle(YENI_UID, e.target.files[0], msg);
+      e.target.value = "";
+      msg.textContent = ok ? "✓ Video yüklendi" : "";
     });
 
     /* =========================================================
@@ -1718,17 +1733,17 @@
     const DUYURU_SABLON = [
       ["Casting duyurusu", "Casting daveti — Model of World",
        "Merhaba {ad},\n\nYaklaşan bir proje için casting yapıyoruz. İlgileniyorsanız bu e-postayı yanıtlayın " +
-       "ya da WhatsApp'tan bize yazın.\n\nTarih:\nYer:\nAranan profil:\n\nModel of World Ajans"],
+       "ya da WhatsApp'tan bize yazın.\n\nTarih:\nYer:\nAranan profil:\n\nModel of World Ekibi"],
       ["Profil güncelleme", "Profilinizi güncelleyin — Model of World",
        "Merhaba {ad},\n\nCasting seçkilerinde öne çıkabilmeniz için profilinizdeki ölçülerin ve fotoğrafların " +
        "güncel olması gerekiyor. Panelinizden birkaç dakikada tamamlayabilirsiniz:\n" +
-       "https://www.modelofworld.com/uye\n\nModel of World Ajans"],
+       "https://www.modelofworld.com/uye\n\nModel of World Ekibi"],
       ["Müsaitlik hatırlatması", "Müsaitlik takviminizi işaretler misiniz?",
        "Merhaba {ad},\n\nÖnümüzdeki dönem için iş planlaması yapıyoruz. Panelinizdeki takvimden müsait " +
        "olduğunuz günleri işaretlerseniz size uygun işlerde önceliğiniz olur:\n" +
-       "https://www.modelofworld.com/uye\n\nModel of World Ajans"],
+       "https://www.modelofworld.com/uye\n\nModel of World Ekibi"],
       ["Genel duyuru", "Model of World — bilgilendirme",
-       "Merhaba {ad},\n\n\n\nModel of World Ajans"],
+       "Merhaba {ad},\n\n\n\nModel of World Ekibi"],
     ];
     $("bulkDuyuru").addEventListener("click", () => {
       const ids = seciliIds();
@@ -2142,7 +2157,7 @@
       const prefs = (p.shoot_prefs || "").split(",").filter(Boolean).map(x => PREF_AD[x] || x).join(", ");
       let bnd = "";
       try { const b = JSON.parse(p.boundaries || "{}"); bnd = [...(b.list || []), b.text].filter(Boolean).join("; "); } catch {}
-      const chap = { "gerek-yok":"gerekmiyor", "ajans-koordinator":"ajans koordinatörü", "kendi-refakatci":"kendi refakatçisi" }[p.chaperone] || "—";
+      const chap = { "gerek-yok":"gerekmiyor", "ajans-koordinator":"Model of World set koordinatörü", "kendi-refakatci":"kendi refakatçisi" }[p.chaperone] || "—";
       let skl = "";
       try { const k = JSON.parse(p.skills || "{}"); skl = [...(k.list || []), k.text].filter(Boolean).join(", "); } catch {}
       return `<br>🎬 Tercihler: <strong>${prefs || "belirtilmedi"}</strong> · 👥 Refakatçi: ${chap}` +
@@ -2332,6 +2347,11 @@
               <input type="file" accept="image/*" multiple data-foto-input>
               <span class="mini" data-foto-msg></span>
             </div>
+            <div class="foto-ekle">
+              <strong class="mini">🎬 Video ekle (maks. 250 MB):</strong>
+              <input type="file" accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi,.3gp" data-video-input>
+              <span class="mini" data-video-msg></span>
+            </div>
             <div class="adm-row">
               <select class="adm-input" data-redsel style="max-width:300px">
                 <option value="">Red gerekçesi…</option>
@@ -2448,6 +2468,39 @@
       if (!r.ok) { toast(r.err || "İşlem yapılamadı", "hata"); return; }
       toast(fact === "geri-al" ? "↩ Dosya geri alındı"
           : fact === "kalici" ? "🗑 Dosya sunucudan silindi" : "🗄 Dosya arşive taşındı");
+      load();
+    });
+
+    /* ---------- Üyeye video ekleme (yönetici, üye adına) ---------- */
+    async function videoYukle(uid, dosya, msg) {
+      const mb = dosya.size / 1024 / 1024;
+      if (mb > 250) { toast(`Video ${mb.toFixed(0)} MB — sınır 250 MB`, "hata"); return false; }
+      if (!/\.(mp4|mov|m4v|webm|mkv|avi|3gp|hevc)$/i.test(dosya.name)) {
+        toast("Desteklenmeyen video türü. MP4, MOV, WEBM, MKV, AVI veya 3GP seçin.", "hata"); return false;
+      }
+      const fd = new FormData();
+      fd.append("user_id", uid); fd.append("kind", "video"); fd.append("album", "genel");
+      fd.append("file", dosya, dosya.name);
+      return await new Promise(res => {
+        const x = new XMLHttpRequest();
+        x.open("POST", "/api/admin/upload");
+        x.upload.onprogress = ev => { if (ev.lengthComputable && msg) msg.textContent = `Video yükleniyor… %${Math.round(ev.loaded / ev.total * 100)}`; };
+        x.onload = () => {
+          if (x.status >= 200 && x.status < 300) { toast("🎬 Video eklendi"); return res(true); }
+          let d = {}; try { d = JSON.parse(x.responseText); } catch {}
+          toast(d.error || "Video yüklenemedi (" + x.status + ")", "hata"); res(false);
+        };
+        x.onerror = () => { toast("Bağlantı kesildi — tekrar deneyin", "hata"); res(false); };
+        x.send(fd);
+      });
+    }
+    $("results").addEventListener("change", async e => {
+      const inp = e.target.closest("[data-video-input]");
+      if (!inp || !inp.files?.length) return;
+      const card = inp.closest(".adm-user");
+      const msg = card.querySelector("[data-video-msg]");
+      await videoYukle(+card.dataset.uid, inp.files[0], msg);
+      inp.value = ""; if (msg) msg.textContent = "";
       load();
     });
 
@@ -2757,7 +2810,7 @@
             <h2>${totalBudget.toLocaleString('tr-TR')} TL</h2>
           </div>
           <div class="dash-card">
-            <span class="mini muted">📈 Ajans Geliri (%${Math.round(commRate*100)})</span>
+            <span class="mini muted">📈 Komisyon Geliri (%${Math.round(commRate*100)})</span>
             <h2 style="color:var(--ok)">${totalCommission.toLocaleString('tr-TR')} TL</h2>
           </div>
           <div class="dash-card">

@@ -5,7 +5,7 @@ Yalnızca Python standart kütüphanesi kullanır (pip gerekmez).
 127.0.0.1:8010 dinler; dış dünyaya Caddy /api/* üzerinden açılır.
 
 v3: albüm kategorili medya (stüdyo/podyum/polaroid), yumuşak silme (arşiv),
-yönetici onay havuzu (gerekçeli red), ajans içi not/puan/etiket,
+yönetici onay havuzu (gerekçeli red), iç not/puan/etiket,
 denetim günlüğü (audit), iş teklifi akışı (booking), dijital imza,
 video-book linki. Eski veritabanı otomatik yükseltilir.
 """
@@ -24,7 +24,9 @@ SESSION_DAYS = 30
 
 UPLOAD_RULES = {
     "photo": ({".jpg", ".jpeg", ".png", ".webp", ".heic"}, 12 * 1024 * 1024, 30),
-    "video": ({".mp4", ".mov", ".webm", ".m4v"}, 80 * 1024 * 1024, 6),
+    # Telefon videoları (özellikle iPhone 4K) 30 saniyede 100 MB'ı geçiyor; 80 MB sınırı
+    # yüklemeleri reddediyordu. Sınır 250 MB'a çıkarıldı, telefon formatları eklendi.
+    "video": ({".mp4", ".mov", ".webm", ".m4v", ".mkv", ".avi", ".3gp", ".hevc"}, 250 * 1024 * 1024, 6),
     "belge": ({".pdf", ".jpg", ".jpeg", ".png"}, 10 * 1024 * 1024, 3),
     "imza":  ({".png", ".jpg", ".jpeg"}, 2 * 1024 * 1024, 3),
     "kimlik": ({".pdf", ".jpg", ".jpeg", ".png"}, 8 * 1024 * 1024, 2),
@@ -34,7 +36,7 @@ ALBUMS = {"studio", "podium", "polaroid", "sanatsal", "genel"}
 # Geçerli başvuru kategorileri — assets/js/data.js içindeki CATEGORIES ile aynı kalmalı
 CATEGORY_KEYS = {"model", "hostes", "yuz", "el_ayak", "cocuk", "nu",
                  "fitness", "plus", "oyuncu", "dans", "promo"}
-MAX_BODY = 85 * 1024 * 1024
+MAX_BODY = 260 * 1024 * 1024   # en büyük yükleme (video 250 MB) + form alanları payı
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -656,14 +658,49 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Cache-Control", "%s, max-age=2592000, immutable" % kapsam)
             self.end_headers()
             return
-        data = open(fp, "rb").read()
-        self.send_response(200)
-        self.send_header("Content-Type", mimetypes.guess_type(fp)[0] or "image/jpeg")
-        self.send_header("Content-Length", str(len(data)))
+        boyut = st.st_size
+        ctype = mimetypes.guess_type(fp)[0] or ("video/mp4" if fp.lower().endswith((".mp4", ".m4v", ".mov")) else "image/jpeg")
+        # Videolar için Range (parça) isteği desteği: Safari/iPhone ve Chrome, <video>
+        # etiketinde parça isteğine 206 dönmeyen sunucudan hiç oynatmaz ("yükleniyor"da kalır).
+        bas, son = 0, boyut - 1
+        aralik = self.headers.get("Range") or ""
+        m = re.match(r"bytes=(\d*)-(\d*)$", aralik.strip())
+        parcali = False
+        if m and boyut and (m.group(1) or m.group(2)):
+            if m.group(1):
+                bas = int(m.group(1))
+                if m.group(2): son = min(int(m.group(2)), boyut - 1)
+            else:  # son N bayt
+                bas = max(0, boyut - int(m.group(2)))
+            if bas > son or bas >= boyut:
+                self.send_response(416)
+                self.send_header("Content-Range", "bytes */%d" % boyut)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            parcali = True
+        uzunluk = son - bas + 1
+        self.send_response(206 if parcali else 200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(uzunluk))
+        self.send_header("Accept-Ranges", "bytes")
+        if parcali:
+            self.send_header("Content-Range", "bytes %d-%d/%d" % (bas, son, boyut))
         self.send_header("ETag", etag)
         self.send_header("Cache-Control", "%s, max-age=2592000, immutable" % kapsam)
         self.end_headers()
-        self.wfile.write(data)
+        # Büyük videoyu tek seferde belleğe almadan parça parça gönder
+        try:
+            with open(fp, "rb") as f:
+                f.seek(bas)
+                kalan = uzunluk
+                while kalan > 0:
+                    blok = f.read(min(1024 * 1024, kalan))
+                    if not blok: break
+                    self.wfile.write(blok)
+                    kalan -= len(blok)
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            pass  # izleyici videoyu kapattı / ileri sardı
 
     def _ip(self):
         xf = self.headers.get("X-Forwarded-For") or ""
@@ -699,7 +736,7 @@ class Handler(BaseHTTPRequestHandler):
     def _can(self, adm, perm):
         return adm and perm in ROLE_PERMS.get(adm["role"], set())
 
-    # Formdan gelen kayıt için: gönderene otomatik yanıt + ajansa bildirim
+    # Formdan gelen kayıt için: gönderene otomatik yanıt + yöneticiye bildirim
     FORM_YANIT = {
         "teklif": ("Teklif talebiniz alındı — Model of World",
                    "Merhaba{ad},\n\n"
@@ -707,14 +744,14 @@ class Handler(BaseHTTPRequestHandler):
                    "fiyat çalışmasıyla dönüş yapacak.\n\n"
                    "Bu arada aklınıza bir soru gelirse bu e-postayı yanıtlayabilir ya da "
                    "+90 (212) 000 00 00 numaralı hattımızdan bize ulaşabilirsiniz.\n\n"
-                   "Model of World Ajans\nwww.modelofworld.com"),
+                   "Model of World Ekibi\nwww.modelofworld.com"),
         "iletisim": ("Mesajınız alındı — Model of World",
                      "Merhaba{ad},\n\nMesajınızı aldık, en kısa sürede dönüş yapacağız.\n\n"
-                     "Model of World Ajans\nwww.modelofworld.com"),
+                     "Model of World Ekibi\nwww.modelofworld.com"),
         "randevu": ("Görüşme talebiniz alındı — Model of World",
                     "Merhaba{ad},\n\nGörüşme talebinizi aldık. Randevu bilgileriniz:\n\n{detay}\n\n"
                     "Saati değiştirmek isterseniz bu e-postayı yanıtlamanız yeterli.\n\n"
-                    "Model of World Ajans\nwww.modelofworld.com"),
+                    "Model of World Ekibi\nwww.modelofworld.com"),
     }
     FORM_AD = {"teklif": "Teklif talebi", "iletisim": "İletişim mesajı", "randevu": "Görüşme talebi"}
 
@@ -737,7 +774,7 @@ class Handler(BaseHTTPRequestHandler):
                         govde.format(ad=(" " + ad.split()[0]) if ad else "", detay=detay),
                         yanit_adresi=a.get("to") or a.get("from"), kayit_adi="otomatik-yanit")
 
-        # 2) Ajansa bildirim
+        # 2) Yöneticiye bildirim
         hedef = a.get("to") or a.get("from")
         if hedef:
             satirlar = ["%s: %s" % (k, v) for k, v in veri.items() if v not in (None, "", [], {})]
@@ -845,7 +882,7 @@ class Handler(BaseHTTPRequestHandler):
                 "WHERE p.consent_token=? AND COALESCE(u.deleted,'')=''", (tok,)).fetchone()
             if not row:
                 return self._json(404, {"error": "Bu bağlantı geçersiz veya daha önce kullanılmış. "
-                                                 "Ajanstan yeni bir onay bağlantısı isteyin."})
+                                                 "Model of World ekibinden yeni bir onay bağlantısı isteyin."})
             return self._json(200, {"ok": True, "fullname": row["fullname"],
                                     "veli": bool(is_minor(row["id"])),
                                     "veli_ad": row["parent_name"] or ""})
@@ -1085,7 +1122,7 @@ class Handler(BaseHTTPRequestHandler):
             var = db().execute("SELECT COALESCE(deleted,'') d FROM users WHERE email=?", (email,)).fetchone()
             if var and var["d"]:
                 return self._json(409, {"error": "Bu e-posta ile daha önce kayıt yapılmış ve kayıt kaldırılmış. "
-                                                 "Yeniden başvurmak için ajansla iletişime geçin."})
+                                                 "Yeniden başvurmak için bizimle iletişime geçin."})
             if var:
                 return self._json(409, {"error": "Bu e-posta zaten kayıtlı — giriş yapın"})
             salt = secrets.token_hex(16)
@@ -1117,7 +1154,7 @@ class Handler(BaseHTTPRequestHandler):
             if not row or hash_pw(d.get("password") or "", row["salt"]) != row["pass_hash"]:
                 return self._json(401, {"error": "E-posta veya şifre hatalı"})
             if (row["deleted"] or ""):
-                return self._json(403, {"error": "Bu üyelik kaldırılmış. Bilgi için ajansla iletişime geçin."})
+                return self._json(403, {"error": "Bu üyelik kaldırılmış. Bilgi için bizimle iletişime geçin."})
             return self._json(200, {"ok": True, "sifre_belirle": (row["must_change_pw"] or "") == "1"},
                               cookie=self._make_session(row["id"]))
 
@@ -1158,7 +1195,7 @@ class Handler(BaseHTTPRequestHandler):
                 "WHERE p.consent_token=? AND COALESCE(u.deleted,'')=''", (tok,)).fetchone()
             if not row:
                 return self._json(404, {"error": "Bu bağlantı geçersiz veya daha önce kullanılmış. "
-                                                 "Ajanstan yeni bir onay bağlantısı isteyin."})
+                                                 "Model of World ekibinden yeni bir onay bağlantısı isteyin."})
             db().execute("UPDATE profiles SET consent_kvkk='1', consent_contract='1', "
                          "consent_at=?, consent_ip=?, consent_token=NULL WHERE user_id=?",
                          (now(), self._ip(), row["id"]))
@@ -1955,7 +1992,7 @@ class Handler(BaseHTTPRequestHandler):
                                  "müsaitlik takviminizi işaretleyebilirsiniz:\n"
                                  "https://www.modelofworld.com/uye\n\n"
                                  "Profili eksiksiz olan adaylar castinglerde öne çıkar.\n\n"
-                                 "Model of World Ajans\nwww.modelofworld.com") % (
+                                 "Model of World Ekibi\nwww.modelofworld.com") % (
                                      ilkAd or "", (note + "\n\n") if note else "")
                     else:
                         konu = "Başvurunuz hakkında — Model of World"
@@ -1963,7 +2000,7 @@ class Handler(BaseHTTPRequestHandler):
                                  "eşleşme bulamadık.\n\n%s"
                                  "Bu bir yetenek değerlendirmesi değildir; ihtiyaç duyduğumuz profiller "
                                  "dönemsel olarak değişir. İlerleyen dönemde tekrar başvurabilirsiniz.\n\n"
-                                 "Model of World Ajans\nwww.modelofworld.com") % (
+                                 "Model of World Ekibi\nwww.modelofworld.com") % (
                                      ilkAd or "", ("Gerekçe: " + note + "\n\n") if note else "")
                     postalandi = mail_gonder(kisi["email"], konu, govde, kayit_adi="durum-" + st)
             return self._json(200, {"ok": True, "eposta": postalandi})
@@ -2192,7 +2229,7 @@ class Handler(BaseHTTPRequestHandler):
 
                 gecici = secrets.token_urlsafe(9)
                 salt = secrets.token_hex(16)
-                # Şifreyi ajans ürettiği için üye ilk girişte kendi şifresini belirler
+                # Şifreyi yönetici ürettiği için üye ilk girişte kendi şifresini belirler
                 cur = db().execute(
                     "INSERT INTO users(email,pass_hash,salt,fullname,phone,created,must_change_pw) "
                     "VALUES(?,?,?,?,?,?,'1')",

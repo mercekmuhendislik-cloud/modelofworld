@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/style.css?v=ddf66a4">
+  <link rel="stylesheet" href="assets/css/style.css?v=9beb427">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
   <style>
     .my-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
@@ -49,7 +49,7 @@
     .crop-controls { display:flex; gap:10px; align-items:center; margin:14px 0; }
     .crop-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
 
-    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=ddf66a4 */
+    /* Çoklu seçim menüsü (.msel*) stilleri ortak katmanda: assets/css/style.css?v=9beb427 */
 
     /* Başvuru durumu zaman çizelgesi */
     .cizelge { list-style:none; padding:0; margin:0 0 4px; }
@@ -120,8 +120,8 @@
     #ilkSifreKutu input:focus { outline:none; border-color:var(--gold); }
     #ilkSifreHata { color:var(--danger); font-size:.83rem; margin-top:10px; min-height:1em; line-height:1.6; }
   </style>
-  <meta name="mow-surum" content="ddf66a4">
-  <script src="assets/js/surum-kontrol.js?v=ddf66a4"></script>
+  <meta name="mow-surum" content="9beb427">
+  <script src="assets/js/surum-kontrol.js?v=9beb427"></script>
 </head>
 <body data-page="panel">
   <div id="site-header"></div>
@@ -130,7 +130,7 @@
   <div id="ilkSifreKatman">
     <div id="ilkSifreKutu" role="dialog" aria-modal="true" aria-labelledby="ilkSifreBaslik">
       <h3 id="ilkSifreBaslik">Şifrenizi Belirleyin</h3>
-      <p>Hesabınız ajans tarafından açıldı. Güvenliğiniz için devam etmeden önce
+      <p>Hesabınız Model of World tarafından açıldı. Güvenliğiniz için devam etmeden önce
          yalnızca sizin bileceğiniz bir şifre belirlemeniz gerekiyor.</p>
       <label for="ilkSifre1">Yeni şifre</label>
       <input type="password" id="ilkSifre1" placeholder="En az 6 karakter" autocomplete="new-password">
@@ -343,7 +343,7 @@
             <select name="chaperone">
               <option value="">Seçiniz…</option>
               <option value="gerek-yok">Refakatçiye gerek yok</option>
-              <option value="ajans-koordinator">Ajans set koordinatörü sette bulunsun</option>
+              <option value="ajans-koordinator">Model of World set koordinatörü sette bulunsun</option>
               <option value="kendi-refakatci">Kendi refakatçim sette bulunacak</option>
             </select>
             <span class="hint">Sanatsal/özel çekimlerde refakatçi bulundurma hakkınız her koşulda saklıdır.</span>
@@ -355,7 +355,7 @@
             <div class="field"><label>Podyum / Defile</label><input type="number" name="rate_runway" placeholder="örn. 8000"></div>
             <div class="field" id="rateArtWrap" style="display:none"><label>Sanatsal / Özel Çekim</label><input type="number" name="rate_artistic" placeholder="örn. 15000"></div>
           </div>
-          <span class="hint">Ücretler müşteriye gösterilmez; ajansın size uygun teklif hazırlaması için kullanılır.</span>
+          <span class="hint">Ücretler müşteriye gösterilmez; size uygun teklif hazırlanması için kullanılır.</span>
         </div>
         <div class="wizard-nav">
           <span class="muted" id="msg-tercihler" style="font-size:.85rem"></span>
@@ -380,7 +380,7 @@
 
         <div class="guide-box" id="polaroidWarn" style="display:none;margin-top:16px">
           <strong>⏰ Polaroid güncellemesi gerekli</strong>
-          Doğal (makyajsız) polaroid fotoğraflarınız 6 aydan eski ya da hiç yok. Ajans standardı gereği lütfen güncel polaroid yükleyin.
+          Doğal (makyajsız) polaroid fotoğraflarınız 6 aydan eski ya da hiç yok. Kadro standardı gereği lütfen güncel polaroid yükleyin.
         </div>
         <div class="album-head"><h4>🤳 Polaroid (Makyajsız / Doğal)</h4>
           <label class="btn btn-gold btn-sm" style="cursor:pointer">+ Yükle<input type="file" class="albumInput" data-album="polaroid" accept="image/*" multiple style="display:none"></label>
@@ -388,7 +388,7 @@
         <div class="my-photos" data-grid="polaroid"></div>
 
         <div id="sanatsalWrap" style="display:none">
-          <div class="album-head"><h4>🎨 Sanatsal / Özel Albüm <span class="muted" style="letter-spacing:0;text-transform:none">(yalnızca yetkili ajans personeli görür, müşterilere izinsiz gösterilmez)</span></h4>
+          <div class="album-head"><h4>🎨 Sanatsal / Özel Albüm <span class="muted" style="letter-spacing:0;text-transform:none">(yalnızca yetkili Model of World personeli görür, müşterilere izinsiz gösterilmez)</span></h4>
             <label class="btn btn-gold btn-sm" style="cursor:pointer">+ Yükle<input type="file" class="albumInput" data-album="sanatsal" accept="image/*" multiple style="display:none"></label>
           </div>
           <div class="my-photos" data-grid="sanatsal"></div>
@@ -399,8 +399,8 @@
         <p class="muted" style="font-size:.86rem;margin-bottom:14px">15–30 saniyelik tanıtım/yürüyüş videosu yükleyin <em>veya</em> YouTube / Vimeo / TikTok bağlantınızı ekleyin.</p>
         <div class="my-photos" id="videoGrid" style="margin-bottom:12px"></div>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <label class="btn btn-ghost btn-sm" style="cursor:pointer">🎬 Video Yükle (maks. 80 MB)
-            <input type="file" id="videoInput" accept="video/mp4,video/quicktime,video/webm" style="display:none">
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">🎬 Video Yükle (maks. 250 MB)
+            <input type="file" id="videoInput" accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi,.3gp" style="display:none">
           </label>
           <span class="muted" id="videoStatus" style="font-size:.84rem"></span>
         </div>
@@ -417,13 +417,13 @@
       <!-- 4) İMZA & ONAY -->
       <div class="form-card tab-pane" id="tab-teklifler">
         <h3 style="margin-bottom:6px">İş Tekliflerim</h3>
-        <p class="muted" style="font-size:.86rem;margin-bottom:18px">Ajans size uygun bir proje bulduğunda teklif buraya düşer. Detayları inceleyip kabul veya reddedebilirsiniz.</p>
+        <p class="muted" style="font-size:.86rem;margin-bottom:18px">Size uygun bir proje bulunduğunda teklif buraya düşer. Detayları inceleyip kabul veya reddedebilirsiniz.</p>
 
         <div class="kazanc-grid" id="kazancGrid"></div>
         <div id="odemeKart" style="display:none;margin-bottom:22px">
           <h4 style="font-size:1rem;margin-bottom:8px">Ödeme Geçmişi</h4>
           <div id="odemeListe"></div>
-          <p class="muted" style="font-size:.78rem;margin-top:8px">Serbest çalışan olarak vergi beyanınızda bu dökümü kullanabilirsiniz. Tutarlar ajansın kaydettiği brüt iş bedelidir.</p>
+          <p class="muted" style="font-size:.78rem;margin-top:8px">Serbest çalışan olarak vergi beyanınızda bu dökümü kullanabilirsiniz. Tutarlar Model of World'ün kaydettiği brüt iş bedelidir.</p>
         </div>
 
         <div id="offersRoot"></div>
@@ -467,7 +467,7 @@
       <!-- ÖDEME -->
       <div class="form-card tab-pane" id="tab-odeme">
         <h3 style="margin-bottom:6px">Ödeme &amp; Fatura Bilgilerim</h3>
-        <p class="muted" style="font-size:.86rem;margin-bottom:18px">Kaşe ücreti ödemeleriniz için kullanılır; yalnızca ajans muhasebesi görür.</p>
+        <p class="muted" style="font-size:.86rem;margin-bottom:18px">Kaşe ücreti ödemeleriniz için kullanılır; yalnızca muhasebe görür.</p>
         <div class="form-grid">
           <div class="field full"><label>IBAN</label><input type="text" name="iban" placeholder="TR__ ____ ____ ____ ____ ____ __" maxlength="32"></div>
           <div class="field"><label>Hesap Sahibi Ad Soyad</label><input type="text" name="account_name" placeholder="Hesap sahibinin tam adı"></div>
@@ -508,7 +508,7 @@
               <input type="radio" name="privacy" value="private">
               <div>
                 <strong style="display:block;text-transform:none;letter-spacing:0">🔒 Sadece Özel Paylaşım</strong>
-                <span class="muted" style="font-size:.86rem">Profilim yalnızca ajansın müşterilere özel gönderdiği bağlantılarda yer alır.</span>
+                <span class="muted" style="font-size:.86rem">Profilim yalnızca Model of World'ün müşterilere özel gönderdiği bağlantılarda yer alır.</span>
               </div>
             </div>
           </label>
@@ -520,7 +520,7 @@
 
         <div style="border-top:1px solid var(--line);margin-top:28px;padding-top:22px">
           <h3 style="margin-bottom:6px">Şifre Değiştir</h3>
-          <p class="muted" style="font-size:.86rem;margin-bottom:16px">Ajanstan geçici şifre aldıysanız buradan kendi şifrenizi belirleyin. Şifrenizi değiştirdiğinizde diğer cihazlardaki oturumlar kapanır.</p>
+          <p class="muted" style="font-size:.86rem;margin-bottom:16px">Geçici şifre aldıysanız buradan kendi şifrenizi belirleyin. Şifrenizi değiştirdiğinizde diğer cihazlardaki oturumlar kapanır.</p>
           <div class="form-grid">
             <div class="field">
               <label>Mevcut Şifreniz</label>
@@ -616,15 +616,15 @@
     </div>
   </div>
 
-  <button id="sosBtn" title="Acil Durum — ajansa konumunuzla alarm gönderir"
+  <button id="sosBtn" title="Acil Durum — Model of World'e konumunuzla alarm gönderir"
     style="position:fixed;left:20px;bottom:20px;z-index:90;background:#c62828;color:#fff;border-radius:999px;padding:13px 20px;font-weight:600;letter-spacing:.1em;box-shadow:0 10px 30px rgba(198,40,40,.45)">
     🆘 SOS
   </button>
 
   <div id="site-footer"></div>
 
-  <script src="assets/js/data.js?v=ddf66a4"></script>
-  <script src="assets/js/main.js?v=ddf66a4"></script>
+  <script src="assets/js/data.js?v=9beb427"></script>
+  <script src="assets/js/main.js?v=9beb427"></script>
   <script>
     (function () {
       const $ = id => document.getElementById(id);
@@ -634,7 +634,7 @@
       const val = n => { const el = field(n); return el ? (el.type === "checkbox" ? (el.checked ? "1" : "") : el.value) : ""; };
 
       /* ============ İlk giriş: şifre belirleme ============
-         Hesabı ajans açtıysa üye kendi şifresini seçmeden panele devam edemez. */
+         Hesabı yönetici açtıysa üye kendi şifresini seçmeden panele devam edemez. */
       function ilkSifreAc() {
         $("ilkSifreKatman").classList.add("open");
         setTimeout(() => $("ilkSifre1").focus(), 80);
@@ -666,7 +666,7 @@
       $("ilkSifre2").addEventListener("keydown", e => { if (e.key === "Enter") $("ilkSifreKaydet").click(); });
 
       const yasHesap = b => { const d = new Date(b); return isNaN(d) ? null : Math.floor((Date.now() - d) / 31557600000); };
-      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=ddf66a4) */
+      /* Çoklu seçim menüsü ortak katmanda tanımlı (assets/js/main.js?v=9beb427) */
       const makeMsel = window.VERA.makeMsel;
       const catSel = makeMsel($("catSel"),
         Object.entries(window.VERA.CATEGORIES).map(([k, v]) => ({ value: k, label: v.label })),
@@ -821,24 +821,43 @@
         e.target.value = ""; load(false);
       }));
       $("videoInput").addEventListener("change", async e => {
-        /* Yukleme oncesi boyut/format kontrolu — sunucuya bosuna 80 MB gonderilmesin */
+        /* Yukleme oncesi boyut/format kontrolu — sunucuya bosuna 250 MB gonderilmesin */
         const dosya = e.target.files[0];
+        const st = $("videoStatus");
         if (dosya) {
           const mb = dosya.size / 1024 / 1024;
-          if (mb > 80) {
-            $("uploadStatus").textContent =
-              `Video ${mb.toFixed(0)} MB — en fazla 80 MB yükleyebilirsiniz. Telefonunuzdan gönderirken ` +
+          if (mb > 250) {
+            st.textContent =
+              `Video ${mb.toFixed(0)} MB — en fazla 250 MB yükleyebilirsiniz. Telefonunuzdan gönderirken ` +
               `"düşük kalite / daha küçük boyut" seçeneğini kullanın ya da videoyu kısaltın.`;
             e.target.value = ""; return;
           }
-          if (/\.(mov|m4v)$/i.test(dosya.name)) {
-            $("uploadStatus").textContent =
-              "Not: .MOV dosyaları bazı tarayıcılarda oynatılamıyor. Mümkünse MP4 yükleyin — yükleme sürüyor…";
+          if (!/\.(mp4|mov|m4v|webm|mkv|avi|3gp|hevc)$/i.test(dosya.name)) {
+            st.textContent = "Bu dosya türü desteklenmiyor. MP4, MOV, WEBM, MKV, AVI veya 3GP yükleyin.";
+            e.target.value = ""; return;
           }
         }
         const f = e.target.files[0]; if (!f) return;
-        const st = $("videoStatus");
-        try { st.textContent = "Video yükleniyor… (boyuta göre sürebilir)"; await upload("video", "genel", f, f.name); st.textContent = "✓ Yüklendi"; }
+        /* Yükleme ilerlemesi: fetch ilerleme vermez, XHR ile yüzde gösterilir */
+        try {
+          st.textContent = "Video yükleniyor… %0";
+          await new Promise((res, rej) => {
+            const fd = new FormData();
+            fd.append("kind", "video"); fd.append("album", "genel"); fd.append("file", f, f.name);
+            const x = new XMLHttpRequest();
+            x.open("POST", "/api/upload");
+            x.upload.onprogress = ev => { if (ev.lengthComputable) st.textContent = `Video yükleniyor… %${Math.round(ev.loaded / ev.total * 100)}`; };
+            x.onload = () => {
+              if (x.status >= 200 && x.status < 300) return res();
+              let d = {}; try { d = JSON.parse(x.responseText); } catch {}
+              rej(new Error(d.error || (x.status === 413 ? "Dosya çok büyük" : "Yükleme hatası (" + x.status + ")")));
+            };
+            x.onerror = () => rej(new Error("Bağlantı kesildi — lütfen tekrar deneyin"));
+            x.send(fd);
+          });
+          st.textContent = "✓ Yüklendi" + (/\.(mov|m4v|mkv|avi|3gp|hevc)$/i.test(f.name)
+            ? " · Not: bu format her tarayıcıda oynamayabilir, mümkünse MP4 tercih edin." : "");
+        }
         catch (err) { st.textContent = err.message; }
         e.target.value = ""; load(false);
       });
@@ -850,13 +869,13 @@
       });
       /* ---- SOS ---- */
       $("sosBtn").addEventListener("click", () => {
-        if (!confirm("ACİL DURUM alarmı ajans yönetimine konumunuzla birlikte gönderilecek. Onaylıyor musunuz?")) return;
+        if (!confirm("ACİL DURUM alarmı Model of World yönetimine konumunuzla birlikte gönderilecek. Onaylıyor musunuz?")) return;
         const send = async (lat, lng) => {
           const msg = prompt("Kısaca durum (boş bırakabilirsiniz):") || "";
           const r = await fetch("/api/sos", { method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ lat, lng, msg }) }).catch(() => null);
-          alert(r && r.ok ? "🆘 Alarm gönderildi. Ajans en kısa sürede sizinle iletişime geçecek. Acil tehlikedeyseniz 155'i arayın."
-                          : "Gönderilemedi — lütfen ajansı telefonla arayın.");
+          alert(r && r.ok ? "🆘 Alarm gönderildi. Ekibimiz en kısa sürede sizinle iletişime geçecek. Acil tehlikedeyseniz 155'i arayın."
+                          : "Gönderilemedi — lütfen bizi telefonla arayın.");
         };
         navigator.geolocation
           ? navigator.geolocation.getCurrentPosition(p => send(p.coords.latitude, p.coords.longitude), () => send(null, null), { timeout: 6000 })
@@ -948,7 +967,7 @@
         $("cizelgeNot").textContent = durum === "inceleniyor"
           ? "Değerlendirme genellikle 5 iş günü sürer. Profilinizi tamamlamak sıranızı hızlandırır."
           : durum === "onaylandi" && !yayinda
-            ? "Kadroya kabul edildiniz. Profilinizin sitede yayınlanmasına ajans karar verir."
+            ? "Kadroya kabul edildiniz. Profilinizin sitede yayınlanmasına Model of World karar verir."
             : "";
       }
 
@@ -1014,8 +1033,8 @@
             <strong>${u.fullname || ""}</strong> · onay tarihi: <strong>${tarih}</strong><br>
             ${p.consent_kvkk === "1" ? "✓" : "✕"} Kişisel verilerimin KVKK kapsamında işlenmesine açık rıza<br>
             ${p.consent_contract === "1" ? "✓" : "✕"} Çalışma prensipleri ve şartlarını kabul<br>
-            ✓ Ajansın adaylardan hiçbir ücret talep etmediğini biliyorum<br>
-            <span class="muted" style="font-size:.82rem">Görsel kullanımı: profil fotoğraflarınız ajans kataloğunda ve müşteri sunumlarında kullanılır; sitede yalnızca adınız ve soyadınızın baş harfi görünür. Gizlilik tercihinizi bu sayfadan değiştirebilirsiniz.</span>
+            ✓ Model of World'ün adaylardan hiçbir ücret talep etmediğini biliyorum<br>
+            <span class="muted" style="font-size:.82rem">Görsel kullanımı: profil fotoğraflarınız Model of World kataloğunda ve müşteri sunumlarında kullanılır; sitede yalnızca adınız ve soyadınızın baş harfi görünür. Gizlilik tercihinizi bu sayfadan değiştirebilirsiniz.</span>
           </div>`;
         $("onayYazdir").onclick = () => {
           const w = window.open("", "_blank");
@@ -1280,7 +1299,7 @@
       }
       document.body.addEventListener("click", async e => {
         const b = e.target.closest("[data-del]");
-        if (!b || !confirm("Bu dosya kaldırılsın mı? (Ajans arşivinde saklanır)")) return;
+        if (!b || !confirm("Bu dosya kaldırılsın mı? (Arşivde saklanır)")) return;
         await fetch("/api/photo/" + b.dataset.del, { method: "DELETE" });
         load(false);
       });
@@ -1329,7 +1348,7 @@
             </div>
             ${!o.feedback_rating ? `
             <div class="mt-2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-              <span class="muted" style="font-size:.82rem">Set / müşteri değerlendirmeniz (gizli — sadece ajans görür):</span>
+              <span class="muted" style="font-size:.82rem">Set / müşteri değerlendirmeniz (gizli — sadece Model of World görür):</span>
               <select data-fb-r="${o.id}" class="sort-select" style="padding:7px 10px;font-size:.82rem">
                 <option value="">Puan</option><option value="5">★★★★★</option><option value="4">★★★★</option><option value="3">★★★</option><option value="2">★★</option><option value="1">★</option>
               </select>
@@ -1438,7 +1457,7 @@
           st === "onaylandi" ? "✓ Kadroya Kabul Edildiniz" : st === "reddedildi" ? "Değerlendirildi" : "İnceleniyor";
         const rn = ME.profile?.review_note;
         $("reviewNote").style.display = rn ? "" : "none";
-        if (rn) $("reviewNote").textContent = "Ajans notu: " + rn;
+        if (rn) $("reviewNote").textContent = "Model of World notu: " + rn;
 
         Object.entries(ME.profile || {}).forEach(([k, v]) => {
           if (k === "category" || k === "languages") return;
