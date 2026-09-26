@@ -177,7 +177,8 @@
         if (state.dilHepsi ? uyan.length !== state.lang.length : !uyan.length) return false;
       }
 
-      if (t.height && t.height < state.minHeight) return false;
+      /* Boy 100'den küçükse yazım hatasıdır (örn. "18"); bilinmiyor sayılır, kişi gizlenmez */
+      if (t.height && t.height >= 100 && t.height < state.minHeight) return false;
       if (state.maxWeight < 90 && (t.weight || 0) > state.maxWeight) return false;
 
       if (state.q) {
