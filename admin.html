@@ -319,6 +319,7 @@
   </style>
   <meta name="mow-surum" content="551dafe">
   <script src="assets/js/surum-kontrol.js?v=551dafe"></script>
+  <script src="assets/js/beyaz-kapak.js?v=1"></script>
 </head>
 <body data-page="admin">
   <section style="padding-top:40px">
@@ -2498,6 +2499,23 @@
       if (!fb) return;
       e.preventDefault(); e.stopPropagation();
       const pid = +fb.dataset.foto, fact = fb.dataset.fact;
+      if (fact === "kapak") {
+        /* Kapak seçimi = beyaz fonlu kopya üret + onu kapak yap. Seçilen kare zaten
+           beyaz fonlu üretimse ya da üretim başarısız olursa kare doğrudan kapak olur. */
+        const card = fb.closest(".adm-user");
+        const uid = card ? +card.dataset.uid : 0;
+        const uye = (DATA.users || []).find(x => x.id === uid) || {};
+        const m = (uye.media || []).find(z => z.id === pid);
+        const msg = card && card.querySelector("[data-foto-msg]");
+        if (m && beyazMi(m)) {
+          const r = await api("/api/admin/media", { photo_id: pid, action: "kapak" });
+          if (!r.ok) { toast(r.err || "İşlem yapılamadı", "hata"); return; }
+          toast("★ Kapak fotoğrafı güncellendi — katalog 30 sn içinde yenilenir");
+        } else {
+          await beyazKapak(uid, pid, msg);
+        }
+        load(); return;
+      }
       if (fact === "kalici") {
         if (!(await silOnayi("Bu dosya sunucudan tamamen silinecek.",
               "Bu işlem geri alınamaz. Dosyayı saklamak için arşivde bırakabilirsiniz."))) return;
@@ -2513,6 +2531,50 @@
           : "🗄 Dosya arşive taşındı");
       load();
     });
+
+    /* ---------- Beyaz fonlu kapak: otomatik üretim ----------
+       Kaynak kareyi indirir, tarayıcıda arka planını kaldırıp beyaz fona 3:4 oturtur
+       (assets/js/beyaz-kapak.js), sonucu üyeye yeni fotoğraf olarak yükler, kapak yapar
+       ve aynı üyenin önceki beyaz fonlu üretimlerini arşive kaldırır. Orijinal kare kalır. */
+    const BEYAZ_AD = "kapak-beyaz-fon";
+    function beyazMi(m) { return /^kapak-beyaz-fon\./.test(m.orig || ""); }
+
+    async function beyazKapak(uid, pid, msg) {
+      const durum = t => { if (msg) msg.textContent = t; };
+      if (!window.MOW_BEYAZ) {
+        toast("Beyaz fon aracı yüklenemedi — kare doğrudan kapak yapılıyor", "hata");
+        await api("/api/admin/media", { photo_id: pid, action: "kapak" }); return false;
+      }
+      try {
+        durum("Kaynak fotoğraf alınıyor…");
+        const r0 = await fetch("/api/photo/" + pid);
+        if (!r0.ok) throw new Error("Fotoğraf indirilemedi (" + r0.status + ")");
+        const s = await window.MOW_BEYAZ.uret(await r0.blob(), durum);
+        durum("Yükleniyor…");
+        const fd = new FormData();
+        fd.append("user_id", uid); fd.append("kind", "photo"); fd.append("album", "studio");
+        fd.append("file", s.blob, BEYAZ_AD + s.uzanti);
+        if (s.kucuk) fd.append("thumb", s.kucuk, "thumb.webp");
+        const r = await fetch("/api/admin/upload", { method: "POST", body: fd }).catch(() => null);
+        const d = r ? await r.json().catch(() => ({})) : {};
+        if (!r || !r.ok || !d.id) throw new Error(d.error || "Yüklenemedi");
+        const k = await api("/api/admin/media", { photo_id: d.id, action: "kapak" });
+        if (!k.ok) throw new Error(k.err || "Kapak yapılamadı");
+        /* Eski beyaz fonlu üretimler birikmesin */
+        const uye = (DATA.users || []).find(x => x.id === uid) || {};
+        for (const m of (uye.media || []).filter(z => z.kind === "photo" && !z.deleted && beyazMi(z) && z.id !== d.id))
+          await api("/api/admin/media", { photo_id: m.id, action: "arsivle" });
+        durum("");
+        toast("⬜ Beyaz fonlu kapak hazır — katalog 30 sn içinde yenilenir");
+        return true;
+      } catch (e) {
+        console.warn("beyaz kapak", e);
+        durum("");
+        toast("Beyaz fon üretilemedi (" + (e.message || e) + ") — kare olduğu gibi kapak yapıldı", "hata");
+        await api("/api/admin/media", { photo_id: pid, action: "kapak" });
+        return false;
+      }
+    }
 
     /* ---------- Üyeye video ekleme (yönetici, üye adına) ---------- */
     async function videoYukle(uid, dosya, msg) {
@@ -2746,6 +2808,15 @@
               ? (gonder.gizlilik_ac ? "🌐 Üye sitede yayında (gizlilik herkese açık yapıldı)" : "🌐 Üye sitede yayında")
               : "Üye yayından alındı")
           : (gonder.featured ? "⭐ Öne çıkarıldı — ana sayfada önce görünür" : "Öne çıkarma kaldırıldı"));
+        /* Yeni yayına alınan üyenin kapağı henüz beyaz fonlu değilse otomatik üret */
+        if (act === "yayin" && gonder.published) {
+          const fotolar = (uye.media || []).filter(m => m.kind === "photo" && !m.deleted && m.album !== "sanatsal");
+          const kapak = fotolar.find(m => String(m.id) === String(pr.cover_photo)) || fotolar[0];
+          if (kapak && !beyazMi(kapak)) {
+            toast("⬜ Kapak beyaz fona alınıyor… (ilk kullanımda model indirilir, 1-2 dk sürebilir)");
+            await beyazKapak(uid, kapak.id, msg);
+          }
+        }
         load(); return;
       }
 
