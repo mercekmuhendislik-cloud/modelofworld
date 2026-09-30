@@ -208,6 +208,12 @@ section { padding: clamp(64px, 9vw, 120px) 0; }
 .nav-toggle { display: none; }
 .header-cta { margin-left: 6px; }
 
+/* 8 bağlantı (İlanlar eklendi): orta genişlikte aralıklar hafifçe daralır */
+@media (max-width: 1480px) {
+  .main-nav { gap: 17px; }
+  .main-nav a { letter-spacing: 0.11em; }
+  .main-nav a.nav-cta { padding: 9px 16px; }
+}
 /* Dizüstü genişlikleri: menü biraz daha sıkışır, taşma olmaz */
 @media (max-width: 1180px) {
   .header-inner { gap: 14px; }
@@ -222,7 +228,7 @@ section { padding: clamp(64px, 9vw, 120px) 0; }
    ÖNEMLİ: .site-header'da backdrop-filter var; bu, içindeki position:fixed
    ögeleri header'a göre hizalar ve menü kutusu yükseklik alamaz (arka plan
    çizilmez, yazılar sayfa içeriğiyle karışır). Bu yüzden absolute kullanılır. */
-@media (max-width: 1120px) {
+@media (max-width: 1300px) {
   .main-nav {
     position: absolute; top: 100%; left: 0; right: 0;
     height: calc(100svh - var(--header-h));
@@ -1223,7 +1229,7 @@ body { animation: pageIn 0.6s ease both; }
 .nav-mob { display: none; }
 .hide-mob { display: inline-flex; }
 
-@media (max-width: 1120px) {
+@media (max-width: 1300px) {
   /* Mobil menüye taşınan ek bağlantılar */
   .main-nav .nav-mob {
     display: block; width: 100%; text-align: left; cursor: pointer;

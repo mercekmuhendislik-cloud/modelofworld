@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>İş İlanları — Model, Oyuncu, Hostes Aranıyor | Model of World</title>
+  <meta name="description" content="Model of World güncel iş ilanları: reklam çekimi, fuar, defile ve dizi projeleri için model, oyuncu, hostes ve figüran aranıyor. Başvuru ücretsizdir.">
+  <!-- Open Graph & Twitter Cards -->
+  <link rel="canonical" href="https://www.modelofworld.com/ilanlar">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Model of World">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="İş İlanları — Model of World">
+  <meta property="og:description" content="Model, oyuncu, hostes ve figüran aranan güncel işler. Başvuru ücretsizdir.">
+  <meta property="og:url" content="https://www.modelofworld.com/ilanlar">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&auto=format&fit=crop&w=1200&h=630&crop=faces">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="İş İlanları — Model of World">
+  <meta name="twitter:description" content="Model, oyuncu, hostes ve figüran aranan güncel işler. Başvuru ücretsizdir.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css?v=3e52f5e">
+  <link rel="stylesheet" href="assets/css/ilan.css?v=3e52f5e">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
+  <meta name="mow-surum" content="3e52f5e">
+  <script src="assets/js/surum-kontrol.js?v=3e52f5e"></script>
+</head>
+<body data-page="ilanlar">
+  <div id="site-header"></div>
+
+  <div class="page-head">
+    <div class="container center">
+      <span class="eyebrow" style="justify-content:center">Kariyer</span>
+      <h1>İş İlanları</h1>
+      <p class="muted mt-2" style="max-width:58ch;margin-inline:auto">Reklam, fuar, defile ve dizi projeleri için aradığımız profiller. Size uyan ilana bir dakikada başvurun. <strong class="gold">Başvuru ücretsizdir, sizden hiçbir aşamada ücret istenmez.</strong></p>
+    </div>
+  </div>
+
+  <section style="padding-top:16px">
+    <div class="container">
+      <div class="ilan-grid" id="ilanGrid"><p class="muted">İlanlar yükleniyor…</p></div>
+      <div class="ilan-blok ilan-guven" style="margin-top:36px">
+        <h2>Aradığınız ilan yok mu?</h2>
+        <p>Kadromuza katılın; profilinize uyan yeni işler önce kadromuzdaki üyelere iletilir.</p>
+        <p class="mt-2"><a class="btn btn-gold" href="basvuru">Kadromuza Katılın</a></p>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="/api/cast.js"></script>
+  <script src="assets/js/data.js?v=3e52f5e"></script>
+  <script src="assets/js/main.js?v=3e52f5e"></script>
+  <script src="assets/js/analytics.js?v=3e52f5e"></script>
+  <script>
+    (function () {
+      const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+      const AY = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+      const tarih = t => { const d = new Date(t); return isNaN(d) ? "" : d.getDate() + " " + AY[d.getMonth()]; };
+      const kriter = i => [i.gender === "kadin" ? "Kadın" : i.gender === "erkek" ? "Erkek" : "",
+        i.age_min && i.age_max ? i.age_min + "–" + i.age_max + " yaş" : i.age_min ? i.age_min + "+ yaş" : i.age_max ? i.age_max + " yaşa kadar" : "",
+        i.height_min ? i.height_min + " cm+" : ""].filter(Boolean).join(" · ");
+      const grid = document.getElementById("ilanGrid");
+      fetch("/api/ilanlar").then(r => r.json()).then(d => {
+        const liste = d.ilanlar || [];
+        if (!liste.length) {
+          grid.outerHTML = `<div class="ilan-bos">Şu anda açık ilan yok. Yeni ilanlar yayınlandığında burada görünecek.</div>`;
+          return;
+        }
+        grid.innerHTML = liste.map(i => `
+          <a class="ilan-kart reveal" href="/api/i/${encodeURIComponent(i.kod)}?k=site">
+            ${i.gorsel ? `<img src="${esc(i.gorsel)}" alt="${esc(i.title)}" loading="lazy">` : ""}
+            <div class="ic">
+              <span class="kat">${esc(i.kat_ad)} aranıyor</span>
+              <h3>${esc(i.title)}</h3>
+              <span class="detay">${esc([i.city, i.date ? tarih(i.date) : ""].filter(Boolean).join(" · "))}</span>
+              ${kriter(i) ? `<span class="detay">${esc(kriter(i))}</span>` : ""}
+              <span class="son">${i.deadline ? "Son başvuru: " + esc(tarih(i.deadline)) : "Başvurular açık"}${i.kalan != null ? " · " + i.kalan + " kişi aranıyor" : ""}</span>
+            </div>
+          </a>`).join("");
+        window.VERA?.observeNew?.(grid);
+      }).catch(() => { grid.innerHTML = `<div class="ilan-bos">İlanlar yüklenemedi, sayfayı yenileyin.</div>`; });
+    })();
+  </script>
+</body>
+</html>

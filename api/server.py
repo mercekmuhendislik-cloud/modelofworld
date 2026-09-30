@@ -164,6 +164,25 @@ def init_db():
     for col in ["consent_token", "consent_ip", "consent_sent"]:
         try: c.execute(f"ALTER TABLE profiles ADD COLUMN {col} TEXT")
         except sqlite3.OperationalError: pass
+    # v10: herkese açık iş ilanları (WhatsApp gruplarında paylaşılır).
+    #   ilanlar       — ilanın kendisi; 'kod' paylaşım bağlantısındaki kısa anahtar
+    #   ilan_basvuru  — ilana yapılan başvurular (başvuran her zaman bir üyedir)
+    #   ilan_ziyaret  — bağlantı tıklamaları; 'kaynak' hangi WhatsApp grubundan gelindiği
+    c.executescript("""
+    CREATE TABLE IF NOT EXISTS ilanlar(
+      id INTEGER PRIMARY KEY, kod TEXT UNIQUE, title TEXT, category TEXT, city TEXT,
+      location TEXT, date TEXT, deadline TEXT, fee TEXT, spots INTEGER DEFAULT 0,
+      gender TEXT, age_min INTEGER, age_max INTEGER, height_min INTEGER,
+      description TEXT, requirements TEXT, minor TEXT DEFAULT '0',
+      status TEXT DEFAULT 'acik', image TEXT, created TEXT, updated TEXT, created_by TEXT);
+    CREATE TABLE IF NOT EXISTS ilan_basvuru(
+      id INTEGER PRIMARY KEY, ilan_id INTEGER, user_id INTEGER, source TEXT, note TEXT,
+      status TEXT DEFAULT 'yeni', created TEXT, updated TEXT, UNIQUE(ilan_id, user_id));
+    CREATE TABLE IF NOT EXISTS ilan_ziyaret(
+      id INTEGER PRIMARY KEY, ilan_id INTEGER, source TEXT, created TEXT, ziyaretci TEXT);
+    CREATE INDEX IF NOT EXISTS ix_ilan_ziyaret ON ilan_ziyaret(ilan_id);
+    CREATE INDEX IF NOT EXISTS ix_ilan_basvuru ON ilan_basvuru(ilan_id);
+    """)
     # Yönetici şifresi ilk kurulumda mevcut anahtara eşitlenir (sonra panelden değiştirilir)
     if not c.execute("SELECT 1 FROM settings WHERE k='admin_salt'").fetchone():
         salt = secrets.token_hex(16)
@@ -602,6 +621,230 @@ def randevu_saatleri(gun_iso):
         t += dilim
     return out
 
+# =========================================================
+# İş ilanları (v10) — WhatsApp gruplarında paylaşılan herkese açık ilanlar
+# =========================================================
+import html as _html
+SITE_URL = "https://www.modelofworld.com"
+ILAN_KAT = {"model": "Model", "hostes": "Hostes", "yuz": "Yüz Modeli", "el_ayak": "El / Ayak Modeli",
+            "cocuk": "Çocuk Model", "fitness": "Fitness Modeli", "plus": "Büyük Beden Model",
+            "oyuncu": "Oyuncu", "dans": "Dansçı", "promo": "Promosyon Ekibi", "figuran": "Figüran"}
+ILAN_ALANLAR = ["title", "category", "city", "location", "date", "deadline", "fee", "spots",
+                "gender", "age_min", "age_max", "height_min", "description", "requirements", "minor"]
+AY_AD = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos",
+         "Eylül", "Ekim", "Kasım", "Aralık"]
+BOT_UA = re.compile(r"whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|slackbot|"
+                    r"discordbot|linkedinbot|googlebot|bingbot|bot\b|crawler|spider|preview", re.I)
+
+def tarih_tr(t):
+    """'2026-10-12' → '12 Ekim 2026'. Boş/bozuksa olduğu gibi döner."""
+    try:
+        d = datetime.fromisoformat(str(t)[:10])
+        return "%d %s %d" % (d.day, AY_AD[d.month - 1], d.year)
+    except Exception:
+        return str(t or "")
+
+def kaynak_temiz(s):
+    """WhatsApp grup etiketi: küçük harf, Türkçe harfler sadeleşir, yalnızca a-z 0-9 ve tire."""
+    s = str(s or "").strip().lower()
+    for a, b in (("ç", "c"), ("ğ", "g"), ("ı", "i"), ("İ", "i"), ("i̇", "i"), ("ö", "o"), ("ş", "s"), ("ü", "u")):
+        s = s.replace(a, b)
+    s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
+    return s[:40]
+
+def ilan_kod_uret(baslik):
+    kok = kaynak_temiz(baslik)[:28].strip("-") or "ilan"
+    while True:
+        kod = "%s-%s" % (kok, secrets.token_hex(2))
+        if not db().execute("SELECT 1 FROM ilanlar WHERE kod=?", (kod,)).fetchone():
+            return kod
+
+def ilan_durumu(r):
+    """(açık mı, kapanma nedeni, kalan kontenjan). Tarih ve kontenjan her okumada hesaplanır:
+    son başvuru günü geçmiş ya da seçilen kişi sayısı kontenjanı doldurmuşsa ilan kapalıdır."""
+    secilen = db().execute("SELECT COUNT(*) c FROM ilan_basvuru WHERE ilan_id=? AND status='secildi'",
+                           (r["id"],)).fetchone()["c"]
+    spots = int(r["spots"] or 0)
+    kalan = max(0, spots - secilen) if spots else None
+    if (r["status"] or "acik") != "acik":
+        return False, "Bu ilan için başvurular kapandı.", kalan
+    dl = (r["deadline"] or "")[:10]
+    if dl and dl < datetime.now().strftime("%Y-%m-%d"):
+        return False, "Son başvuru tarihi geçtiği için başvurular kapandı.", kalan
+    if spots and kalan == 0:
+        return False, "Aranan kişi sayısına ulaşıldığı için başvurular kapandı.", 0
+    return True, "", kalan
+
+def ilan_ozet(r):
+    """İlanın herkese açık alanları (dışa verilebilir)."""
+    acik, neden, kalan = ilan_durumu(r)
+    d = {k: r[k] for k in ILAN_ALANLAR}
+    d.update({"kod": r["kod"], "acik": acik, "kapali_neden": neden, "kalan": kalan,
+              "kat_ad": ILAN_KAT.get(r["category"] or "", "Model"),
+              "gorsel": ("/api/ilan-gorsel/%s?v=%s" % (r["kod"], re.sub(r"\D", "", r["updated"] or "")[-10:]))
+                        if r["image"] else "",
+              "link": "%s/api/i/%s" % (SITE_URL, r["kod"]),
+              "created": r["created"]})
+    return d
+
+def ilan_kriter_metni(r):
+    parca = []
+    if r["gender"] in ("kadin", "erkek"): parca.append("Kadın" if r["gender"] == "kadin" else "Erkek")
+    a1, a2 = r["age_min"], r["age_max"]
+    if a1 and a2: parca.append("%s–%s yaş" % (a1, a2))
+    elif a1: parca.append("%s yaş ve üzeri" % a1)
+    elif a2: parca.append("%s yaşa kadar" % a2)
+    if r["height_min"]: parca.append("%s cm ve üzeri" % r["height_min"])
+    return " · ".join(parca)
+
+def ilan_listesi_admin():
+    """Yönetim paneli için: ilanlar + başvurular + grup bazlı tıklama/başvuru sayıları."""
+    out = []
+    for r in db().execute("SELECT * FROM ilanlar ORDER BY id DESC").fetchall():
+        d = ilan_ozet(r); d["id"] = r["id"]; d["status"] = r["status"]; d["updated"] = r["updated"]
+        ziyaret = {}
+        for z in db().execute("SELECT COALESCE(source,'') s, COUNT(*) n FROM ilan_ziyaret WHERE ilan_id=? GROUP BY s",
+                              (r["id"],)):
+            ziyaret[z["s"]] = z["n"]
+        basvurular = []
+        for b in db().execute("""SELECT b.*, u.fullname, u.phone, u.email, p.age, p.height, p.city, p.gender,
+                   p.status AS uye_durum, p.cover_photo, p.parent_name, p.parent_phone
+                   FROM ilan_basvuru b JOIN users u ON u.id=b.user_id
+                   LEFT JOIN profiles p ON p.user_id=b.user_id
+                   WHERE b.ilan_id=? AND COALESCE(u.deleted,'')='' ORDER BY b.id DESC""", (r["id"],)):
+            x = dict(b)
+            foto = _sayi(x.get("cover_photo"))
+            if not foto:
+                f = db().execute("SELECT id FROM photos WHERE user_id=? AND kind='photo' AND deleted=0 "
+                                 "AND COALESCE(album,'genel')!='sanatsal' ORDER BY id LIMIT 1", (x["user_id"],)).fetchone()
+                foto = f["id"] if f else None
+            x["foto"] = foto
+            basvurular.append(x)
+        kaynak_basvuru = {}
+        for b in basvurular:
+            kaynak_basvuru[b["source"] or ""] = kaynak_basvuru.get(b["source"] or "", 0) + 1
+        d.update({"ziyaret": ziyaret, "ziyaret_toplam": sum(ziyaret.values()),
+                  "basvurular": basvurular, "kaynak_basvuru": kaynak_basvuru})
+        out.append(d)
+    return out
+
+def ilan_sayfasi_html(r, kaynak):
+    """Paylaşım bağlantısının açtığı sayfa. Önizleme kartı (og:*) sunucuda yazılır —
+    WhatsApp önizlemeyi JavaScript çalıştırmadan okur. Başvuru formu ilan.js ile gelir."""
+    e = lambda s: _html.escape(str(s or ""), quote=True)
+    o = ilan_ozet(r)
+    kat = o["kat_ad"]
+    baslik = r["title"] or (kat + " aranıyor")
+    kriter = ilan_kriter_metni(r)
+    satirlar = []
+    if r["city"] or r["location"]:
+        satirlar.append(("📍", "Yer", ", ".join(x for x in [r["location"], r["city"]] if x)))
+    if r["date"]: satirlar.append(("📅", "Çekim / iş tarihi", tarih_tr(r["date"])))
+    if kriter: satirlar.append(("👤", "Aranan profil", kriter))
+    if r["fee"]: satirlar.append(("💰", "Ücret", r["fee"]))
+    if r["spots"]: satirlar.append(("🎯", "Aranan kişi", "%s kişi" % r["spots"] +
+                                    ("" if o["kalan"] is None else " · kalan kontenjan %s" % o["kalan"])))
+    if r["deadline"]: satirlar.append(("⏳", "Son başvuru", tarih_tr(r["deadline"])))
+    aciklama_og = " · ".join(x for x in [
+        ", ".join(y for y in [r["city"], tarih_tr(r["date"]) if r["date"] else ""] if y), kriter,
+        ("Son başvuru " + tarih_tr(r["deadline"])) if r["deadline"] else "",
+        "Başvuru ücretsizdir"] if x)
+    link = "%s/api/i/%s" % (SITE_URL, r["kod"])
+    gorsel = (SITE_URL + o["gorsel"]) if o["gorsel"] else ""
+    veri = json.dumps({**o, "kaynak": kaynak}, ensure_ascii=False).replace("</", "<\\/")
+    surum = str(int(START_TIME))
+    og_img = ('<meta property="og:image" content="%s">\n  <meta property="og:image:width" content="1200">\n'
+              '  <meta property="og:image:height" content="630">\n  <meta property="og:image:type" content="image/jpeg">\n'
+              '  <meta name="twitter:image" content="%s">' % (e(gorsel), e(gorsel))) if gorsel else ""
+    guven = [
+        "Başvuru tamamen ücretsizdir. Model of World adaylardan hiçbir aşamada ücret istemez.",
+        "Tüm işler yazılı sözleşmeyle yapılır, ücret ve çalışma koşulları önceden bildirilir.",
+        "Çekimlerde refakatçi getirebilirsiniz; bilgileriniz yalnızca bu iş için kullanılır.",
+    ]
+    if (r["minor"] or "0") == "1" or r["category"] == "cocuk":
+        guven.append("18 yaş altı adaylar için veli onayı zorunludur ve çekimlerde veli refakati şarttır.")
+    # Parçalar önceden hazırlanır: eski Python sürümleri f-string içinde tırnaklı ifadeye izin vermez
+    gorsel_html = ('<img class="ilan-gorsel" src="%s" alt="%s">' % (e(o["gorsel"]), e(baslik))) if o["gorsel"] else ""
+    sehir_ek = (" · " + e(r["city"])) if r["city"] else ""
+    kapali_html = "" if o["acik"] else '<div class="ilan-kapali">%s</div>' % e(o["kapali_neden"])
+    satir_html = "".join('<li><span class="ik">%s</span><span class="ia">%s</span><strong>%s</strong></li>'
+                         % (i, e(a), e(v)) for i, a, v in satirlar)
+    cta_html = ('<a class="btn btn-gold" href="#basvur" id="ustBasvur">Hemen Başvur</a>' if o["acik"]
+                else '<a class="btn btn-ghost" href="ilanlar">Açık ilanlara göz at</a>')
+    desc_html = ('<div class="ilan-blok"><h2>İş Hakkında</h2><div class="ilan-metin">%s</div></div>'
+                 % e(r["description"])) if r["description"] else ""
+    req_html = ('<div class="ilan-blok"><h2>Aranan Özellikler</h2><div class="ilan-metin">%s</div></div>'
+                % e(r["requirements"])) if r["requirements"] else ""
+    guven_html = "".join("<li>✓ %s</li>" % e(g) for g in guven)
+    form_baslik = "Başvuru" if o["acik"] else "Başvurular Kapandı"
+    t_baslik, t_aciklama, t_link, t_kat = e(baslik), e(aciklama_og), e(link), e(kat)
+    return f"""<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="/">
+  <title>{t_baslik} — Model of World İş İlanı</title>
+  <meta name="description" content="{t_aciklama}">
+  <link rel="canonical" href="{t_link}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Model of World">
+  <meta property="og:locale" content="tr_TR">
+  <meta property="og:title" content="{t_baslik}">
+  <meta property="og:description" content="{t_aciklama}">
+  <meta property="og:url" content="{t_link}">
+  {og_img}
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{t_baslik}">
+  <meta name="twitter:description" content="{t_aciklama}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css?v={surum}">
+  <link rel="stylesheet" href="assets/css/ilan.css?v={surum}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90' fill='%23d34f6e'>M</text></svg>">
+</head>
+<body data-page="ilanlar">
+  <div id="site-header"></div>
+  <section class="ilan-sayfa">
+    <div class="container" style="max-width:980px">
+      <a class="ilan-geri" href="ilanlar">← Tüm iş ilanları</a>
+      <div class="ilan-ust">
+        {gorsel_html}
+        <div class="ilan-bilgi">
+          <span class="eyebrow">{t_kat} aranıyor{sehir_ek}</span>
+          <h1>{t_baslik}</h1>
+          {kapali_html}
+          <ul class="ilan-satirlar">
+            {satir_html}
+          </ul>
+          {cta_html}
+          <button class="btn btn-ghost" type="button" id="ilanPaylas">Paylaş</button>
+        </div>
+      </div>
+
+      {desc_html}
+      {req_html}
+
+      <div class="ilan-blok ilan-guven">
+        <h2>Güvenle Başvurun</h2>
+        <ul>{guven_html}</ul>
+      </div>
+
+      <div class="ilan-blok" id="basvur">
+        <h2>{form_baslik}</h2>
+        <div id="ilanForm"><p class="muted">Yükleniyor…</p></div>
+      </div>
+    </div>
+  </section>
+  <div id="site-footer"></div>
+  <script>window.MOW_ILAN = {veri};</script>
+  <script src="assets/js/data.js?v={surum}"></script>
+  <script src="assets/js/main.js?v={surum}"></script>
+  <script src="assets/js/ilan.js?v={surum}"></script>
+</body>
+</html>"""
+
 def offers_of(uid):
     rows = db().execute("""SELECT o.id, o.status, o.updated, o.consent_at,
         o.checkin_at, o.checkout_at, o.feedback_rating, o.payment_status,
@@ -840,6 +1083,47 @@ class Handler(BaseHTTPRequestHandler):
                                     "gunler": a["gunler"], "dilim": a["dilim"],
                                     "en_gec_gun": a["en_gec_gun"]})
 
+        # ---------- İş ilanları (herkese açık) ----------
+        m = re.match(r"^/api/i/([a-z0-9\-]{3,60})/?$", p)
+        if m:
+            r = db().execute("SELECT * FROM ilanlar WHERE kod=?", (m.group(1),)).fetchone()
+            if not r or (r["status"] or "") == "silindi":
+                raw = ("<!DOCTYPE html><meta charset='utf-8'><meta http-equiv='refresh' content='0;url=/ilanlar'>"
+                       "<p>İlan bulunamadı. <a href='/ilanlar'>Açık ilanlar</a></p>").encode("utf-8")
+                self.send_response(404)
+            else:
+                kaynak = kaynak_temiz(qs.get("k", [""])[0])
+                ua = self.headers.get("User-Agent") or ""
+                # Önizleme botları (WhatsApp'ın kart çekmesi) tıklama sayılmaz
+                if not BOT_UA.search(ua):
+                    iz = hashlib.sha256((self._ip() + "|" + ua).encode()).hexdigest()[:16]
+                    # Aynı kişinin 30 dk içindeki yenilemeleri tek ziyaret sayılır
+                    sinir = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat(timespec="seconds")
+                    if not db().execute("SELECT 1 FROM ilan_ziyaret WHERE ilan_id=? AND ziyaretci=? AND created>=?",
+                                        (r["id"], iz, sinir)).fetchone():
+                        db().execute("INSERT INTO ilan_ziyaret(ilan_id,source,created,ziyaretci) VALUES(?,?,?,?)",
+                                     (r["id"], kaynak, now(), iz))
+                        db().commit()
+                raw = ilan_sayfasi_html(r, kaynak).encode("utf-8")
+                self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(raw)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(raw)
+            return
+
+        if p == "/api/ilanlar":
+            liste = [ilan_ozet(r) for r in db().execute(
+                "SELECT * FROM ilanlar WHERE status='acik' ORDER BY COALESCE(date,'') = '', date, id DESC").fetchall()]
+            return self._json(200, {"ilanlar": [x for x in liste if x["acik"]]})
+
+        m = re.match(r"^/api/ilan-gorsel/([a-z0-9\-]{3,60})$", p)
+        if m:
+            r = db().execute("SELECT image FROM ilanlar WHERE kod=? AND status!='silindi'", (m.group(1),)).fetchone()
+            if not r or not r["image"]: return self._json(404, {"error": "Görsel yok"})
+            return self._dosya_gonder(os.path.join(UPLOAD_DIR, r["image"]), "public")
+
         if p == "/api/cast.js":
             raw = ("window.VERA_CAST = " + json.dumps(cast_list(), ensure_ascii=False) + ";").encode("utf-8")
             self.send_response(200)
@@ -1054,6 +1338,7 @@ class Handler(BaseHTTPRequestHandler):
                    "son_yedek_bilgi": ayar_oku("son_yedek_bilgi", ""),
                    "customers": musteriler,
                    "jobs": jobs, "submissions": subs, "audit": logs,
+                   "ilanlar": ilan_listesi_admin(), "wa_gruplar": ayar_oku("wa_gruplar", []) or [],
                    "sos": sos, "shares": shares, "tasks": tasks, "templates": templates,
                    "maintenance": bool(mrow and mrow["v"] == "1"),
                    "me": {"username": adm["username"], "role": adm["role"]}}
@@ -2371,6 +2656,161 @@ class Handler(BaseHTTPRequestHandler):
             audit("admin:" + adm["username"], "is-teklifi", None, f"{title[:60]} → {len(ids)} üye")
             db().commit()
             return self._json(200, {"ok": True, "id": cur.lastrowid})
+
+        # ---------- İş ilanları ----------
+        if p == "/api/ilan-basvuru":
+            # Başvuran her zaman üyedir: üye değilse ilan sayfası önce kısa kaydı açar
+            # (/api/register + /api/upload), sonra bu uca gelir.
+            uid = self._session_user()
+            if not uid: return self._json(401, {"error": "Başvurmak için giriş yapın veya kısa kaydı doldurun"})
+            d = jbody()
+            r = db().execute("SELECT * FROM ilanlar WHERE kod=?", (str(d.get("kod") or ""),)).fetchone()
+            if not r or r["status"] == "silindi": return self._json(404, {"error": "İlan bulunamadı"})
+            acik, neden, _ = ilan_durumu(r)
+            if not acik: return self._json(400, {"error": neden})
+            pr = db().execute("SELECT parent_name, parent_phone, age, category FROM profiles WHERE user_id=?",
+                              (uid,)).fetchone()
+            if ((r["minor"] or "0") == "1" or r["category"] == "cocuk" or is_minor(uid)) and not (pr and pr["parent_name"]):
+                return self._json(400, {"error": "18 yaş altı başvurularda veli bilgisi gereklidir. "
+                                                 "Panelinizdeki Veli İzni bölümünü doldurup tekrar deneyin."})
+            var = db().execute("SELECT id, status FROM ilan_basvuru WHERE ilan_id=? AND user_id=?",
+                               (r["id"], uid)).fetchone()
+            if var: return self._json(200, {"ok": True, "zaten": True})
+            db().execute("INSERT INTO ilan_basvuru(ilan_id,user_id,source,note,status,created,updated) "
+                         "VALUES(?,?,?,?,'yeni',?,?)",
+                         (r["id"], uid, kaynak_temiz(d.get("kaynak")), str(d.get("note") or "")[:600], now(), now()))
+            audit("uye", "ilan-basvuru", uid, "%s (%s)" % (r["title"][:60], kaynak_temiz(d.get("kaynak")) or "doğrudan"))
+            db().commit()
+            if mail_kurulu():
+                a = mail_ayari(); hedef = a.get("to") or a.get("from")
+                u2 = db().execute("SELECT fullname, phone FROM users WHERE id=?", (uid,)).fetchone()
+                if hedef:
+                    mail_gonder(hedef, "Yeni ilan başvurusu — %s" % r["title"][:60],
+                                "İlan: %s\nBaşvuran: %s (%s)\nGeldiği grup: %s\n\nPanel: %s/admin" %
+                                (r["title"], u2["fullname"], u2["phone"], kaynak_temiz(d.get("kaynak")) or "doğrudan", SITE_URL),
+                                kayit_adi="ilan-basvuru")
+            return self._json(200, {"ok": True})
+
+        if p == "/api/ilan-durumum":
+            # İlan sayfası: giriş yapmış üye bu ilana başvurmuş mu?
+            uid = self._session_user()
+            if not uid: return self._json(200, {"uye": False})
+            r = db().execute("SELECT id FROM ilanlar WHERE kod=?", (str(jbody().get("kod") or ""),)).fetchone()
+            b = db().execute("SELECT status FROM ilan_basvuru WHERE ilan_id=? AND user_id=?",
+                             (r["id"] if r else 0, uid)).fetchone()
+            u2 = db().execute("SELECT fullname FROM users WHERE id=?", (uid,)).fetchone()
+            pr = db().execute("SELECT parent_name, age, category FROM profiles WHERE user_id=?", (uid,)).fetchone()
+            return self._json(200, {"uye": True, "ad": (u2["fullname"] if u2 else "").split(" ")[0],
+                                    "basvurdu": bool(b), "durum": b["status"] if b else "",
+                                    "veli_var": bool(pr and pr["parent_name"]), "resit_degil": bool(is_minor(uid))})
+
+        if p == "/api/admin/ilan":
+            # Oluştur (id yok) veya düzenle (id var)
+            adm = self._admin(qs)
+            if not self._can(adm, "job"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            d = jbody()
+            title = str(d.get("title") or "").strip()[:140]
+            if not title: return self._json(400, {"error": "İlan başlığı gerekli"})
+            kat = str(d.get("category") or "model")
+            if kat not in ILAN_KAT: kat = "model"
+            def tarih(v):
+                v = str(v or "")[:10]
+                return v if re.match(r"^\d{4}-\d{2}-\d{2}$", v) else ""
+            def sayi(v, lo, hi):
+                n = _sayi(v)
+                return n if n is not None and lo <= n <= hi else None
+            vals = {
+                "title": title, "category": kat,
+                "city": str(d.get("city") or "").strip()[:60],
+                "location": str(d.get("location") or "").strip()[:140],
+                "date": tarih(d.get("date")), "deadline": tarih(d.get("deadline")),
+                "fee": str(d.get("fee") or "").strip()[:80],
+                "spots": sayi(d.get("spots"), 0, 999) or 0,
+                "gender": d.get("gender") if d.get("gender") in ("kadin", "erkek") else "",
+                "age_min": sayi(d.get("age_min"), 1, 99), "age_max": sayi(d.get("age_max"), 1, 99),
+                "height_min": sayi(d.get("height_min"), 50, 230),
+                "description": str(d.get("description") or "").strip()[:3000],
+                "requirements": str(d.get("requirements") or "").strip()[:2000],
+                "minor": "1" if (d.get("minor") in (1, "1", True) or kat == "cocuk") else "0",
+            }
+            iid = _sayi(d.get("id"))
+            if iid:
+                if not db().execute("SELECT 1 FROM ilanlar WHERE id=?", (iid,)).fetchone():
+                    return self._json(404, {"error": "İlan bulunamadı"})
+                db().execute("UPDATE ilanlar SET " + ", ".join(k + "=?" for k in vals) + ", updated=? WHERE id=?",
+                             list(vals.values()) + [now(), iid])
+                audit("admin:" + adm["username"], "ilan-duzenle", None, title[:80])
+            else:
+                kod = ilan_kod_uret(title)
+                cur = db().execute("INSERT INTO ilanlar(kod," + ",".join(vals) + ",status,created,updated,created_by) "
+                                   "VALUES(?," + ",".join("?" * len(vals)) + ",'acik',?,?,?)",
+                                   [kod] + list(vals.values()) + [now(), now(), adm["username"]])
+                iid = cur.lastrowid
+                audit("admin:" + adm["username"], "ilan-olustur", None, title[:80])
+            db().commit()
+            r = db().execute("SELECT * FROM ilanlar WHERE id=?", (iid,)).fetchone()
+            return self._json(200, {"ok": True, "id": iid, "kod": r["kod"], "link": "%s/api/i/%s" % (SITE_URL, r["kod"])})
+
+        if p == "/api/admin/ilan-durum":
+            adm = self._admin(qs)
+            if not self._can(adm, "job"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            d = jbody()
+            st = str(d.get("status") or "")
+            if st not in ("acik", "kapali", "silindi"): return self._json(400, {"error": "Geçersiz durum"})
+            r = db().execute("SELECT title FROM ilanlar WHERE id=?", (_sayi(d.get("id")) or 0,)).fetchone()
+            if not r: return self._json(404, {"error": "İlan bulunamadı"})
+            db().execute("UPDATE ilanlar SET status=?, updated=? WHERE id=?", (st, now(), _sayi(d.get("id"))))
+            audit("admin:" + adm["username"], "ilan-" + st, None, r["title"][:80])
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/admin/ilan-gorsel":
+            # Panelde otomatik üretilen önizleme görseli (1200×630 JPEG) — WhatsApp kartında görünür
+            adm = self._admin(qs)
+            if not self._can(adm, "job"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            fields, files = parse_multipart(body, ctype)
+            iid = _sayi(fields.get("id")) or 0
+            r = db().execute("SELECT image FROM ilanlar WHERE id=?", (iid,)).fetchone()
+            if not r: return self._json(404, {"error": "İlan bulunamadı"})
+            if not files: return self._json(400, {"error": "Görsel yok"})
+            veri = files[0][2]
+            if not (1000 < len(veri) <= 1024 * 1024) or veri[:2] != b"\xff\xd8":
+                return self._json(400, {"error": "Görsel JPEG olmalı ve 1 MB'ı geçmemeli"})
+            fn = "ilan_%d_%s.jpg" % (iid, secrets.token_hex(6))
+            with open(os.path.join(UPLOAD_DIR, fn), "wb") as f: f.write(veri)
+            if r["image"]:
+                try: os.remove(os.path.join(UPLOAD_DIR, r["image"]))
+                except OSError: pass
+            db().execute("UPDATE ilanlar SET image=?, updated=? WHERE id=?", (fn, now(), iid))
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/admin/ilan-basvuru-durum":
+            adm = self._admin(qs)
+            if not self._can(adm, "job"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            d = jbody()
+            st = str(d.get("status") or "")
+            if st not in ("yeni", "secildi", "elendi"): return self._json(400, {"error": "Geçersiz durum"})
+            b = db().execute("SELECT b.ilan_id, b.user_id, i.title FROM ilan_basvuru b JOIN ilanlar i ON i.id=b.ilan_id "
+                             "WHERE b.id=?", (_sayi(d.get("id")) or 0,)).fetchone()
+            if not b: return self._json(404, {"error": "Başvuru bulunamadı"})
+            db().execute("UPDATE ilan_basvuru SET status=?, updated=? WHERE id=?", (st, now(), _sayi(d.get("id"))))
+            audit("admin:" + adm["username"], "ilan-basvuru-" + st, b["user_id"], b["title"][:80])
+            db().commit()
+            return self._json(200, {"ok": True})
+
+        if p == "/api/admin/wa-gruplar":
+            # Paylaşım yapılan WhatsApp gruplarının adları (her ilanda yeniden yazılmasın)
+            adm = self._admin(qs)
+            if not self._can(adm, "job"): return self._json(403, {"error": "Bu işlem için yetkiniz yok"})
+            gruplar, gorulen = [], set()
+            for g in (jbody().get("gruplar") or [])[:200]:
+                ad = str(g or "").strip()[:60]; k = kaynak_temiz(ad)
+                if ad and k and k not in gorulen:
+                    gorulen.add(k); gruplar.append(ad)
+            ayar_yaz("wa_gruplar", gruplar)
+            db().commit()
+            return self._json(200, {"ok": True, "gruplar": gruplar})
 
         if p == "/api/admin/share":
             adm = self._admin(qs)

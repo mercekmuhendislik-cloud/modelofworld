@@ -617,6 +617,20 @@
         </div>
         <div id="jobsList" class="mt-2"></div>
 
+        <h2 class="adm-section-title" id="ilanH2">📣 İş İlanları (WhatsApp paylaşımı)</h2>
+        <div class="form-card" id="ilanCard">
+          <p class="mini" style="margin-bottom:10px">İlanı oluşturun, grubunuzu seçip <strong>WhatsApp'ta Aç</strong>'a basın; hazır metin ve önizleme kartıyla paylaşılır. Başvurular ve hangi gruptan kaç kişi geldiği aşağıda görünür.</p>
+          <div class="adm-row">
+            <button class="btn btn-gold btn-sm" id="ilanYeniBtn">+ Yeni İlan</button>
+            <button class="btn btn-ghost btn-sm" id="ilanGrupBtn">👥 WhatsApp Gruplarım</button>
+            <a class="btn btn-ghost btn-sm" href="ilanlar" target="_blank" rel="noopener">🌐 Sitedeki İlanlar Sayfası</a>
+            <span class="mini" id="ilanOzet"></span>
+          </div>
+          <div id="ilanGrupWrap" hidden></div>
+          <div id="ilanFormWrap" hidden></div>
+        </div>
+        <div id="ilanList" class="mt-2"></div>
+
         <h2 class="adm-section-title" id="shareH2">🔗 VIP Müşteri Paylaşımı (süreli özel link)</h2>
         <div class="form-card" id="shareCard">
           <p class="mini" style="margin-bottom:10px">Seçtiğiniz üyelerin sedcard'larını müşteriye özel, süresi dolunca kendini kapatan bir bağlantıyla paylaşın. Sanatsal albüm yalnızca izin kutusunu işaretlerseniz görünür.</p>
@@ -1038,6 +1052,7 @@
         ["Oturumlar", renderSessions], ["2FA", renderTotp], ["Görevler", renderTasks],
         ["Araçlar", renderTools], ["E-posta ayarı", renderEposta], ["Randevu ayarı", renderRandevu],
         ["Etiketler", renderEtiketler],
+        ["İş ilanları", () => window.renderIlanlar && window.renderIlanlar()],
         ["Seçim", syncBulk], ["Sekme sayaçları", updateTabCounts],
       ];
       const patlayan = [];
@@ -1974,6 +1989,7 @@
     const ATABS = [
       ["genel",   "📊", "Genel Bakış",        ["sosBand","dashRoot","logTitle","logs"]],
       ["uyeler",  "👥", "Üyeler & Onaylar",   ["toolsRow","etiketCard","tplCard","bulkBar","durumSekme","hizlandirRow","filterRow2","results"]],
+      ["ilanlar", "📣", "İş İlanları",        ["ilanH2","ilanCard","ilanList"]],
       ["isler",   "💼", "İşler & Paylaşım",   ["takH2","takCard","jobH2","jobCard","jobsList","shareH2","shareCard"]],
       ["finance", "💰", "Finansal Takip",      ["financeH2","financeTab"]],
       ["formlar", "✉️", "Gelen Formlar",      ["subTitle","subInfo","frmSekme","subFiltre","subs"]],
@@ -2014,6 +2030,7 @@
       setCnt("ekip", acikGorev);
       setCnt("genel", (DATA.sos || []).length);
       setCnt("formlar", (DATA.submissions || []).filter(s => s.processed !== "1").length);
+      setCnt("ilanlar", (DATA.ilanlar || []).reduce((n, i) => n + (i.basvurular || []).filter(b => b.status === "yeni").length, 0));
     }
 
     /* ---------- Canlı nabız: 30 sn'de bir yeni kayıt / SOS bildirimi ---------- */
@@ -3447,5 +3464,6 @@
       toast("⬇ Günlük indirildi (" + (satirlar.length - 1) + " kayıt)");
     });
   </script>
+  <script src="assets/js/admin-ilan.js?v=1"></script>
 </body>
 </html>

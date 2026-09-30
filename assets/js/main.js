@@ -12,6 +12,7 @@
     { href: "hizmetler",  label: "Hizmetlerimiz",  key: "hizmetler" },
     { href: "produksiyon",label: "Prodüksiyon",    key: "produksiyon" },
     { href: "nasil-calisir", label: "Nasıl Çalışır?", key: "nasil-calisir" },
+    { href: "ilanlar",    label: "İlanlar",        key: "ilanlar" },
     { href: "basvuru",     label: "Başvuru Yap",    key: "basvuru", cta: true },
     { href: "hakkimizda", label: "Hakkımızda",     key: "hakkimizda" },
     { href: "iletisim",   label: "İletişim",       key: "iletisim" },
@@ -351,6 +352,7 @@
       text: `${s.title} ${s.short}`.toLowerCase(),
     })),
     { label: "Başvuru Formu", sub: "Model / Hostes olun", href: "basvuru", text: "başvuru basvuru model hostes kayıt" },
+    { label: "İş İlanları", sub: "Model, oyuncu, hostes aranıyor", href: "ilanlar", text: "ilan ilanlar iş is casting oyuncu figüran aranıyor" },
     { label: "Teklif İste", sub: "Kurumsal müşteriler", href: "teklif", text: "teklif fiyat proje müşteri" },
   ];
 
